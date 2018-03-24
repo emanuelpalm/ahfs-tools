@@ -4,5 +4,3 @@ version = "0.1.0"
 authors = ["Emanuel Palm <emanuel.palm@ltu.se>"]
 
 [dependencies]
-pest = "^1.0"
-pest_derive = "^1.0"
