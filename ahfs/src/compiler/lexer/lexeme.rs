@@ -1,41 +1,49 @@
 use std::cmp;
 use std::fmt;
-use std::ops::Range;
 
 /// Identifies a significant region within a source string.
 #[derive(Debug)]
 pub struct Lexeme<'a> {
     source: &'a str,
-    offset: usize,
-    len: usize, // TODO: Store _end_ internally instead of len?
+    start: usize,
+    stop: usize,
 }
 
 impl<'a> Lexeme<'a> {
-    /// Creates new lexeme from given source string, offset and length.
+    /// Creates new lexeme from given source string, and start and stop offsets.
+    ///
+    /// The start offset points to the first byte of the first UTF-8 code point
+    /// of the lexeme, while the stop offset points to the first byte after the
+    /// the lexeme.
     ///
     /// # Panics
     ///
     /// ## Region Out of Bounds
     ///
-    /// If the given offset and length cover a region outside the bounds of the
-    /// given source string, the function panics.
+    /// If the given start offset is larger than the stop offset, or if the
+    /// offsets cover a region outside the bounds of the given source string,
+    /// the function panics.
     ///
     /// ## UTF-8 Code Point Boundaries
     ///
-    /// Both of the given offset and length must refer to the first bytes of
-    /// UTF-8 code points within the string. Failing to comply to this
-    /// requirement will not cause an immediate panic, but will likely result
-    /// in one when the lexeme is used later on.
+    /// Both of the given offsets must refer to the first bytes of UTF-8 code
+    /// points within the string. Failing to comply to this requirement will
+    /// causes an immediate panic only if running in debug mode. In release
+    /// mode, a panic is likely going to be the result if using the methods of
+    /// the lexeme later on.
     #[inline]
-    pub fn new(source: &'a str, offset: usize, len: usize) -> Self {
-        assert!(offset + len <= source.len());
-        Lexeme { source, offset, len }
+    pub fn new(source: &'a str, start: usize, stop: usize) -> Self {
+        assert!(start <= stop && stop <= source.len());
+        debug_assert!(source.is_char_boundary(start)
+            && source.is_char_boundary(stop));
+
+        Lexeme { source, start, stop }
     }
 
     /// Borrows lexeme as string.
     #[inline]
     pub fn as_str(&self) -> &'a str {
-        &self.source[self.offset..(self.offset + self.len)]
+        &self.source[self.start..self.stop]
     }
 
     /// Lexeme source string.
@@ -44,41 +52,37 @@ impl<'a> Lexeme<'a> {
         self.source
     }
 
-    /// Offset, in bytes, from beginning of source string to lexeme.
+    /// Start offset, in bytes, from beginning of source string to lexeme.
     #[inline]
-    pub fn offset(&self) -> usize {
-        self.offset
+    pub fn start(&self) -> usize {
+        self.start
     }
 
-    /// Length, in bytes, of lexeme.
+    /// Stop offset, in bytes, from beginning of source string to first byte
+    /// after lexeme.
     #[inline]
-    pub fn len(&self) -> usize {
-        self.len
+    pub fn stop(&self) -> usize {
+        self.stop
     }
 
-    /// Determines on which line the first byte of the lexeme is located within
-    /// its source string.
+    /// Creates iterator over the source string lines touched by this lexeme.
     #[inline]
-    pub fn row(&self) -> usize {
-        self.source[..self.offset]
+    pub fn lines(&self) -> Lines<'a> {
+        Lines::new(self)
+    }
+
+    /// Determines line number of this lexeme.
+    ///
+    /// # Multi-Line Lexemes
+    ///
+    /// If this lexeme spans multiple lines, the method reports the number of
+    /// the first line the lexeme touches.
+    #[inline]
+    pub fn line_number(&self) -> usize {
+        self.source[..self.start]
             .bytes()
             .filter(|b| *b == b'\n')
             .count() + 1
-    }
-
-    /// Creates new lexeme with source string truncated to only include lines
-    /// touched by this lexeme.
-    #[inline]
-    pub fn shrink(&self) -> Lexeme<'a> {
-        let start = match self.source[..self.offset].rfind('\n') {
-            Some(index) => index + 1,
-            None => 0,
-        };
-        let stop = match self.source[self.offset..].find('\n') {
-            Some(index) => index + self.offset,
-            None => self.offset,
-        };
-        Self::new(&self.source[start..stop], self.offset - start, self.len)
     }
 
     /// Combines regions of this and given lexeme.
@@ -94,28 +98,135 @@ impl<'a> Lexeme<'a> {
     /// it would be too short to encompass the combined regions of the two
     /// lexemes.
     pub fn span(&self, other: &Lexeme<'a>) -> Lexeme<'a> {
-        let offset = cmp::min(self.offset, other.offset);
-        let end = cmp::max(self.offset + self.len, other.offset + other.len);
-        Self::new(self.source, offset, end - offset)
+        let start = cmp::min(self.start, other.start);
+        let stop = cmp::max(self.stop, other.stop);
+        Self::new(self.source, start, stop)
     }
 }
 
 impl<'a> fmt::Display for Lexeme<'a> {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        let lexeme = self.shrink();
-        let row = self.row();
-        let mut x = row;
-
-        write!(f, "     |\n")?;
-        for line in lexeme.source().lines() {
-            write!(f, "{:>4} | {}\n", x, line)?;
-            x += 1;
+        write!(f, "      |\n")?;
+        for line in self.lines() {
+            write!(f, "{}", line)?;
         }
-        // if row + 1 == x {
-        //    write!(f, "     | {:offset$}{:^>len$}\n", "", "",
-        //           offset = 
-        //}
         Ok(())
+    }
+}
+
+#[derive(Debug)]
+pub struct Lines<'a> {
+    source: &'a str,
+    line_number: usize,
+    start: usize,
+    stop: usize,
+    offset: usize,
+}
+
+impl<'a> Lines<'a> {
+    #[inline]
+    fn new(lexeme: &Lexeme<'a>) -> Self {
+        let source = lexeme.source();
+
+        // Find first newline before lexeme.
+        let start = match source[..lexeme.start()].rfind('\n') {
+            Some(index) => index + 1,
+            None => 0,
+        };
+
+        // Find first newline after lexeme.
+        let stop = lexeme.stop() + match source[lexeme.stop()..].find('\n') {
+            Some(mut index) => {
+                // Exclude any carriage return.
+                if index > 0 && source.as_bytes()[index - 1] == b'\r' {
+                    index -= 1;
+                }
+                index
+            },
+            None => 0,
+        };
+
+        Lines {
+            source: &source[start..stop],
+            line_number: source[..start]
+                .bytes()
+                .filter(|b| *b == b'\n')
+                .count() + 1,
+            start: lexeme.start() - start,
+            stop: lexeme.stop() - start,
+            offset: 0,
+        }
+    }
+}
+
+impl<'a> Iterator for Lines<'a> {
+    type Item = Line<'a>;
+
+    fn next(&mut self) -> Option<Self::Item> {
+        if self.offset >= self.source.len() {
+            return None;
+        }
+
+        // Find end of line.
+        let (mut offset, at_end) = match self.source[self.offset..].find('\n') {
+            Some(index) => (index, false),
+            None => (self.source.len(), true),
+        };
+
+        // Truncate source to cover only line.
+        let source = &self.source[self.offset..offset];
+
+        let line_number = self.line_number;
+
+        // Determine start of lexeme within line.
+        let start = if self.offset > 0 {
+            0
+        } else {
+            self.start
+        };
+
+        // Determine stop of lexeme within line.
+        let mut stop = if at_end {
+            self.stop - self.offset
+        } else {
+            offset
+        };
+        // Ensure stop does not include a trailing carriage return.
+        if stop > 0 && source.as_bytes()[stop - 1] == b'\r' {
+            stop -= 1;
+            offset += 1;
+        }
+
+        // Forward internal offset and line_number.
+        self.offset = offset + 1;
+        self.line_number += 1;
+
+        Some(Line { source, line_number, start, stop })
+    }
+}
+
+#[derive(Debug)]
+pub struct Line<'a> {
+    source: &'a str,
+    line_number: usize,
+    start: usize,
+    stop: usize,
+}
+
+impl<'a> Line<'a> {
+    #[inline]
+    pub fn as_str(&self) -> &'a str {
+        &self.source[self.start..self.stop]
+    }
+}
+
+impl<'a> fmt::Display for Line<'a> {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(f, concat!(
+            "{:>5} | {}\n",
+            "      | {:start$}{:^<len$}\n"),
+            self.line_number, self.source,
+            "", "", start = self.start, len = self.stop - self.start)
     }
 }
 
@@ -123,33 +234,55 @@ impl<'a> fmt::Display for Lexeme<'a> {
 mod tests {
     use super::*;
 
-    const DOC: &'static str = "A is: System;\nA consumes: B;\nA produces: C;\n";
+    const SOURCE: &'static str = concat!(
+        "A is: System;\n",
+        "A consumes: B;\n",
+        "A produces: C;\n");
 
     #[test]
     fn as_str() {
-        let lexeme = Lexeme::new(DOC, 16, 9);
+        let lexeme = Lexeme::new(SOURCE, 16, 25);
         assert_eq!("consumes:", lexeme.as_str());
     }
 
     #[test]
     fn display() {
         {
-            let lexeme = Lexeme::new(DOC, 0, 1); 
-            assert_eq!(
-                format!("{}", lexeme).as_str(),
-                "     |\n   1 | A is: System;\n     | ^\n");
+            let lexeme = Lexeme::new("X", 0, 1);
+            assert_eq!(format!("{}", lexeme).as_str(), concat!(
+                "      |\n",
+                "    1 | X\n",
+                "      | ^\n"));
         }
         {
-            let lexeme = Lexeme::new(DOC, 16, 9);
-            assert_eq!(
-                format!("{}", lexeme).as_str(),
-                "     |\n   2 | A consumes: B;\n     |   ^^^^^^^^^\n");
+            let lexeme = Lexeme::new(SOURCE, 0, 1); 
+            assert_eq!(format!("{}", lexeme).as_str(), concat!(
+                "      |\n",
+                "    1 | A is: System;\n",
+                "      | ^\n"));
         }
         {
-            let lexeme = Lexeme::new(DOC, 29, 14);
-            assert_eq!(
-                format!("{}", lexeme).as_str(),
-                "     |\n   3 | A produces: C;\n     | ^^^^^^^^^^^^^^\n");
+            let lexeme = Lexeme::new(SOURCE, 16, 25);
+            assert_eq!(format!("{}", lexeme).as_str(), concat!(
+                "      |\n",
+                "    2 | A consumes: B;\n",
+                "      |   ^^^^^^^^^\n"));
+        }
+        {
+            let lexeme = Lexeme::new(SOURCE, 29, 43);
+            assert_eq!(format!("{}", lexeme).as_str(), concat!(
+                "      |\n",
+                "    3 | A produces: C;\n",
+                "      | ^^^^^^^^^^^^^^\n"));
+        }
+        {
+            let lexeme = Lexeme::new(SOURCE, 16, 40);
+            assert_eq!(format!("{}", lexeme).as_str(), concat!(
+                "      |\n",
+                "    2 | A consumes: B;\n",
+                "      |   ^^^^^^^^^^^^\n",
+                "    3 | A produces: C;\n",
+                "      | ^^^^^^^^^^^\n"));
         }
     }
 }

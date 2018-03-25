@@ -1,7 +1,6 @@
-pub use super::Lexeme;
-
 use std::char;
 use std::str;
+use super::Lexeme;
 
 /// A lexical analyzer.
 ///
@@ -17,7 +16,7 @@ use std::str;
 /// ## Example
 ///
 /// ```rust
-/// use ahfs::compiler::Lexer;
+/// use ahfs::compiler::lexer::Lexer;
 ///
 /// let mut lexer = Lexer::new("aabbaa");
 ///
@@ -144,8 +143,7 @@ impl<'a> Candidate<'a> {
     #[inline]
     fn collect(&mut self) -> Lexeme<'a> {
         let source = unsafe { str::from_utf8_unchecked(self.source) };
-        let len = self.end - self.offset;
-        let lexeme = Lexeme::new(source, self.offset, len);
+        let lexeme = Lexeme::new(source, self.offset, self.end);
         self.discard();
         lexeme
     }
