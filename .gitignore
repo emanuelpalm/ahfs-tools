@@ -3,4 +3,5 @@
 
 **/*.rs.bk
 *.iml
+*.swp
 Cargo.lock
