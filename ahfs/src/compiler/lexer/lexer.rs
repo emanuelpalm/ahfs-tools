@@ -35,6 +35,7 @@ use super::Lexeme;
 /// assert_eq!(1, lexemes.len());
 /// assert_eq!("bb", lexemes[0].as_str());
 /// ```
+#[derive(Debug)]
 pub struct Lexer<'a> {
     candidate: Candidate<'a>,
     collected: Vec<Lexeme<'a>>,
@@ -79,6 +80,7 @@ impl<'a> Lexer<'a> {
     }
 }
 
+#[derive(Debug)]
 struct Candidate<'a> {
     source: &'a [u8],
     start: usize,
