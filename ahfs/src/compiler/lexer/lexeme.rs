@@ -24,7 +24,7 @@ impl<'a> Lexeme<'a> {
     /// offsets cover a region outside the bounds of the given source string,
     /// the function panics.
     ///
-    /// ## UTF-8 Code Point Boundaries
+    /// ## Invalid UTF-8 Code Point Boundaries
     ///
     /// Both of the given offsets must refer to the first bytes of UTF-8 code
     /// points within the string. Failing to comply to this requirement will

@@ -1,6 +1,10 @@
 //! Lexical analysis utilities.
 //!
 //! This module provide various utilities for analyzing UTF-8 source strings.
+//! Most significantly, it provides a [default lexical analysis function][ana],
+//! apart from other tools useful for performing lexical analyses.
+//!
+//! [ana]: fn.analyze.html
 
 mod lexeme;
 mod lexer;
@@ -13,6 +17,27 @@ macro_rules! next_or_break {
 }
 
 /// Performs default lexical analysis of given source string.
+///
+/// # Format
+///
+/// Skips ASCII whitespace and control characters. Treats the following
+/// characters as delimiters: `\n ( ) : ; [ ] { }`. Any sequence of characters
+/// that is not broken by any whitespace, control character or delimiter is
+/// treated as a single lexeme.
+///
+/// ## Example
+///
+/// ```rust
+/// let source = "{:R🤖BOT;} from\n[outer] (space)!";
+///
+/// assert_eq!(
+///     vec!["{", ":", "R🤖BOT", ";", "}", "from", "\n",
+///          "[", "outer", "]", "(", "space", ")", "!"],
+///     ::ahfs::compiler::lexer::analyze(source)
+///         .iter()
+///         .map(|lexeme| lexeme.as_str())
+///         .collect::<Vec<_>>());
+/// ```
 pub fn analyze<'a>(source: &'a str) -> Vec<Lexeme<'a>> {
     let mut lexer = Lexer::new(source);
     let mut ch: char;
