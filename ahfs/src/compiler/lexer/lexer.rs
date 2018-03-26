@@ -9,7 +9,7 @@ use super::Lexeme;
 /// A lexer extracts _lexemes_ from a _source_ string. When created, the lexer
 /// contains a _candidate lexeme_ with length 0 at the beginning of its source.
 /// The candidate lexeme can be expanded to include more characters, and later
-/// collected or discarded when it includes some set of signifcant characters.
+/// collected or discarded when it includes some set of significant characters.
 /// If collected, the candidate is saved to a vector. If either collected or
 /// discarded, a new 0 length candidate is created right after the old one.
 ///
