@@ -75,14 +75,14 @@ impl<'a> Lexer<'a> {
 
 struct Candidate<'a> {
     source: &'a [u8],
-    offset: usize,
-    end: usize,
+    start: usize,
+    stop: usize,
 }
 
 impl<'a> Candidate<'a> {
     #[inline]
     fn new(source: &'a str) -> Self {
-        Candidate { source: source.as_bytes(), offset: 0, end: 0 }
+        Candidate { source: source.as_bytes(), start: 0, stop: 0 }
     }
 
     fn next(&mut self) -> Option<char> {
@@ -92,65 +92,68 @@ impl<'a> Candidate<'a> {
         if a < 128 {
             return Some(unsafe { char::from_u32_unchecked(a as u32) });
         }
-        // 2+ byte character!
+        let code = loop {
+            let init = (a & 0b0001_1111) as u32;
+            let b = self.next_byte_or_0();
 
-        let init = (a & 0b0001_1111) as u32;
-        let b = self.next_byte_or_0();
-        let mut code = utf8_accumulate(init, b);
-
-        // Is 3+ byte character?
-        if a >= 0xE0 {
-            let c = self.next_byte_or_0();
-            let bc = utf8_accumulate((b & UTF8_CONT_MASK) as u32, c);
-            code = init << 12 | bc;
-
-            // Is 4 byte character?
-            if a >= 0xF0 {
-                let d = self.next_byte_or_0();
-                code = (init & 0b111) << 18 | utf8_accumulate(bc, d);
+            // Is 2 byte character?
+            if a < 0xe0 {
+                break utf8_push(init, b);
             }
-        }
+
+            let c = self.next_byte_or_0();
+            let b_c = utf8_push((b & UTF8_CONT_MASK) as u32, c);
+
+            // Is 3+ byte character?
+            if a < 0xf0 {
+                break init << 12 | b_c;
+            }
+
+            // Is 4 byte character!
+            let d = self.next_byte_or_0();
+            break (init & 0b111) << 18 | utf8_push(b_c, d);
+        };
         return Some(unsafe { char::from_u32_unchecked(code) });
 
         const UTF8_CONT_MASK: u8 = 0b0011_1111;
 
         #[inline]
-        fn utf8_accumulate(code: u32, byte: u8) -> u32 {
+        fn utf8_push(code: u32, byte: u8) -> u32 {
             (code << 6) | (byte & UTF8_CONT_MASK) as u32
         }
     }
 
     #[inline]
     fn next_byte(&mut self) -> Option<u8> {
-        if self.end >= self.source.len() {
+        if self.stop >= self.source.len() {
             return None;
         }
-        let byte = *unsafe { self.source.get_unchecked(self.end) };
-        self.end += 1;
+        let byte = *unsafe { self.source.get_unchecked(self.stop) };
+        self.stop += 1;
         Some(byte)
     }
 
     #[inline]
     fn next_byte_or_0(&mut self) -> u8 {
-        if self.end >= self.source.len() {
+        if self.stop >= self.source.len() {
             return 0;
         }
-        let byte = *unsafe { self.source.get_unchecked(self.end) };
-        self.end += 1;
+        let byte = *unsafe { self.source.get_unchecked(self.stop) };
+        self.stop += 1;
         byte
     }
 
     #[inline]
     fn collect(&mut self) -> Lexeme<'a> {
         let source = unsafe { str::from_utf8_unchecked(self.source) };
-        let lexeme = Lexeme::new(source, self.offset, self.end);
+        let lexeme = Lexeme::new(source, self.start, self.stop);
         self.discard();
         lexeme
     }
 
     #[inline]
     fn discard(&mut self) {
-        self.offset = self.end;
+        self.start = self.stop;
     }
 }
 
