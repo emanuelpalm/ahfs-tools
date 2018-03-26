@@ -82,19 +82,19 @@ impl<'a> Lexeme<'a> {
 
     /// Combines regions of this and given lexeme.
     ///
-    /// Any characters inbetween this and the referred lexeme are included by
-    /// the returned lexeme.
+    /// Any characters between this and the referred lexeme are included by the
+    /// returned lexeme.
     ///
-    /// # Panics and Foreign Lexemes
+    /// # Foreign Lexemes
     ///
-    /// The given lexeme is not prevented from being foreign, mening it refers
-    /// to a region within a different source string. The returned lexeme
-    /// inherists its source string from this lexeme, which causes a panic if
-    /// it would be too short to encompass the combined regions of the two
-    /// lexemes.
-    pub fn span(&self, other: &Lexeme<'a>) -> Lexeme<'a> {
-        let start = cmp::min(self.start, other.start);
-        let stop = cmp::max(self.stop, other.stop);
+    /// The given lexeme is not prevented from referring to a region within
+    /// some other source string. In any case, the returned lexeme will refer
+    /// to a valid region within the same source string as this lexeme.
+    pub fn span<'b>(&self, other: &Lexeme<'b>) -> Lexeme<'a> {
+        use std::cmp::Ord;
+
+        let start = self.start.min(other.start);
+        let stop = self.stop.max(other.stop).min(self.source.len());
         Self::new(self.source, start, stop)
     }
 }
