@@ -92,13 +92,14 @@ impl<'a> Candidate<'a> {
     }
 
     fn next(&mut self) -> Option<char> {
-        let a = self.next_byte()?;
-
-        // Is 1 byte character?
-        if a < 128 {
-            return Some(unsafe { char::from_u32_unchecked(a as u32) });
-        }
         let code = loop {
+            let a = self.next_byte()?;
+
+            // Is 1 byte character?
+            if a < 128 {
+                break a as u32;
+            }
+
             let init = (a & 0b0001_1111) as u32;
             let b = self.next_byte_or_0();
 
