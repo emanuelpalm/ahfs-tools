@@ -56,6 +56,12 @@ impl<'a> Lexer<'a> {
         self.candidate.next()
     }
 
+    /// Shrinks candidate, making it include one less character.
+    #[inline]
+    pub fn undo(&mut self) {
+        self.candidate.undo()
+    }
+
     /// Collects current candidate lexeme.
     pub fn collect(&mut self) {
         self.collected.push(self.candidate.collect());
@@ -141,6 +147,25 @@ impl<'a> Candidate<'a> {
         let byte = *unsafe { self.source.get_unchecked(self.stop) };
         self.stop += 1;
         byte
+    }
+
+    #[inline]
+    fn undo(&mut self) {
+        if self.start == self.stop {
+            return;
+        }
+        loop {
+            self.stop -= 1;
+            let byte = *unsafe { self.source.get_unchecked(self.stop) };
+            if !utf8_is_cont_byte(byte) {
+                return;
+            }
+        }
+
+        #[inline]
+        fn utf8_is_cont_byte(byte: u8) -> bool {
+            (byte & 0b1100_0000) == 0b1000_0000
+        }
     }
 
     #[inline]
