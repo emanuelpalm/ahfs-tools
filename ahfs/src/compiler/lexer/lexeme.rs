@@ -162,11 +162,19 @@ impl<'a> Iterator for Lines<'a> {
             return None;
         }
 
+        let mut skip = 1;
+
         // Find end of line.
         let (mut offset, at_end) = match self.source[self.offset..].find('\n') {
             Some(index) => (index, false),
             None => (self.source.len(), true),
         };
+
+        // Adjust line end if its last character is a carriage return.
+        if offset > 0 && self.source.as_bytes()[offset - 1] == b'\r' {
+            offset -= 1;
+            skip += 1;
+        }
 
         // Truncate source to cover only line.
         let source = &self.source[self.offset..offset];
@@ -174,26 +182,13 @@ impl<'a> Iterator for Lines<'a> {
         let line_number = self.line_number;
 
         // Determine start of lexeme within line.
-        let start = if self.offset > 0 {
-            0
-        } else {
-            self.start
-        };
+        let start = if self.offset > 0 { 0 } else { self.start };
 
         // Determine stop of lexeme within line.
-        let mut stop = if at_end {
-            self.stop - self.offset
-        } else {
-            offset
-        };
-        // Ensure stop does not include a trailing carriage return.
-        if stop > 0 && source.as_bytes()[stop - 1] == b'\r' {
-            stop -= 1;
-            offset += 1;
-        }
+        let stop = if at_end { self.stop - self.offset } else { offset };
 
         // Forward internal offset and line_number.
-        self.offset = offset + 1;
+        self.offset = offset + skip;
         self.line_number += 1;
 
         Some(Line { source, line_number, start, stop })
@@ -231,7 +226,7 @@ mod tests {
 
     const SOURCE: &'static str = concat!(
         "A is: System;\n",
-        "A consumes: B;\n",
+        "A consumes: B;\r\n",
         "A produces: C;\n");
 
     #[test]
@@ -264,14 +259,14 @@ mod tests {
                 "      |   ^^^^^^^^^\n"));
         }
         {
-            let lexeme = Lexeme::new(SOURCE, 29, 43);
+            let lexeme = Lexeme::new(SOURCE, 30, 44);
             assert_eq!(format!("{}", lexeme).as_str(), concat!(
                 "      |\n",
                 "    3 | A produces: C;\n",
                 "      | ^^^^^^^^^^^^^^\n"));
         }
         {
-            let lexeme = Lexeme::new(SOURCE, 16, 40);
+            let lexeme = Lexeme::new(SOURCE, 16, 41);
             assert_eq!(format!("{}", lexeme).as_str(), concat!(
                 "      |\n",
                 "    2 | A consumes: B;\n",
