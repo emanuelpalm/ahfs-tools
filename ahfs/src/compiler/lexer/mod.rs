@@ -1,8 +1,7 @@
 //! Lexical analysis utilities.
 //!
 //! This module provide various utilities for analyzing UTF-8 source strings.
-//! Most significantly, it provides a [default lexical analysis function][ana],
-//! apart from other tools useful for performing lexical analyses.
+//! Most significantly, it provides a [default lexical analysis function][ana].
 //!
 //! [ana]: fn.analyze.html
 
