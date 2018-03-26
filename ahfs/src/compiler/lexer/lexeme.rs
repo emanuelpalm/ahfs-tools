@@ -1,4 +1,3 @@
-use std::cmp;
 use std::fmt;
 
 /// Identifies a significant region within a source string.
@@ -10,10 +9,11 @@ pub struct Lexeme<'a> {
 }
 
 impl<'a> Lexeme<'a> {
-    /// Creates new lexeme from given source string, and start and stop offsets.
+    /// Creates new lexeme from given source string, start offset and stop
+    /// offset.
     ///
-    /// The start offset points to the first byte of the first UTF-8 code point
-    /// of the lexeme, while the stop offset points to the first byte after the
+    /// The start offset points to the first byte of a lexeme located within
+    /// the source string, while the stop offset points to the first byte after
     /// the lexeme.
     ///
     /// # Panics
@@ -71,12 +71,7 @@ impl<'a> Lexeme<'a> {
         Lines::new(self)
     }
 
-    /// Determines line number of this lexeme.
-    ///
-    /// # Multi-Line Lexemes
-    ///
-    /// If this lexeme spans multiple lines, the method reports the number of
-    /// the first line the lexeme touches.
+    /// Determines line number of the first byte of this lexeme.
     #[inline]
     pub fn line_number(&self) -> usize {
         self.source[..self.start]
@@ -142,7 +137,7 @@ impl<'a> Lines<'a> {
                     index -= 1;
                 }
                 index
-            },
+            }
             None => 0,
         };
 
@@ -225,8 +220,8 @@ impl<'a> fmt::Display for Line<'a> {
         write!(f, concat!(
             "{:>5} | {}\n",
             "      | {:start$}{:^<len$}\n"),
-            self.line_number, self.source,
-            "", "", start = self.start, len = self.stop - self.start)
+               self.line_number, self.source,
+               "", "", start = self.start, len = self.stop - self.start)
     }
 }
 
@@ -255,7 +250,7 @@ mod tests {
                 "      | ^\n"));
         }
         {
-            let lexeme = Lexeme::new(SOURCE, 0, 1); 
+            let lexeme = Lexeme::new(SOURCE, 0, 1);
             assert_eq!(format!("{}", lexeme).as_str(), concat!(
                 "      |\n",
                 "    1 | A is: System;\n",
