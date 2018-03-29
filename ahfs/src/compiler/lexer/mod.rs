@@ -39,6 +39,7 @@ macro_rules! next_or_break {
 /// ```
 pub fn analyze<'a>(source: &'a str) -> Vec<Lexeme<'a>> {
     let mut lexer = Lexer::new(source);
+    let mut lexemes = Vec::new();
     let mut ch: char;
     loop {
         ch = next_or_break!(lexer);
@@ -49,7 +50,7 @@ pub fn analyze<'a>(source: &'a str) -> Vec<Lexeme<'a>> {
         }
 
         if is_delimiter(ch) {
-            lexer.collect();
+            lexemes.push(lexer.collect());
             continue;
         }
 
@@ -60,9 +61,9 @@ pub fn analyze<'a>(source: &'a str) -> Vec<Lexeme<'a>> {
                 break;
             }
         }
-        lexer.collect();
+        lexemes.push(lexer.collect());
     }
-    return lexer.into_lexemes();
+    return lexemes;
 
     #[inline]
     fn is_control(ch: char) -> bool {

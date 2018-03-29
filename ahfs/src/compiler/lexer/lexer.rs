@@ -28,72 +28,26 @@ use super::Lexeme;
 /// // Take Bs.
 /// assert_eq!(Some('b'), lexer.next());
 /// assert_eq!(Some('b'), lexer.next());
-/// lexer.collect();
-///
-/// // Finalize analysis.
-/// let lexemes = lexer.into_lexemes();
-/// assert_eq!(1, lexemes.len());
-/// assert_eq!("bb", lexemes[0].as_str());
+/// let lexeme = lexer.collect();
+/// assert_eq!("bb", lexeme.as_str());
 /// ```
 #[derive(Debug)]
 pub struct Lexer<'a> {
-    candidate: Candidate<'a>,
-    collected: Vec<Lexeme<'a>>,
+    source: &'a [u8],
+    start: usize,
+    stop: usize,
 }
 
 impl<'a> Lexer<'a> {
     /// Creates new lexer for analyzing given source string.
     #[inline]
     pub fn new(source: &'a str) -> Self {
-        Lexer {
-            candidate: Candidate::new(source),
-            collected: Vec::new(),
-        }
+        Lexer { source: source.as_bytes(), start: 0, stop: 0 }
     }
 
     /// Expands candidate to include one more character, which is also returned.
     #[inline]
     pub fn next(&mut self) -> Option<char> {
-        self.candidate.next()
-    }
-
-    /// Shrinks candidate, making it include one less character.
-    #[inline]
-    pub fn undo(&mut self) {
-        self.candidate.undo()
-    }
-
-    /// Collects current candidate lexeme.
-    pub fn collect(&mut self) {
-        self.collected.push(self.candidate.collect());
-    }
-
-    /// Discards current candidate lexeme.
-    #[inline]
-    pub fn discard(&mut self) {
-        self.candidate.discard();
-    }
-
-    /// Consumes lexer and returns all lexemes it collected.
-    pub fn into_lexemes(self) -> Vec<Lexeme<'a>> {
-        self.collected
-    }
-}
-
-#[derive(Debug)]
-struct Candidate<'a> {
-    source: &'a [u8],
-    start: usize,
-    stop: usize,
-}
-
-impl<'a> Candidate<'a> {
-    #[inline]
-    fn new(source: &'a str) -> Self {
-        Candidate { source: source.as_bytes(), start: 0, stop: 0 }
-    }
-
-    fn next(&mut self) -> Option<char> {
         let code = loop {
             let a = self.next_byte()?;
 
@@ -113,7 +67,7 @@ impl<'a> Candidate<'a> {
             let c = self.next_byte_or_0();
             let b_c = utf8_push((b & UTF8_CONT_MASK) as u32, c);
 
-            // Is 3+ byte character?
+            // Is 3 byte character?
             if a < 0xf0 {
                 break init << 12 | b_c;
             }
@@ -152,8 +106,9 @@ impl<'a> Candidate<'a> {
         byte
     }
 
+    /// Shrinks candidate, making it include one less character.
     #[inline]
-    fn undo(&mut self) {
+    pub fn undo(&mut self) {
         if self.start == self.stop {
             return;
         }
@@ -171,16 +126,18 @@ impl<'a> Candidate<'a> {
         }
     }
 
+    /// Collects current candidate lexeme.
     #[inline]
-    fn collect(&mut self) -> Lexeme<'a> {
+    pub fn collect(&mut self) -> Lexeme<'a> {
         let source = unsafe { str::from_utf8_unchecked(self.source) };
         let lexeme = Lexeme::new(source, self.start, self.stop);
         self.discard();
         lexeme
     }
 
+    /// Discards current candidate lexeme.
     #[inline]
-    fn discard(&mut self) {
+    pub fn discard(&mut self) {
         self.start = self.stop;
     }
 }
