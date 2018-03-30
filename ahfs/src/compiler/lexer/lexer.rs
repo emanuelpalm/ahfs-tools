@@ -1,14 +1,15 @@
 use std::char;
 use std::str;
+use std::u32;
 use super::Lexeme;
 
-/// A lexical analyzer.
+/// A utility for creating [`Lexeme`s](struct.Lexeme.html) from source strings.
 ///
 /// # Operation
 ///
-/// A lexer extracts _lexemes_ from a _source_ string. When created, the lexer
-/// contains a _candidate lexeme_ with length 0 at the beginning of its source.
-/// The candidate lexeme can be expanded to include more characters, and later
+/// Extracts _lexemes_ from a _source_ string. When created, it contains a
+/// _candidate lexeme_ with length 0 at the beginning of its source. The
+/// candidate lexeme can be expanded to include more characters, and later
 /// collected or discarded when it includes some set of significant characters.
 /// If collected, the candidate is returned. If either collected or discarded,
 /// a new zero-length candidate is created at the end position of the old one.
@@ -18,7 +19,8 @@ use super::Lexeme;
 /// ```rust
 /// use ahfs::compiler::lexer::Lexer;
 ///
-/// let mut lexer = Lexer::new("aabbaa");
+/// let source = "aabbaa";
+/// let mut lexer = Lexer::new(source);
 ///
 /// // Skip As.
 /// assert_eq!(Some('a'), lexer.next());
@@ -28,8 +30,8 @@ use super::Lexeme;
 /// // Take Bs.
 /// assert_eq!(Some('b'), lexer.next());
 /// assert_eq!(Some('b'), lexer.next());
-/// let lexeme = lexer.collect();
-/// assert_eq!("bb", lexeme.as_str());
+/// let lexeme = lexer.collect(());
+/// assert_eq!("bb", lexeme.extract(source));
 /// ```
 #[derive(Debug)]
 pub struct Lexer<'a> {
@@ -128,9 +130,8 @@ impl<'a> Lexer<'a> {
 
     /// Collects current candidate lexeme.
     #[inline]
-    pub fn collect(&mut self) -> Lexeme<'a> {
-        let source = unsafe { str::from_utf8_unchecked(self.source) };
-        let lexeme = Lexeme::new(source, self.start, self.stop);
+    pub fn collect<K>(&mut self, kind: K) -> Lexeme<K> {
+        let lexeme = Lexeme::new(kind, self.start, self.stop);
         self.discard();
         lexeme
     }

@@ -6,9 +6,11 @@
 //! [ana]: fn.analyze.html
 
 mod lexeme;
+mod lexeme_kind;
 mod lexer;
 
 pub use self::lexeme::Lexeme;
+pub use self::lexeme_kind::LexemeKind;
 pub use self::lexer::Lexer;
 
 macro_rules! next_or_break {
@@ -20,7 +22,7 @@ macro_rules! next_or_break {
 /// # Format
 ///
 /// Skips ASCII whitespace and control characters. Treats the following
-/// characters as delimiters: `\n ( ) : ; [ ] { }`. Any sequence of characters
+/// characters as delimiters: `\n # ( ) : ; [ ] { }`. Any sequence of characters
 /// that is not broken by any whitespace, control character or delimiter is
 /// treated as a single lexeme.
 ///
@@ -34,10 +36,10 @@ macro_rules! next_or_break {
 ///          "[", "outer", "]", "(", "space", ")", "!"],
 ///     ::ahfs::compiler::lexer::analyze(source)
 ///         .iter()
-///         .map(|lexeme| lexeme.as_str())
+///         .map(|lexeme| lexeme.extract(source))
 ///         .collect::<Vec<_>>());
 /// ```
-pub fn analyze<'a>(source: &'a str) -> Vec<Lexeme<'a>> {
+pub fn analyze<'a>(source: &'a str) -> Vec<Lexeme> {
     let mut lexer = Lexer::new(source);
     let mut lexemes = Vec::new();
     let mut ch: char;
@@ -50,7 +52,9 @@ pub fn analyze<'a>(source: &'a str) -> Vec<Lexeme<'a>> {
         }
 
         if is_delimiter(ch) {
-            lexemes.push(lexer.collect());
+            lexemes.push(lexer.collect(unsafe {
+                LexemeKind::from_delimiter(ch)
+            }));
             continue;
         }
 
@@ -61,7 +65,7 @@ pub fn analyze<'a>(source: &'a str) -> Vec<Lexeme<'a>> {
                 break;
             }
         }
-        lexemes.push(lexer.collect());
+        lexemes.push(lexer.collect(LexemeKind::Word));
     }
     return lexemes;
 
@@ -76,7 +80,7 @@ pub fn analyze<'a>(source: &'a str) -> Vec<Lexeme<'a>> {
     #[inline]
     fn is_delimiter(ch: char) -> bool {
         match ch {
-            '\n' | '(' | ')' | ':' | ';' | '[' | ']' | '{' | '}' => true,
+            '\n' | '#' | '(' | ')' | ':' | ';' | '[' | ']' | '{' | '}' => true,
             _ => false,
         }
     }
@@ -84,6 +88,8 @@ pub fn analyze<'a>(source: &'a str) -> Vec<Lexeme<'a>> {
 
 #[cfg(test)]
 mod tests {
+    use super::LexemeKind;
+
     #[test]
     fn analyze() {
         const SOURCE: &'static str = concat!(
@@ -91,13 +97,28 @@ mod tests {
             "B is: Service;\n",
             "# Emojis 😜🤖💩!");
 
+        let lexemes = super::analyze(SOURCE);
+
+        // Check lexeme strings.
         assert_eq!(
             vec!["A", "is", ":", "System", ";", "\n",
                  "B", "is", ":", "Service", ";", "\n",
                  "#", "Emojis", "😜🤖💩!"],
-            super::analyze(SOURCE)
-                .iter()
-                .map(|lexeme| lexeme.as_str())
+            lexemes.iter()
+                .map(|lexeme| lexeme.extract(SOURCE))
+                .collect::<Vec<_>>());
+
+        // Check lexeme kinds.
+        assert_eq!(
+            vec![LexemeKind::Word, LexemeKind::Word, LexemeKind::Colon,
+                 LexemeKind::Word, LexemeKind::Semicolon, LexemeKind::Newline,
+
+                 LexemeKind::Word, LexemeKind::Word, LexemeKind::Colon,
+                 LexemeKind::Word, LexemeKind::Semicolon, LexemeKind::Newline,
+
+                 LexemeKind::Hash, LexemeKind::Word, LexemeKind::Word],
+            lexemes.iter()
+                .map(|lexeme| *lexeme.kind())
                 .collect::<Vec<_>>());
     }
 }
