@@ -26,7 +26,7 @@ impl<'a, K> Error<'a, K> {
 
 impl<'a, K: fmt::Debug + fmt::Display> error::Error for Error<'a, K> {
     fn description(&self) -> &str {
-        self.kind.description()
+        self.kind.text()
     }
 }
 
@@ -39,12 +39,12 @@ impl<'a, K: fmt::Debug> fmt::Debug for Error<'a, K> {
 
 impl<'a, K: fmt::Display> fmt::Display for Error<'a, K> {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        writeln!(f, "{}", self.kind)?;
+        writeln!(f, "{}.", self.kind)?;
         self.lexeme.fmt_using(f, self.source)
     }
 }
 
-/// A compiler error category.
+/// Represents a specific kind of compiler error.
 pub enum ErrorKind<'a, K: 'a> {
     /// End of source was unexpectedly encountered while parsing.
     ///
@@ -60,7 +60,7 @@ pub enum ErrorKind<'a, K: 'a> {
 
 impl<'a, K> ErrorKind<'a, K> {
     /// Returns a pointer to a string describing the error kind.
-    pub fn description(&self) -> &'static str {
+    pub fn text(&self) -> &'static str {
         match *self {
             ErrorKind::UnexpectedEnd { .. } => "Unexpected source end",
             ErrorKind::UnexpectedLexeme { .. } => "Unexpected lexeme",
