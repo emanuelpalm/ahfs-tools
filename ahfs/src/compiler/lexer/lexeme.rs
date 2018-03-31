@@ -67,8 +67,19 @@ impl<K> Lexeme<K> {
         where W: fmt::Write,
     {
         write!(writer, "      |\n")?;
+        let mut counter = 0;
+        let mut is_truncated = false;
         for line in Lines::new(source, self.start, self.end) {
+            // println!("{}", line); TODO: What? Line in test not printing?
             write!(writer, "{}", line)?;
+            counter += 1;
+            if counter > 2 {
+                is_truncated = true;
+                break;
+            }
+        }
+        if is_truncated {
+            write!(writer, "     ...\n")?;
         }
         Ok(())
     }
@@ -270,6 +281,16 @@ mod tests {
                 "      |   ^^^^^^^^^^^^\n",
                 "    3 | A produces: C;\n",
                 "      | ^^^^^^^^^^^\n"));
+        }
+        {
+            let out = format(Lexeme::new((), 6, 44), SOURCE);
+            assert_eq!(out.as_str(), concat!(
+                "      |\n",
+                "    1 | A is: System;\n",
+                "      |       ^^^^^^^\n",
+                "    2 | A consumes: B;\n",
+                "      | ^^^^^^^^^^^^^^\n",
+                "     ...\n"));
         }
         {
             let out = format(Lexeme::new((), 44, 44), SOURCE);
