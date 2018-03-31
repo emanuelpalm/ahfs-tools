@@ -96,6 +96,15 @@ impl<K> Lexeme<K> {
     }
 }
 
+impl<K: Clone> Clone for Lexeme<K> {
+    #[inline]
+    fn clone(&self) -> Self {
+        Self::new(self.kind.clone(), self.start, self.end)
+    }
+}
+
+impl<K: Copy> Copy for Lexeme<K> {}
+
 impl<K: fmt::Debug> fmt::Debug for Lexeme<K> {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         write!(f, "Lexeme {{ kind: {:?}, start: {}, end: {} }}",
