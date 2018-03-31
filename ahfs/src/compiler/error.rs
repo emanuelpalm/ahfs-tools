@@ -59,11 +59,19 @@ pub enum ErrorKind<'a, K: 'a> {
 }
 
 impl<'a, K> ErrorKind<'a, K> {
+    /// Returns a pointer to an error kind identifier.
+    pub fn code(&self) -> &'static str {
+        match *self {
+            ErrorKind::UnexpectedEnd { .. } => meta::UNEXPECTED_END.code,
+            ErrorKind::UnexpectedLexeme { .. } => meta::UNEXPECTED_LEXEME.code,
+        }
+    }
+
     /// Returns a pointer to a string describing the error kind.
     pub fn text(&self) -> &'static str {
         match *self {
-            ErrorKind::UnexpectedEnd { .. } => "Unexpected source end",
-            ErrorKind::UnexpectedLexeme { .. } => "Unexpected lexeme",
+            ErrorKind::UnexpectedEnd { .. } => meta::UNEXPECTED_END.text,
+            ErrorKind::UnexpectedLexeme { .. } => meta::UNEXPECTED_LEXEME.text,
         }
     }
 }
@@ -85,20 +93,20 @@ impl<'a, K: fmt::Display> fmt::Display for ErrorKind<'a, K> {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         return match *self {
             ErrorKind::UnexpectedEnd { expected } => {
-                fmt_unexpected(f, "Unexpected source end", expected)
-            },
+                fmt_unexpected(f, &meta::UNEXPECTED_END, expected)
+            }
             ErrorKind::UnexpectedLexeme { expected } => {
-                fmt_unexpected(f, "Unexpected lexeme", expected)
-            },
+                fmt_unexpected(f, &meta::UNEXPECTED_LEXEME, expected)
+            }
         };
 
         fn fmt_unexpected<'a, K: fmt::Display>(
             f: &mut fmt::Formatter,
-            message: &'static str,
+            error: &ErrorInfo,
             expected: &'a [K],
         ) -> fmt::Result
         {
-            f.write_str(message)?;
+            write!(f, "Error {}: {}", error.code, error.text)?;
             match expected.len() {
                 0 => Ok(()),
                 1 => write!(f, ", expected `{}`", expected[0]),
@@ -113,4 +121,28 @@ impl<'a, K: fmt::Display> fmt::Display for ErrorKind<'a, K> {
             }
         }
     }
+}
+
+/// Various error meta data.
+mod meta {
+    /// Error meta data.
+    pub struct Error {
+        /// A machine-readable error identifier.
+        ///
+        /// Uniquely identifies error kind. Must consist of exactly four ASCII
+        /// characters, making it require 4 bytes of memory.
+        pub code: &'static str,
+
+        /// A human-readable error description.
+        ///
+        /// Should be short, to the point, start with a capitalized letter, and
+        /// end _without_ a period.
+        pub text: &'static str,
+    }
+    pub const UNEXPECTED_END: Error = Error {
+        code: "P001", text: "Unexpected source end"
+    };
+    pub const UNEXPECTED_LEXEME: Error = Error {
+        code: "P002", text: "Unexpected lexeme"
+    };
 }
