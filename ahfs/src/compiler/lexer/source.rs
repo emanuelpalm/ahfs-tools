@@ -17,34 +17,34 @@ use super::Lexeme;
 /// ## Example
 ///
 /// ```rust
-/// use ahfs::compiler::lexer::Lexer;
+/// use ahfs::compiler::lexer::Source;
 ///
-/// let source = "aabbaa";
-/// let mut lexer = Lexer::new(source);
+/// let source_str = "aabbaa";
+/// let mut source = Source::new(source_str);
 ///
 /// // Skip As.
-/// assert_eq!(Some('a'), lexer.next());
-/// assert_eq!(Some('a'), lexer.next());
-/// lexer.discard();
+/// assert_eq!(Some('a'), source.next());
+/// assert_eq!(Some('a'), source.next());
+/// source.discard();
 ///
 /// // Take Bs.
-/// assert_eq!(Some('b'), lexer.next());
-/// assert_eq!(Some('b'), lexer.next());
-/// let lexeme = lexer.collect(());
-/// assert_eq!("bb", lexeme.extract(source));
+/// assert_eq!(Some('b'), source.next());
+/// assert_eq!(Some('b'), source.next());
+/// let lexeme = source.collect(());
+/// assert_eq!("bb", lexeme.extract(source_str));
 /// ```
 #[derive(Debug)]
-pub struct Lexer<'a> {
+pub struct Source<'a> {
     source: &'a [u8],
     start: usize,
-    stop: usize,
+    end: usize,
 }
 
-impl<'a> Lexer<'a> {
-    /// Creates new lexer for analyzing given source string.
+impl<'a> Source<'a> {
+    /// Wraps given `source`.
     #[inline]
     pub fn new(source: &'a str) -> Self {
-        Lexer { source: source.as_bytes(), start: 0, stop: 0 }
+        Source { source: source.as_bytes(), start: 0, end: 0 }
     }
 
     /// Expands candidate to include one more character, which is also returned.
@@ -90,33 +90,33 @@ impl<'a> Lexer<'a> {
 
     #[inline]
     fn next_byte(&mut self) -> Option<u8> {
-        if self.stop >= self.source.len() {
+        if self.end >= self.source.len() {
             return None;
         }
-        let byte = *unsafe { self.source.get_unchecked(self.stop) };
-        self.stop += 1;
+        let byte = *unsafe { self.source.get_unchecked(self.end) };
+        self.end += 1;
         Some(byte)
     }
 
     #[inline]
     fn next_byte_or_0(&mut self) -> u8 {
-        if self.stop >= self.source.len() {
+        if self.end >= self.source.len() {
             return 0;
         }
-        let byte = *unsafe { self.source.get_unchecked(self.stop) };
-        self.stop += 1;
+        let byte = *unsafe { self.source.get_unchecked(self.end) };
+        self.end += 1;
         byte
     }
 
     /// Shrinks candidate, making it include one less character.
     #[inline]
     pub fn undo(&mut self) {
-        if self.start == self.stop {
+        if self.start == self.end {
             return;
         }
         loop {
-            self.stop -= 1;
-            let byte = *unsafe { self.source.get_unchecked(self.stop) };
+            self.end -= 1;
+            let byte = *unsafe { self.source.get_unchecked(self.end) };
             if !utf8_is_cont_byte(byte) {
                 return;
             }
@@ -131,7 +131,7 @@ impl<'a> Lexer<'a> {
     /// Collects current candidate lexeme.
     #[inline]
     pub fn collect<K>(&mut self, kind: K) -> Lexeme<K> {
-        let lexeme = Lexeme::new(kind, self.start, self.stop);
+        let lexeme = Lexeme::new(kind, self.start, self.end);
         self.discard();
         lexeme
     }
@@ -139,7 +139,7 @@ impl<'a> Lexer<'a> {
     /// Discards current candidate lexeme.
     #[inline]
     pub fn discard(&mut self) {
-        self.start = self.stop;
+        self.start = self.end;
     }
 }
 
@@ -149,12 +149,12 @@ mod tests {
 
     #[test]
     fn next() {
-        let mut lexer = Lexer::new("$¢€𐍈");
-        assert_eq!(Some('$'), lexer.next());
-        assert_eq!(Some('¢'), lexer.next());
-        assert_eq!(Some('€'), lexer.next());
-        assert_eq!(Some('𐍈'), lexer.next());
-        assert_eq!(None, lexer.next());
-        assert_eq!(None, lexer.next());
+        let mut source = Source::new("$¢€𐍈");
+        assert_eq!(Some('$'), source.next());
+        assert_eq!(Some('¢'), source.next());
+        assert_eq!(Some('€'), source.next());
+        assert_eq!(Some('𐍈'), source.next());
+        assert_eq!(None, source.next());
+        assert_eq!(None, source.next());
     }
 }

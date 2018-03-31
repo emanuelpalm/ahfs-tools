@@ -7,11 +7,11 @@
 
 mod lexeme;
 mod lexeme_kind;
-mod lexer;
+mod source;
 
 pub use self::lexeme::Lexeme;
 pub use self::lexeme_kind::LexemeKind;
-pub use self::lexer::Lexer;
+pub use self::source::Source;
 
 macro_rules! next_or_break {
     ($lexer:ident) => (match $lexer.next() { Some(ch) => ch, None => break });
@@ -40,32 +40,32 @@ macro_rules! next_or_break {
 ///         .collect::<Vec<_>>());
 /// ```
 pub fn analyze<'a>(source: &'a str) -> Vec<Lexeme> {
-    let mut lexer = Lexer::new(source);
+    let mut source = Source::new(source);
     let mut lexemes = Vec::new();
     let mut ch: char;
     loop {
-        ch = next_or_break!(lexer);
+        ch = next_or_break!(source);
 
         if is_control(ch) {
-            lexer.discard();
+            source.discard();
             continue;
         }
 
         if is_delimiter(ch) {
-            lexemes.push(lexer.collect(unsafe {
+            lexemes.push(source.collect(unsafe {
                 LexemeKind::from_delimiter(ch)
             }));
             continue;
         }
 
         loop {
-            ch = next_or_break!(lexer);
+            ch = next_or_break!(source);
             if is_control(ch) || is_delimiter(ch) {
-                lexer.undo();
+                source.undo();
                 break;
             }
         }
-        lexemes.push(lexer.collect(LexemeKind::Word));
+        lexemes.push(source.collect(LexemeKind::Word));
     }
     return lexemes;
 
