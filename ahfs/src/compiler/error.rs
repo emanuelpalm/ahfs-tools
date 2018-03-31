@@ -46,6 +46,11 @@ impl<'a, K: fmt::Display> fmt::Display for Error<'a, K> {
 
 /// A compiler error category.
 pub enum ErrorKind<'a, K: 'a> {
+    /// End of source was unexpectedly encountered while parsing.
+    ///
+    /// Any of the provided kinds would have been accepted if provided.
+    UnexpectedEnd { expected: &'a [K] },
+
     /// An unexpected lexeme kind was encountered while parsing.
     ///
     /// Any of the provided kinds would have been accepted if provided instead
@@ -57,6 +62,7 @@ impl<'a, K> ErrorKind<'a, K> {
     /// Returns a pointer to a string describing the error kind.
     pub fn description(&self) -> &'static str {
         match *self {
+            ErrorKind::UnexpectedEnd { .. } => "Unexpected source end",
             ErrorKind::UnexpectedLexeme { .. } => "Unexpected lexeme",
         }
     }
@@ -65,28 +71,46 @@ impl<'a, K> ErrorKind<'a, K> {
 impl<'a, K: fmt::Debug> fmt::Debug for ErrorKind<'a, K> {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match *self {
+            ErrorKind::UnexpectedEnd { expected } => {
+                write!(f, "UnexpectedEnd {{ expected: {:?} }}", expected)
+            }
             ErrorKind::UnexpectedLexeme { expected } => {
                 write!(f, "UnexpectedLexeme {{ expected: {:?} }}", expected)
-            },
+            }
         }
     }
 }
 
 impl<'a, K: fmt::Display> fmt::Display for ErrorKind<'a, K> {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        match *self {
-            ErrorKind::UnexpectedLexeme { expected } => match expected.len() {
-                0 => f.write_str("Unexpected lexeme"),
-                1 => write!(f, "Unexpected lexeme, expected `{}`", expected[0]),
+        return match *self {
+            ErrorKind::UnexpectedEnd { expected } => {
+                fmt_unexpected(f, "Unexpected source end", expected)
+            },
+            ErrorKind::UnexpectedLexeme { expected } => {
+                fmt_unexpected(f, "Unexpected lexeme", expected)
+            },
+        };
+
+        fn fmt_unexpected<'a, K: fmt::Display>(
+            f: &mut fmt::Formatter,
+            message: &'static str,
+            expected: &'a [K],
+        ) -> fmt::Result
+        {
+            f.write_str(message)?;
+            match expected.len() {
+                0 => Ok(()),
+                1 => write!(f, ", expected `{}`", expected[0]),
                 _ => {
-                    write!(f, "Unexpected lexeme, expected one of ")?;
+                    write!(f, ", expected one of ")?;
                     let (last, rest) = expected.split_last().unwrap();
                     for e in rest {
                         write!(f, "`{}`, ", e)?;
                     }
                     write!(f, " or `{}`", last)
                 }
-            },
+            }
         }
     }
 }
