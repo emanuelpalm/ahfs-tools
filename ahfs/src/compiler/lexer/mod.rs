@@ -112,10 +112,8 @@ mod tests {
         assert_eq!(
             vec![LexemeKind::Word, LexemeKind::Word, LexemeKind::Colon,
                  LexemeKind::Word, LexemeKind::Semicolon, LexemeKind::Newline,
-
                  LexemeKind::Word, LexemeKind::Word, LexemeKind::Colon,
                  LexemeKind::Word, LexemeKind::Semicolon, LexemeKind::Newline,
-
                  LexemeKind::Hash, LexemeKind::Word, LexemeKind::Word],
             lexemes.iter()
                 .map(|lexeme| *lexeme.kind())

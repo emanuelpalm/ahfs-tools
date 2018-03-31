@@ -102,11 +102,11 @@ impl<'a, K: fmt::Display> fmt::Display for ErrorKind<'a, K> {
 
         fn fmt_unexpected<'a, K: fmt::Display>(
             f: &mut fmt::Formatter,
-            error: &ErrorInfo,
+            meta: &meta::Error,
             expected: &'a [K],
         ) -> fmt::Result
         {
-            write!(f, "Error {}: {}", error.code, error.text)?;
+            write!(f, "Error {}: {}", meta.code, meta.text)?;
             match expected.len() {
                 0 => Ok(()),
                 1 => write!(f, ", expected `{}`", expected[0]),
