@@ -200,11 +200,14 @@ struct Line<'a> {
 
 impl<'a> fmt::Display for Line<'a> {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        use std::cmp::Ord;
+
         write!(f, concat!(
             "{:>5} | {}\n",
             "      | {:start$}{:^<len$}\n"),
-               self.line_number, self.source,
-               "", "", start = self.start, len = self.end - self.start)
+               self.line_number, self.source, "", "",
+               start = self.start,
+               len = (self.end - self.start).max(1))
     }
 }
 
@@ -259,6 +262,13 @@ mod tests {
                 "      |   ^^^^^^^^^^^^\n",
                 "    3 | A produces: C;\n",
                 "      | ^^^^^^^^^^^\n"));
+        }
+        {
+            let out = format(Lexeme::new((), 44, 44), SOURCE);
+            assert_eq!(out.as_str(), concat!(
+                "      |\n",
+                "    3 | A produces: C;\n",
+                "      |               ^\n"));
         }
     }
 }
