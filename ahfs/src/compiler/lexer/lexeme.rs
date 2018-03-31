@@ -6,8 +6,7 @@ use super::LexemeKind;
 /// # Offsets
 ///
 /// The `Lexeme` `start` and `end` offsets identify a bytes range including
-/// `start` and excluding `end`. The type of each lexeme is denoted by an
-/// arbitrary `kind`.
+/// `start` and excluding `end`.
 ///
 /// # Detached
 ///
