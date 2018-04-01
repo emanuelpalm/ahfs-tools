@@ -67,19 +67,13 @@ impl<K> Lexeme<K> {
         where W: fmt::Write,
     {
         write!(writer, "      |\n")?;
-        let mut counter = 0;
-        let mut is_truncated = false;
-        for line in Lines::new(source, self.start, self.end) {
-            // println!("{}", line); TODO: What? Line in test not printing?
-            write!(writer, "{}", line)?;
-            counter += 1;
-            if counter > 2 {
-                is_truncated = true;
+        for (i, line) in Lines::new(source, self.start, self.end).enumerate() {
+            if i < 2 {
+                write!(writer, "{}", line)?;
+            } else {
+                write!(writer, "     ...\n")?;
                 break;
             }
-        }
-        if is_truncated {
-            write!(writer, "     ...\n")?;
         }
         Ok(())
     }
@@ -179,7 +173,7 @@ impl<'a> Iterator for Lines<'a> {
 
         // Find end of line.
         let (mut offset, at_end) = match self.source[self.offset..].find('\n') {
-            Some(index) => (index, false),
+            Some(index) => (self.offset + index, false),
             None => (self.source.len(), true),
         };
 
@@ -197,14 +191,14 @@ impl<'a> Iterator for Lines<'a> {
         // Determine start of lexeme within line.
         let start = if self.offset > 0 { 0 } else { self.start };
 
-        // Determine stop of lexeme within line.
-        let stop = if at_end { self.end - self.offset } else { offset };
+        // Determine end of lexeme within line.
+        let end = if at_end { self.end } else { offset } - self.offset;
 
         // Forward internal offset and line_number.
         self.offset = offset + skip;
         self.line_number += 1;
 
-        Some(Line { source, line_number, start, end: stop })
+        Some(Line { source, line_number, start, end })
     }
 }
 
