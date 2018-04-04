@@ -16,7 +16,7 @@ use super::Lexeme;
 ///
 /// ## Example
 ///
-/// ```rust
+/// ```ignore
 /// use ahfs::compiler::lexer::Source;
 ///
 /// let source_str = "aabbaa";

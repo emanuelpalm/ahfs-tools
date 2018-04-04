@@ -117,6 +117,13 @@ impl<K: fmt::Debug> fmt::Debug for Lexeme<K> {
     }
 }
 
+impl From<Lexeme> for Lexeme<()> {
+    #[inline]
+    fn from(lexeme: Lexeme) -> Self {
+        lexeme.repackage(())
+    }
+}
+
 /// An iterator over the source string lines touched by a lexeme.
 struct Lines<'a> {
     source: &'a str,
@@ -229,9 +236,9 @@ mod tests {
     use super::*;
 
     const SOURCE: &'static str = concat!(
-        "A is: System;\n",
-        "A consumes: B;\r\n",
-        "A produces: C;\n");
+        "A type System;\n",
+        "A consumes B;\r\n",
+        "A produces C;\n");
 
     #[test]
     fn display() {
@@ -250,48 +257,48 @@ mod tests {
             let out = format(Lexeme::new((), 0, 1), SOURCE);
             assert_eq!(out, concat!(
                 "      |\n",
-                "    1 | A is: System;\n",
+                "    1 | A type System;\n",
                 "      | ^\n"));
         }
         {
-            let out = format(Lexeme::new((), 16, 25), SOURCE);
+            let out = format(Lexeme::new((), 17, 25), SOURCE);
             assert_eq!(out.as_str(), concat!(
                 "      |\n",
-                "    2 | A consumes: B;\n",
-                "      |   ^^^^^^^^^\n"));
+                "    2 | A consumes B;\n",
+                "      |   ^^^^^^^^\n"));
         }
         {
-            let out = format(Lexeme::new((), 30, 44), SOURCE);
+            let out = format(Lexeme::new((), 30, 42), SOURCE);
             assert_eq!(out.as_str(), concat!(
                 "      |\n",
-                "    3 | A produces: C;\n",
-                "      | ^^^^^^^^^^^^^^\n"));
+                "    3 | A produces C;\n",
+                "      | ^^^^^^^^^^^^\n"));
         }
         {
-            let out = format(Lexeme::new((), 16, 41), SOURCE);
+            let out = format(Lexeme::new((), 17, 40), SOURCE);
             assert_eq!(out.as_str(), concat!(
                 "      |\n",
-                "    2 | A consumes: B;\n",
-                "      |   ^^^^^^^^^^^^\n",
-                "    3 | A produces: C;\n",
-                "      | ^^^^^^^^^^^\n"));
+                "    2 | A consumes B;\n",
+                "      |   ^^^^^^^^^^^\n",
+                "    3 | A produces C;\n",
+                "      | ^^^^^^^^^^\n"));
         }
         {
-            let out = format(Lexeme::new((), 6, 44), SOURCE);
+            let out = format(Lexeme::new((), 7, 40), SOURCE);
             assert_eq!(out.as_str(), concat!(
                 "      |\n",
-                "    1 | A is: System;\n",
-                "      |       ^^^^^^^\n",
-                "    2 | A consumes: B;\n",
-                "      | ^^^^^^^^^^^^^^\n",
+                "    1 | A type System;\n",
+                "      |        ^^^^^^^\n",
+                "    2 | A consumes B;\n",
+                "      | ^^^^^^^^^^^^^\n",
                 "     ...\n"));
         }
         {
-            let out = format(Lexeme::new((), 44, 44), SOURCE);
+            let out = format(Lexeme::new((), 42, 42), SOURCE);
             assert_eq!(out.as_str(), concat!(
                 "      |\n",
-                "    3 | A produces: C;\n",
-                "      |               ^\n"));
+                "    3 | A produces C;\n",
+                "      |             ^\n"));
         }
     }
 }

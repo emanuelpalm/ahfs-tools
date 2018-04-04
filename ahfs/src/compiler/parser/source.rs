@@ -1,11 +1,11 @@
 use super::{Error, Lexeme, LexemeKind, Result};
 
-pub struct Source<'a, K = LexemeKind>(State<'a, K>);
+pub struct Source<'a, K: 'a = LexemeKind>(State<'a, K>);
 
 impl<'a, K: Clone> Source<'a, K> {
     #[inline]
     pub fn new<L, S>(lexemes: L, source: S) -> Self
-        where L: Into<Box<[Lexeme<K>]>>,
+        where L: Into<&'a [Lexeme<K>]>,
               S: Into<&'a str>,
     {
         Source(State {
@@ -42,10 +42,16 @@ impl<'a, K: Clone> Source<'a, K> {
             }
         }
     }
+
+    pub fn ignore<R>(&mut self, rule: R) -> bool
+        where R: FnOnce(&mut State<'a, K>) -> bool
+    {
+        rule(&mut self.0)
+    }
 }
 
-pub struct State<'a, K> {
-    lexemes: Box<[Lexeme<K>]>,
+pub struct State<'a, K: 'a> {
+    lexemes: &'a [Lexeme<K>],
     offset: usize,
     source: &'a str,
 }
@@ -67,7 +73,7 @@ impl<'a, K> State<'a, K> {
     }
 
     #[inline]
-    pub fn peek(&mut self) -> Option<&Lexeme<K>> {
+    pub fn peek(&self) -> Option<&Lexeme<K>> {
         self.lexemes.get(self.offset)
     }
 
@@ -78,7 +84,7 @@ impl<'a, K> State<'a, K> {
 }
 
 impl<'a, K: Clone + PartialEq> State<'a, K> {
-    pub fn next(&mut self, kinds: &'static [K]) -> Result<'a, Lexeme<K>, K> {
+    pub fn next_if(&mut self, kinds: &'static [K]) -> Result<'a, Lexeme<K>, K> {
         let lexeme = match self.peek() {
             Some(lexeme) => lexeme.clone(),
             None => return Err(Error::UnexpectedEnd {
@@ -97,26 +103,20 @@ impl<'a, K: Clone + PartialEq> State<'a, K> {
         Ok(lexeme)
     }
 
-    pub fn join(&mut self, kinds: &'static [K]) -> Lexeme<()> {
-        let (start, mut end) = match self.peek().map(|lexeme| lexeme.clone()) {
-            Some(lexeme) => (lexeme.start(), lexeme.end()),
-            None => {
-                let end = match self.lexemes.len() {
-                    0 => 0,
-                    _ => self.lexemes[self.offset - 1].end()
-                };
-                return Lexeme::new((), end, end);
-            }
-        };
+    pub fn is_next(&self, kinds: &'static [K]) -> bool {
+        if let Some(lexeme) = self.peek() {
+            return kinds.contains(lexeme.kind());
+        }
+        false
+    }
+
+    pub fn skip_until(&mut self, kinds: &'static [K]) {
         loop {
             match self.peek() {
-                Some(lexeme) if kinds.contains(lexeme.kind()) => {
-                    end = lexeme.end();
-                },
-                _ => { break; },
+                Some(ref lexeme) if !kinds.contains(lexeme.kind()) => {},
+                _ => { return; },
             }
             self.skip();
         }
-        Lexeme::new((), start, end)
     }
 }

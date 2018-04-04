@@ -1,58 +1,35 @@
-use super::{Lexeme, LexemeKind, Source, Result};
+use super::Lexeme;
 
-pub fn parse<'a>(mut source: &mut Source<'a>) -> Result<'a, Vec<Triple>> {
-    let mut triples = Vec::new();
-    while !source.at_end() {
-        let subject = subject(&mut source)?;
-        let predicate = predicate(&mut source)?;
-        let object = object(&mut source)?;
-        triples.push(Triple {
-            subject: subject.repackage(()),
-            predicate: predicate.repackage(()),
-            object,
-        });
-    }
-    return Ok(triples);
-
-    #[inline]
-    fn subject<'a>(source: &mut Source<'a>) -> Result<'a, Lexeme> {
-        source.apply(|state| state.next(&[LexemeKind::Word]))
-    }
-
-    #[inline]
-    fn predicate<'a>(source: &mut Source<'a>) -> Result<'a, Lexeme> {
-        source.apply(|state| {
-            let word = state.next(&[LexemeKind::Word])?;
-            state.next(&[LexemeKind::Colon])?; // TODO: Colon starts text?
-            Ok(word)
-        })
-    }
-
-    #[inline]
-    fn object<'a>(source: &mut Source<'a>) -> Result<'a, Lexeme<()>> {
-        // TODO: Support function and identifier objects---not just texts.
-        source.apply(|state| {
-            let text = state.join(&[
-                LexemeKind::Newline,
-                LexemeKind::Hash,
-                LexemeKind::ParenthesisLeft,
-                LexemeKind::ParenthesisRight,
-                LexemeKind::Colon,
-                LexemeKind::BracketLeft,
-                LexemeKind::BracketRight,
-                LexemeKind::BraceLeft,
-                LexemeKind::BraceRight,
-                LexemeKind::Word,
-            ]);
-            // TODO: Support escaped semicolons? Balanced braces?
-            state.next(&[LexemeKind::Semicolon])?;
-            Ok(text)
-        })
-    }
-}
-
+#[derive(Debug)]
 pub struct Triple {
     subject: Lexeme<()>,
     predicate: Lexeme<()>,
     object: Lexeme<()>,
+}
+
+impl Triple {
+    pub fn new<L>(subject: L, predicate: L, object: L) -> Self
+        where L: Into<Lexeme<()>>
+    {
+        Triple {
+            subject: subject.into(),
+            predicate: predicate.into(),
+            object: object.into(),
+        }
+    }
+}
+
+impl Eq for Triple {}
+
+impl PartialEq for Triple {
+    fn eq(&self, other: &Triple) -> bool {
+        return lexemes_eq(&self.subject, &other.subject)
+            && lexemes_eq(&self.predicate, &other.predicate)
+            && lexemes_eq(&self.object, &other.object);
+
+        #[inline]
+        fn lexemes_eq(a: &Lexeme<()>, b: &Lexeme<()>) -> bool {
+            a.start() == b.start() && a.end() == b.end()
+        }
+    }
 }
