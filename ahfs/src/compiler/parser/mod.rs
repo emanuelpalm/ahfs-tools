@@ -3,51 +3,54 @@ mod triple;
 
 pub use self::triple::Triple;
 
-use self::source::Source;
+use self::source::State;
 use std::result;
 use super::Error;
 use super::lexer::{Lexeme, LexemeKind};
 
-const HASH: &'static [LexemeKind] = &[LexemeKind::Hash];
-const NEWLINE: &'static [LexemeKind] = &[LexemeKind::Semicolon];
-const WORD: &'static [LexemeKind] = &[LexemeKind::Word];
+const TRIPLE_END: &'static [LexemeKind] = &[
+    LexemeKind::Semicolon,
+    LexemeKind::Description
+];
+const WORD: &'static [LexemeKind] = &[
+    LexemeKind::Word
+];
 
 /// The result of a parsing attempt.
-pub type Result<'a, T, K:'a = LexemeKind> = result::Result<T, Error<'a, K>>;
+pub type Result<'a, T, K: 'a = LexemeKind> = result::Result<T, Error<'a, K>>;
 
-pub fn parse<'a>(lexemes: &'a [Lexeme], source: &'a str) -> Result<'a,
-    Vec<Triple>> {
-    let mut source = Source::new(lexemes, source);
+/// Parses given array of [`Lexeme`s][lex] into vector of [`Triple`s][tri].
+///
+/// # Panics
+///
+/// If any of the given [`Lexeme`s][lex] would have offsets out of the `source`
+/// string bounds, the method panics. This is generally avoided by ensuring that
+/// the lexemes were first extracted from the same `source` string.
+///
+/// [lex]: ../lexer/struct.Lexeme.html
+/// [tri]: struct.Triple.html
+pub fn parse<'a>(lx: &'a [Lexeme], source: &'a str) -> Result<'a, Vec<Triple>> {
+    let mut source = State::new(lx, source);
 
     let mut triples = Vec::new();
     while !source.at_end() {
-        if comment(&mut source) {
-            continue;
-        }
         triples.push(triple(&mut source)?);
     }
     return Ok(triples);
 
     #[inline]
-    fn comment<'a>(source: &mut Source<'a>) -> bool {
-        source.ignore(|state| {
-            if state.is_next(HASH) {
-                state.skip_until(NEWLINE);
-                state.skip();
-                return true;
-            }
-            false
-        })
-    }
-
-    #[inline]
-    fn triple<'a>(source: &mut Source<'a>) -> Result<'a, Triple> {
+    fn triple<'a>(source: &mut State<'a>) -> Result<'a, Triple> {
         source.apply(|state| {
             let subject = state.next_if(WORD)?;
             let predicate = state.next_if(WORD)?;
             let object = state.next_if(WORD)?;
-            state.next_if(NEWLINE)?;
-            Ok(Triple::new(subject, predicate, object))
+
+            let mut description = state.next_if(TRIPLE_END)?;
+            if *description.kind() == LexemeKind::Semicolon {
+                description = description.shrink(1, 0);
+            }
+
+            Ok(Triple::new(subject, predicate, object, description))
         })
     }
 }
@@ -58,8 +61,7 @@ mod tests {
 
     const SOURCE: &'static str = concat!(
             "A type System;\n",
-            "B type Service;\n",
-            "# Emojis 😜🤖💩!");
+            "B type Service { Emojis 😜🤖💩! }");
 
     #[test]
     fn parse() {
@@ -71,20 +73,19 @@ mod tests {
             Lexeme::new(LexemeKind::Word, 15, 16),
             Lexeme::new(LexemeKind::Word, 17, 21),
             Lexeme::new(LexemeKind::Word, 22, 29),
-            Lexeme::new(LexemeKind::Semicolon, 29, 30),
-            Lexeme::new(LexemeKind::Hash, 31, 32),
-            Lexeme::new(LexemeKind::Word, 33, 39),
-            Lexeme::new(LexemeKind::Word, 40, 47),
+            Lexeme::new(LexemeKind::Description, 29, 47),
         ];
         assert_eq!(super::parse(&lexemes, SOURCE).unwrap(), vec![
             Triple::new(
                 Lexeme::new((), 0, 1),
                 Lexeme::new((), 2, 6),
-                Lexeme::new((), 7, 13)),
+                Lexeme::new((), 7, 13),
+                Lexeme::new((), 14, 14)),
             Triple::new(
                 Lexeme::new((), 15, 16),
                 Lexeme::new((), 17, 21),
-                Lexeme::new((), 22, 29)),
+                Lexeme::new((), 22, 29),
+                Lexeme::new((), 29, 47)),
         ]);
     }
 }

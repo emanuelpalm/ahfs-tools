@@ -1,10 +1,3 @@
-//! Lexical analysis utilities.
-//!
-//! This module provide various utilities for analyzing UTF-8 source strings.
-//! Most significantly, it provides a [lexical analysis function][ana].
-//!
-//! [ana]: fn.analyze.html
-
 mod lexeme;
 mod lexeme_kind;
 mod source;
@@ -18,71 +11,71 @@ macro_rules! next_or_break {
     ($lexer:ident) => (match $lexer.next() { Some(ch) => ch, None => break });
 }
 
-/// Performs lexical analysis of given source string.
-///
-/// # Format
-///
-/// Skips ASCII whitespace and control characters. Treats the following
-/// characters as delimiters: `# ;`. Any sequence of characters that is not
-/// broken by any whitespace, control character or delimiter is treated as a
-/// single lexeme.
-///
-/// ## Example
-///
-/// ```rust
-/// let source = "R🤖BOT; from\nouter #space#!";
-///
-/// assert_eq!(
-///     vec!["R🤖BOT", ";", "from", "outer", "#", "space", "#", "!"],
-///     ::ahfs::compiler::lexer::analyze(source)
-///         .iter()
-///         .map(|lexeme| lexeme.extract(source))
-///         .collect::<Vec<_>>());
-/// ```
+/// Turns given source string into vector of [`Lexemes`](struct.Lexeme.html).
 pub fn analyze<'a>(source: &'a str) -> Vec<Lexeme> {
     let mut source = Source::new(source);
     let mut lexemes = Vec::new();
-    let mut ch: char;
     'outer: loop {
-        ch = next_or_break!(source);
+        let mut c = next_or_break!(source);
 
-        if is_control(ch) {
+        if is_control(c) {
             source.discard();
             continue 'outer;
         }
 
-        loop {
-            lexemes.push(source.collect(match ch {
-                '#' => LexemeKind::Hash,
-                ';' => LexemeKind::Semicolon,
-                _ => { break; }
-            }));
+        if c == b'{' {
+            let mut left_braces = 1;
+            loop {
+                c = next_or_break!(source);
+                if c != b'{' { break; }
+                left_braces += 1;
+            }
+            let mut right_braces = 0;
+            loop {
+                if c == b'}' {
+                    right_braces += 1;
+                    if left_braces == right_braces { break; }
+                } else {
+                    right_braces = 0;
+                }
+                c = next_or_break!(source);
+            }
+            let lexeme = source.collect(LexemeKind::Description);
+            lexemes.push(lexeme.shrink(left_braces, right_braces));
+            source.undo();
             continue 'outer;
         }
 
-        loop {
-            ch = next_or_break!(source);
-            if is_control(ch) || is_delimiter(ch) {
-                source.undo();
-                break;
+        let kind = match c {
+            b';' => LexemeKind::Semicolon,
+            b'}' => LexemeKind::BraceRight,
+            _ => {
+                loop {
+                    c = next_or_break!(source);
+                    if is_control(c) || is_delimiter(c) {
+                        source.undo();
+                        break;
+                    }
+                }
+                LexemeKind::Word
             }
-        }
-        lexemes.push(source.collect(LexemeKind::Word));
+        };
+        lexemes.push(source.collect(kind));
     }
     return lexemes;
 
     #[inline]
-    fn is_control(ch: char) -> bool {
-        match ch {
-            '\x00'...' ' | '\x7f' => true,
+    fn is_control(c: u8) -> bool {
+        match c {
+            b'\0'...b' ' | 0x7f => true,
             _ => false,
         }
     }
 
     #[inline]
-    fn is_delimiter(ch: char) -> bool {
-        match ch {
-            '#' | ';' => true,
+    fn is_delimiter(c: u8) -> bool {
+        match c {
+            b';' | b'{' | b'}' => true,
             _ => false,
         }
     }
@@ -96,16 +89,14 @@ mod tests {
     fn analyze() {
         const SOURCE: &'static str = concat!(
             "A type System;\n",
-            "B type Service;\n",
-            "# Emojis 😜🤖💩!");
+            "B type Service{ # 😜🤖💩 }}");
 
         let lexemes = super::analyze(SOURCE);
 
         // Check lexeme strings.
         assert_eq!(
             vec!["A", "type", "System", ";",
-                 "B", "type", "Service", ";",
-                 "#", "Emojis", "😜🤖💩!"],
+                 "B", "type", "Service", " # 😜🤖💩 ", "}"],
             lexemes.iter()
                 .map(|lexeme| lexeme.extract(SOURCE))
                 .collect::<Vec<_>>());
@@ -115,8 +106,7 @@ mod tests {
             vec![LexemeKind::Word, LexemeKind::Word, LexemeKind::Word,
                  LexemeKind::Semicolon,
                  LexemeKind::Word, LexemeKind::Word, LexemeKind::Word,
-                 LexemeKind::Semicolon,
-                 LexemeKind::Hash, LexemeKind::Word, LexemeKind::Word],
+                 LexemeKind::Description, LexemeKind::BraceRight],
             lexemes.iter()
                 .map(|lexeme| *lexeme.kind())
                 .collect::<Vec<_>>());

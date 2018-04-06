@@ -19,31 +19,32 @@ pub struct Lexeme<K = LexemeKind> {
 }
 
 impl<K> Lexeme<K> {
-    /// Creates new lexeme from given `kind`, `start` offset and `end` offset.
     #[inline]
     pub fn new(kind: K, start: usize, end: usize) -> Self {
         Lexeme { kind, start, end }
     }
 
-    /// Reference to lexeme kind.
     #[inline]
     pub fn kind(&self) -> &K {
         &self.kind
     }
 
-    /// Lexeme start offset.
     #[inline]
     pub fn start(&self) -> usize {
         self.start
     }
 
-    /// Lexeme end offset.
     #[inline]
     pub fn end(&self) -> usize {
         self.end
     }
 
-    /// Extracts lexeme string from given `source` string.
+    #[inline]
+    pub fn len(&self) -> usize {
+        self.end - self.start
+    }
+
+    /// Extracts `Lexeme` string from given `source` string.
     ///
     /// # Panics
     ///
@@ -55,7 +56,7 @@ impl<K> Lexeme<K> {
         &source[self.start..self.end]
     }
 
-    /// Writes human-readable representation of lexeme to given `writer` using
+    /// Writes human-readable representation of `Lexeme` to given `writer` using
     /// provided `source` string as context.
     ///
     /// # Panics
@@ -78,14 +79,6 @@ impl<K> Lexeme<K> {
         Ok(())
     }
 
-    /// Writes human-readable representation of lexeme to `String` using
-    /// provided `source` string as context.
-    ///
-    /// # Panics
-    ///
-    /// If the `Lexeme` `start` and `end` offsets would be out of the `source`
-    /// string bounds, or if `start` would be greater than `end`, the method
-    /// panics.
     #[cfg(test)]
     pub fn fmt_string_using(&self, source: &str) -> Result<String, fmt::Error> {
         let mut out = String::new();
@@ -93,11 +86,18 @@ impl<K> Lexeme<K> {
         Ok(out)
     }
 
-    /// Creates new lexeme with this `start` and `end` offsets, but a new
-    /// `kind`.
     #[inline]
-    pub fn repackage<T: fmt::Debug>(&self, kind: T) -> Lexeme<T> {
+    pub fn repackage<L: fmt::Debug>(&self, kind: L) -> Lexeme<L> {
         Lexeme { kind, start: self.start, end: self.end }
+    }
+
+    #[inline]
+    pub fn shrink(mut self, from_start: usize, from_end: usize) -> Lexeme<K> {
+        use std::cmp::Ord;
+
+        self.start = self.start.saturating_add(from_start);
+        self.end = self.end.saturating_sub(from_end).max(self.start);
+        self
     }
 }
 
@@ -124,7 +124,6 @@ impl From<Lexeme> for Lexeme<()> {
     }
 }
 
-/// An iterator over the source string lines touched by a lexeme.
 struct Lines<'a> {
     source: &'a str,
     start: usize,
@@ -209,7 +208,6 @@ impl<'a> Iterator for Lines<'a> {
     }
 }
 
-/// A source string line touched by some lexeme.
 struct Line<'a> {
     source: &'a str,
     start: usize,

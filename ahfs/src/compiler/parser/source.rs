@@ -1,37 +1,44 @@
 use super::{Error, Lexeme, LexemeKind, Result};
 
-pub struct Source<'a, K: 'a = LexemeKind>(State<'a, K>);
+/// A utility for reading well-defined [`Lexeme`s][lex] sequences from an array.
+///
+/// # Operation
+///
+/// To advance an internal read offset, _rules_ are applied to the `State`. If
+/// a rule application is successful, the internal offset is updated to reflect
+/// the number of [`Lexeme`s][lex] consumed by the applied rule. If, on the
+/// other hand, a rule application fails, the internal offset is unchanged.
+///
+/// Rules are lambdas operating on a given [`TentativeState`][ten].
+///
+/// [lex]: ../lexer/struct.Lexeme.html
+/// [ten]: struct.TentativeState.html
+pub struct State<'a>(TentativeState<'a>);
 
-impl<'a, K: Clone> Source<'a, K> {
+impl<'a> State<'a> {
     #[inline]
     pub fn new<L, S>(lexemes: L, source: S) -> Self
-        where L: Into<&'a [Lexeme<K>]>,
+        where L: Into<&'a [Lexeme]>,
               S: Into<&'a str>,
     {
-        Source(State {
+        State(TentativeState {
             lexemes: lexemes.into(),
             offset: 0,
             source: source.into(),
         })
     }
 
-    #[inline]
-    pub fn lexemes(&self) -> &[Lexeme<K>] {
-        &self.0.lexemes
-    }
-
-    #[inline]
-    pub fn source(&self) -> &'a str {
-        self.0.source
-    }
-
+    /// Whether or not all internal [`Lexeme`s][lex] have been consumed.
+    ///
+    /// [lex]: ../lexer/struct.Lexeme.html
     #[inline]
     pub fn at_end(&self) -> bool {
         self.0.offset >= self.0.lexemes.len()
     }
 
-    pub fn apply<R, T>(&mut self, rule: R) -> Result<'a, T, K>
-        where R: FnOnce(&mut State<'a, K>) -> Result<'a, T, K>
+    /// Applies given rule.
+    pub fn apply<R, T>(&mut self, rule: R) -> Result<'a, T>
+        where R: FnOnce(&mut TentativeState<'a>) -> Result<'a, T>
     {
         let offset = self.0.offset;
         match rule(&mut self.0) {
@@ -42,50 +49,21 @@ impl<'a, K: Clone> Source<'a, K> {
             }
         }
     }
-
-    pub fn ignore<R>(&mut self, rule: R) -> bool
-        where R: FnOnce(&mut State<'a, K>) -> bool
-    {
-        rule(&mut self.0)
-    }
 }
 
-pub struct State<'a, K: 'a> {
-    lexemes: &'a [Lexeme<K>],
+/// A tentative state, used while attempting to fulfill rules.
+pub struct TentativeState<'a> {
+    lexemes: &'a [Lexeme],
     offset: usize,
     source: &'a str,
 }
 
-impl<'a, K> State<'a, K> {
-    #[inline]
-    pub fn lexemes(&self) -> &[Lexeme<K>] {
-        &self.lexemes
-    }
-
-    #[inline]
-    pub fn source(&self) -> &'a str {
-        self.source
-    }
-
-    #[inline]
-    pub fn at_end(&self) -> bool {
-        self.offset >= self.lexemes.len()
-    }
-
-    #[inline]
-    pub fn peek(&self) -> Option<&Lexeme<K>> {
-        self.lexemes.get(self.offset)
-    }
-
-    #[inline]
-    pub fn skip(&mut self) {
-        self.offset += 1;
-    }
-}
-
-impl<'a, K: Clone + PartialEq> State<'a, K> {
-    pub fn next_if(&mut self, kinds: &'static [K]) -> Result<'a, Lexeme<K>, K> {
-        let lexeme = match self.peek() {
+impl<'a> TentativeState<'a> {
+    /// Returns next [Lexeme][lex] only if it has one out of given `kinds`.
+    ///
+    /// [lex]: ../lexer/struct.Lexeme.html
+    pub fn next_if(&mut self, kinds: &'a [LexemeKind]) -> Result<'a, Lexeme> {
+        let lexeme = match self.lexemes.get(self.offset) {
             Some(lexeme) => lexeme.clone(),
             None => return Err(Error::UnexpectedEnd {
                 expected: kinds,
@@ -101,22 +79,5 @@ impl<'a, K: Clone + PartialEq> State<'a, K> {
         }
         self.offset += 1;
         Ok(lexeme)
-    }
-
-    pub fn is_next(&self, kinds: &'static [K]) -> bool {
-        if let Some(lexeme) = self.peek() {
-            return kinds.contains(lexeme.kind());
-        }
-        false
-    }
-
-    pub fn skip_until(&mut self, kinds: &'static [K]) {
-        loop {
-            match self.peek() {
-                Some(ref lexeme) if !kinds.contains(lexeme.kind()) => {},
-                _ => { return; },
-            }
-            self.skip();
-        }
     }
 }
