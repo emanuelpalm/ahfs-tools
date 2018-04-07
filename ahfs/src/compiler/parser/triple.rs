@@ -1,9 +1,9 @@
-use super::Lexeme;
+use super::{Lexeme, LexemeKind};
 
 /// A parser triple.
 ///
-/// Contains lexemes for a `subject`, a `predicate`, an `object`, and an
-/// optional `description`.
+/// Contains lexemes for a `subject`, a `predicate`, an `object`, and a
+/// `description`.
 ///
 /// The triple is only sure to be syntactically correct. No guarantees are
 /// given about it expressing anything of relevance.
@@ -17,14 +17,17 @@ pub struct Triple {
 
 impl Triple {
     #[inline]
-    pub fn new<L>(subject: L, predicate: L, object: L, description: L) -> Self
+    pub fn new<L>(subject: L, predicate: L, object: L, end: Lexeme) -> Self
         where L: Into<Lexeme<()>>,
     {
         Triple {
             subject: subject.into(),
             predicate: predicate.into(),
             object: object.into(),
-            description: description.into(),
+            description: match *end.kind() {
+                LexemeKind::Description => end.repackage(()),
+                _ => Lexeme::new((), 0, 0),
+            },
         }
     }
 
@@ -45,11 +48,10 @@ impl Triple {
 
     #[inline]
     pub fn description(&self) -> Option<&Lexeme<()>> {
-        if self.description.len() == 0 {
-            None
-        } else {
-            Some(&self.description)
+        if self.description.end() == 0 {
+            return None;
         }
+        Some(&self.description)
     }
 }
 

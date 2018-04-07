@@ -57,23 +57,23 @@ mod tests {
             Lexeme::new(LexemeKind::Word, 0, 1),
             Lexeme::new(LexemeKind::Word, 2, 6),
             Lexeme::new(LexemeKind::Word, 7, 13),
-            Lexeme::new(LexemeKind::Semicolon, 13, 13),
+            Lexeme::new(LexemeKind::Semicolon, 13, 14),
             Lexeme::new(LexemeKind::Word, 15, 16),
             Lexeme::new(LexemeKind::Word, 17, 21),
             Lexeme::new(LexemeKind::Word, 22, 29),
-            Lexeme::new(LexemeKind::Description, 29, 47),
+            Lexeme::new(LexemeKind::Description, 30, 54),
         ];
         assert_eq!(super::parse(&lexemes, SOURCE).unwrap(), vec![
             Triple::new(
                 Lexeme::new((), 0, 1),
                 Lexeme::new((), 2, 6),
                 Lexeme::new((), 7, 13),
-                Lexeme::new((), 13, 13)),
+                Lexeme::new(LexemeKind::Semicolon, 13, 14)),
             Triple::new(
                 Lexeme::new((), 15, 16),
                 Lexeme::new((), 17, 21),
                 Lexeme::new((), 22, 29),
-                Lexeme::new((), 29, 47)),
+                Lexeme::new(LexemeKind::Description, 30, 54)),
         ]);
     }
 }

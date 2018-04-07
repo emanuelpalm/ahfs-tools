@@ -7,86 +7,68 @@ pub use self::lexeme_kind::LexemeKind;
 
 use self::source::Source;
 
+macro_rules! next_or_break {
+    ($source:expr) => (match $source.next() { Some(c) => c, None => break });
+}
+macro_rules! peek_or_break {
+    ($source:expr) => (match $source.peek() { Some(c) => c, None => break });
+}
+
 /// Turns given source string into vector of [`Lexeme`s](struct.Lexeme.html).
 pub fn analyze<'a>(source: &'a str) -> Vec<Lexeme> {
-    let mut session = Session {
-        source: Source::new(source),
-        lexemes: Vec::new(),
-    };
-    session.document();
-    session.lexemes
-}
+    let mut source = Source::new(source);
+    let mut lexemes = Vec::new();
+    loop {
+        let mut c = next_or_break!(source);
+        let kind = match c {
 
-struct Session<'a> {
-    source: Source<'a>,
-    lexemes: Vec<Lexeme>,
-}
-
-macro_rules! read_or_break {
-    ($lexer:expr) => (match $lexer.read() { Some(c) => c, None => break });
-}
-
-impl<'a> Session<'a> {
-    fn document(&mut self) {
-        loop {
-            match read_or_break!(self.source) {
-                b'\0'...b' ' | 0x7f => self.nothing(),
-                b';' => self.delimiter(LexemeKind::Semicolon),
-                b'{' => self.description(),
-                b'}' => self.delimiter(LexemeKind::BraceRight),
-                _ => self.word(),
+            // Whitespace.
+            b'\0'...b' ' | 0x7f => {
+                source.discard();
+                continue;
             }
-        }
-    }
 
-    fn nothing(&mut self) {
-        self.source.next();
-        self.source.discard();
-    }
+            // Delimiter.
+            b';' => LexemeKind::Semicolon,
+            b'}' => LexemeKind::BraceRight,
 
-    fn delimiter(&mut self, kind: LexemeKind) {
-        self.lexemes.push(self.source.collect(kind));
-        self.nothing();
-    }
-
-    fn description(&mut self) {
-        let mut c = 0u8;
-        let mut left_braces = 1;
-        loop {
-            self.source.next();
-            c = read_or_break!(self.source);
-            if c != b'{' { break; }
-            left_braces += 1;
-        }
-        let mut right_braces = 0;
-        loop {
-            if c == b'}' {
-                right_braces += 1;
-                if left_braces == right_braces {
-                    self.source.next();
-                    break;
+            // Description.
+            b'{' => {
+                let mut left_braces = 1;
+                loop {
+                    c = next_or_break!(source);
+                    if c != b'{' { break; }
+                    left_braces += 1;
                 }
-            } else {
-                right_braces = 0;
-            }
-            self.source.next();
-            c = read_or_break!(self.source);
-        }
-        let lexeme = self.source.collect(LexemeKind::Description);
-        self.lexemes.push(lexeme.shrink(left_braces, right_braces));
-    }
-
-    fn word(&mut self) {
-        loop {
-            match read_or_break!(self.source) {
-                b'\0'...b' ' | b';' | b'{' | b'}' | 0x7f => {
-                    break;
+                let mut right_braces = 0;
+                loop {
+                    if c == b'}' {
+                        right_braces += 1;
+                        if left_braces == right_braces { break; }
+                    } else {
+                        right_braces = 0;
+                    }
+                    c = next_or_break!(source);
                 }
-                _ => self.source.next(),
+                LexemeKind::Description
             }
-        }
-        self.lexemes.push(self.source.collect(LexemeKind::Word));
+
+            // Word.
+            _ => {
+                loop {
+                    match peek_or_break!(source) {
+                        b'\0'...b' ' | b';' | b'{' | b'}' | 0x7f => {
+                            break;
+                        }
+                        _ => source.skip(),
+                    }
+                }
+                LexemeKind::Word
+            }
+        };
+        lexemes.push(source.collect(kind));
     }
+    lexemes
 }
 
 #[cfg(test)]
@@ -105,10 +87,10 @@ mod tests {
 
         // Check lexeme strings.
         assert_eq!(
-            vec!["A", "type", "System", "",
-                 "B", "type", "Service", " # 😜🤖💩 ", "",
-                 "C", "type", "Function", "",
-                 "D", "type", "Model", "🤖"],
+            vec!["A", "type", "System", ";",
+                 "B", "type", "Service", "{ # 😜🤖💩 }", "}",
+                 "C", "type", "Function", "{{}}",
+                 "D", "type", "Model", "{{{🤖}}"],
             lexemes.iter()
                 .map(|lexeme| lexeme.extract(SOURCE))
                 .collect::<Vec<_>>());

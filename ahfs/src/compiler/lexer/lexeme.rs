@@ -39,11 +39,6 @@ impl<K> Lexeme<K> {
         self.end
     }
 
-    #[inline]
-    pub fn len(&self) -> usize {
-        self.end - self.start
-    }
-
     /// Extracts `Lexeme` string from given `source` string.
     ///
     /// # Panics
