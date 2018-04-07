@@ -28,7 +28,7 @@ pub enum Error<'a, K: 'a> {
         expected: &'a [K],
 
         /// Offending lexeme.
-        lexeme: Lexeme<K>,
+        lexeme: Lexeme<'a, K>,
 
         /// Compiler source string causing error.
         source: &'a str,
@@ -65,12 +65,12 @@ impl<'a, K: fmt::Display> fmt::Display for Error<'a, K> {
             Error::UnexpectedEnd { expected, source } => {
                 fmt_meta(f, &meta::UNEXPECTED_END)?;
                 fmt_expected(f, expected)?;
-                Lexeme::new((), source.len(), source.len()).fmt_using(f, source)
+                Lexeme::new((), &source[source.len()..]).fmt(f, source)
             }
             Error::UnexpectedLexeme { expected, ref lexeme, source } => {
                 fmt_meta(f, &meta::UNEXPECTED_LEXEME)?;
                 fmt_expected(f, expected)?;
-                lexeme.fmt_using(f, source)
+                lexeme.fmt(f, source)
             }
         };
 

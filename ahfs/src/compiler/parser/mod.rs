@@ -29,8 +29,9 @@ pub type Result<'a, T, K: 'a = LexemeKind> = result::Result<T, Error<'a, K>>;
 ///
 /// [lex]: ../lexer/struct.Lexeme.html
 /// [tri]: struct.Triple.html
-pub fn parse<'a>(lx: &'a [Lexeme], source: &'a str) -> Result<'a, Vec<Triple>> {
-    let mut source = State::new(lx, source);
+pub fn parse<'a>(lx: &'a [Lexeme], src: &'a str) -> Result<'a, Vec<Triple<'a>>>
+{
+    let mut source = State::new(lx, src);
     let mut triples = Vec::new();
     while !source.at_end() {
         triples.push(source.apply(|state| Ok(Triple::new(
@@ -54,26 +55,26 @@ mod tests {
     #[test]
     fn parse() {
         let lexemes = [
-            Lexeme::new(LexemeKind::Word, 0, 1),
-            Lexeme::new(LexemeKind::Word, 2, 6),
-            Lexeme::new(LexemeKind::Word, 7, 13),
-            Lexeme::new(LexemeKind::Semicolon, 13, 14),
-            Lexeme::new(LexemeKind::Word, 15, 16),
-            Lexeme::new(LexemeKind::Word, 17, 21),
-            Lexeme::new(LexemeKind::Word, 22, 29),
-            Lexeme::new(LexemeKind::Description, 30, 54),
+            Lexeme::new(LexemeKind::Word, &SOURCE[0..1]),
+            Lexeme::new(LexemeKind::Word, &SOURCE[2..6]),
+            Lexeme::new(LexemeKind::Word, &SOURCE[7..13]),
+            Lexeme::new(LexemeKind::Semicolon, &SOURCE[13..14]),
+            Lexeme::new(LexemeKind::Word, &SOURCE[15..16]),
+            Lexeme::new(LexemeKind::Word, &SOURCE[17..21]),
+            Lexeme::new(LexemeKind::Word, &SOURCE[22..29]),
+            Lexeme::new(LexemeKind::Description, &SOURCE[30..54]),
         ];
         assert_eq!(super::parse(&lexemes, SOURCE).unwrap(), vec![
             Triple::new(
-                Lexeme::new((), 0, 1),
-                Lexeme::new((), 2, 6),
-                Lexeme::new((), 7, 13),
-                Lexeme::new(LexemeKind::Semicolon, 13, 14)),
+                Lexeme::new((), &SOURCE[0..1]),
+                Lexeme::new((), &SOURCE[2..6]),
+                Lexeme::new((), &SOURCE[7..13]),
+                Lexeme::new(LexemeKind::Semicolon, &SOURCE[13..14])),
             Triple::new(
-                Lexeme::new((), 15, 16),
-                Lexeme::new((), 17, 21),
-                Lexeme::new((), 22, 29),
-                Lexeme::new(LexemeKind::Description, 30, 54)),
+                Lexeme::new((), &SOURCE[15..16]),
+                Lexeme::new((), &SOURCE[17..21]),
+                Lexeme::new((), &SOURCE[22..29]),
+                Lexeme::new(LexemeKind::Description, &SOURCE[30..54])),
         ]);
     }
 }

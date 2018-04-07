@@ -1,27 +1,23 @@
 use std::fmt;
+use std::isize;
+use std::mem;
 use super::LexemeKind;
 
 /// Identifies a typed region within some source string.
-///
-/// # Offsets
-///
-/// The `Lexeme` `start` and `end` offsets identify a bytes range including
-/// `start` and excluding `end`.
-///
-/// # Detached
-///
-/// The `Lexeme` struct does not include an explicit reference to its source
-/// string, meaning it must be kept track of some other way.
-pub struct Lexeme<K = LexemeKind> {
+pub struct Lexeme<'a, K = LexemeKind> {
     kind: K,
-    start: usize,
-    end: usize,
+    region: &'a str,
 }
 
-impl<K> Lexeme<K> {
+impl<'a, K> Lexeme<'a, K> {
     #[inline]
-    pub fn new(kind: K, start: usize, end: usize) -> Self {
-        Lexeme { kind, start, end }
+    pub fn new(kind: K, region: &'a str) -> Self {
+        Lexeme { kind, region }
+    }
+
+    #[inline]
+    pub fn as_str(&self) -> &'a str {
+        self.region
     }
 
     #[inline]
@@ -29,41 +25,32 @@ impl<K> Lexeme<K> {
         &self.kind
     }
 
-    #[inline]
-    pub fn start(&self) -> usize {
-        self.start
-    }
-
-    #[inline]
-    pub fn end(&self) -> usize {
-        self.end
-    }
-
-    /// Extracts `Lexeme` string from given `source` string.
-    ///
-    /// # Panics
-    ///
-    /// If the `Lexeme` `start` and `end` offsets would be out of the `source`
-    /// string bounds, or if `start` would be greater than `end`, the method
-    /// panics.
-    #[inline]
-    pub fn extract<'a>(&self, source: &'a str) -> &'a str {
-        &source[self.start..self.end]
-    }
-
     /// Writes human-readable representation of `Lexeme` to given `writer` using
     /// provided `source` string as context.
-    ///
-    /// # Panics
-    ///
-    /// If the `Lexeme` `start` and `end` offsets would be out of the `source`
-    /// string bounds, or if `start` would be greater than `end`, the method
-    /// panics.
-    pub fn fmt_using<W>(&self, mut writer: W, source: &str) -> fmt::Result
+    pub fn fmt<W>(&self, mut writer: W, mut source: &'a str) -> fmt::Result
         where W: fmt::Write,
     {
+        let region_start = unsafe {
+            mem::transmute::<_, usize>(self.region.as_ptr())
+        };
+        let mut source_start = unsafe {
+            mem::transmute::<_, usize>(source.as_ptr())
+        };
+
+        // Ensure `region` is substring of `source`.
+        {
+            let region_end = region_start + self.region.len();
+            let source_end = source_start + source.len();
+            if region_start < source_start || region_end > source_end {
+                source = self.region;
+                source_start = region_start;
+            }
+        }
+
+        let start = region_start - source_start;
+        let end = start + self.region.len();
         write!(writer, "      |\n")?;
-        for (i, line) in Lines::new(source, self.start, self.end).enumerate() {
+        for (i, line) in Lines::new(source, start, end).enumerate() {
             if i < 2 {
                 write!(writer, "{}", line)?;
             } else {
@@ -75,46 +62,37 @@ impl<K> Lexeme<K> {
     }
 
     #[cfg(test)]
-    pub fn fmt_string_using(&self, source: &str) -> Result<String, fmt::Error> {
+    pub fn fmt_string(&self, source: &'a str) -> Result<String, fmt::Error> {
         let mut out = String::new();
-        self.fmt_using(&mut out, source)?;
+        self.fmt(&mut out, source)?;
         Ok(out)
     }
 
     #[inline]
-    pub fn repackage<L: fmt::Debug>(&self, kind: L) -> Lexeme<L> {
-        Lexeme { kind, start: self.start, end: self.end }
-    }
-
-    #[inline]
-    pub fn shrink(mut self, from_start: usize, from_end: usize) -> Lexeme<K> {
-        use std::cmp::Ord;
-
-        self.start = self.start.saturating_add(from_start);
-        self.end = self.end.saturating_sub(from_end).max(self.start);
-        self
+    pub fn repackage<L: fmt::Debug>(&self, kind: L) -> Lexeme<'a, L> {
+        Lexeme { kind, region: self.region }
     }
 }
 
-impl<K: Clone> Clone for Lexeme<K> {
+impl<'a, K: Clone> Clone for Lexeme<'a, K> {
     #[inline]
     fn clone(&self) -> Self {
-        Self::new(self.kind.clone(), self.start, self.end)
+        Self::new(self.kind.clone(), self.region)
     }
 }
 
-impl<K: Copy> Copy for Lexeme<K> {}
+impl<'a, K: Copy> Copy for Lexeme<'a, K> {}
 
-impl<K: fmt::Debug> fmt::Debug for Lexeme<K> {
+impl<'a, K: fmt::Debug> fmt::Debug for Lexeme<'a, K> {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(f, "Lexeme {{ kind: {:?}, start: {}, end: {} }}",
-            self.kind, self.start, self.end)
+        write!(f, "Lexeme {{ kind: {:?}, region: {:?} }}",
+               self.kind, self.region)
     }
 }
 
-impl From<Lexeme> for Lexeme<()> {
+impl<'a> From<Lexeme<'a>> for Lexeme<'a, ()> {
     #[inline]
-    fn from(lexeme: Lexeme) -> Self {
+    fn from(lexeme: Lexeme<'a>) -> Self {
         lexeme.repackage(())
     }
 }
@@ -235,40 +213,48 @@ mod tests {
 
     #[test]
     fn display() {
-        let format = |lexeme: Lexeme<_>, source: &str| {
-            lexeme.fmt_string_using(source).unwrap()
+        let format = |source: &str, start: usize, end: usize| {
+            let lexeme = Lexeme::new((), &source[start..end]);
+            lexeme.fmt_string(source).unwrap()
         };
 
         {
-            let out = format(Lexeme::new((), 0, 1), "X");
+            let out = Lexeme::new((), "B").fmt_string(SOURCE).unwrap();
+            assert_eq!(out.as_str(), concat!(
+                "      |\n",
+                "    1 | B\n",
+                "      | ^\n"));
+        }
+        {
+            let out = format("X", 0, 1);
             assert_eq!(out.as_str(), concat!(
                 "      |\n",
                 "    1 | X\n",
                 "      | ^\n"));
         }
         {
-            let out = format(Lexeme::new((), 0, 1), SOURCE);
+            let out = format(SOURCE, 0, 1);
             assert_eq!(out, concat!(
                 "      |\n",
                 "    1 | A type System;\n",
                 "      | ^\n"));
         }
         {
-            let out = format(Lexeme::new((), 17, 25), SOURCE);
+            let out = format(SOURCE, 17, 25);
             assert_eq!(out.as_str(), concat!(
                 "      |\n",
                 "    2 | A consumes B;\n",
                 "      |   ^^^^^^^^\n"));
         }
         {
-            let out = format(Lexeme::new((), 30, 42), SOURCE);
+            let out = format(SOURCE, 30, 42);
             assert_eq!(out.as_str(), concat!(
                 "      |\n",
                 "    3 | A produces C;\n",
                 "      | ^^^^^^^^^^^^\n"));
         }
         {
-            let out = format(Lexeme::new((), 17, 40), SOURCE);
+            let out = format(SOURCE, 17, 40);
             assert_eq!(out.as_str(), concat!(
                 "      |\n",
                 "    2 | A consumes B;\n",
@@ -277,7 +263,7 @@ mod tests {
                 "      | ^^^^^^^^^^\n"));
         }
         {
-            let out = format(Lexeme::new((), 7, 40), SOURCE);
+            let out = format(SOURCE, 7, 40);
             assert_eq!(out.as_str(), concat!(
                 "      |\n",
                 "    1 | A type System;\n",
@@ -287,7 +273,7 @@ mod tests {
                 "     ...\n"));
         }
         {
-            let out = format(Lexeme::new((), 42, 42), SOURCE);
+            let out = format(SOURCE, 42, 42);
             assert_eq!(out.as_str(), concat!(
                 "      |\n",
                 "    3 | A produces C;\n",

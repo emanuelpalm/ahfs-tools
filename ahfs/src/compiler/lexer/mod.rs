@@ -15,7 +15,7 @@ macro_rules! peek_or_break {
 }
 
 /// Turns given source string into vector of [`Lexeme`s](struct.Lexeme.html).
-pub fn analyze<'a>(source: &'a str) -> Vec<Lexeme> {
+pub fn analyze<'a>(source: &'a str) -> Vec<Lexeme<'a>> {
     let mut source = Source::new(source);
     let mut lexemes = Vec::new();
     loop {
@@ -81,7 +81,7 @@ mod tests {
             "A type System;\n",
             "B type Service{ # 😜🤖💩 }}",
             "C type Function {{}}\r\n",
-            "D type Model\n{{{🤖}}");
+            "D type Model\n{{{🤖}} c");
 
         let lexemes = super::analyze(SOURCE);
 
@@ -90,9 +90,9 @@ mod tests {
             vec!["A", "type", "System", ";",
                  "B", "type", "Service", "{ # 😜🤖💩 }", "}",
                  "C", "type", "Function", "{{}}",
-                 "D", "type", "Model", "{{{🤖}}"],
+                 "D", "type", "Model", "{{{🤖}} c"],
             lexemes.iter()
-                .map(|lexeme| lexeme.extract(SOURCE))
+                .map(|lexeme| lexeme.as_str())
                 .collect::<Vec<_>>());
 
         // Check lexeme kinds.

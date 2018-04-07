@@ -24,6 +24,11 @@ impl<'a> Source<'a> {
         Source { source: source.as_bytes(), start: 0, end: 0 }
     }
 
+    #[inline]
+    fn source(&self) -> &'a str {
+        unsafe { str::from_utf8_unchecked(self.source) }
+    }
+
     /// Returns byte right after candidate, and then expands the candidate.
     #[inline]
     pub fn next(&mut self) -> Option<u8> {
@@ -45,9 +50,14 @@ impl<'a> Source<'a> {
     }
 
     /// Collects current candidate lexeme.
+    ///
+    /// # Panics
+    ///
+    /// If the current `start` and `end` offsets do not align with the UTF-8
+    /// code boundaries of the source string, the method panics.
     #[inline]
-    pub fn collect<K>(&mut self, kind: K) -> Lexeme<K> {
-        let lexeme = Lexeme::new(kind, self.start, self.end);
+    pub fn collect<K>(&mut self, kind: K) -> Lexeme<'a, K> {
+        let lexeme = Lexeme::new(kind, &self.source()[self.start..self.end]);
         self.discard();
         lexeme
     }
@@ -78,6 +88,6 @@ mod tests {
         assert_eq!(Some(b'b'), source.next());
 
         let lexeme = source.collect(());
-        assert_eq!("bb", lexeme.extract(source_str));
+        assert_eq!("bb", lexeme.as_str());
     }
 }

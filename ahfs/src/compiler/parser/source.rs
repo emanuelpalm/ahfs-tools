@@ -18,7 +18,7 @@ pub struct State<'a>(TentativeState<'a>);
 impl<'a> State<'a> {
     #[inline]
     pub fn new<L, S>(lexemes: L, source: S) -> Self
-        where L: Into<&'a [Lexeme]>,
+        where L: Into<&'a [Lexeme<'a>]>,
               S: Into<&'a str>,
     {
         State(TentativeState {
@@ -53,7 +53,7 @@ impl<'a> State<'a> {
 
 /// A tentative state, used while attempting to fulfill rules.
 pub struct TentativeState<'a> {
-    lexemes: &'a [Lexeme],
+    lexemes: &'a [Lexeme<'a>],
     offset: usize,
     source: &'a str,
 }
@@ -62,7 +62,8 @@ impl<'a> TentativeState<'a> {
     /// Returns next [Lexeme][lex] only if it has one out of given `kinds`.
     ///
     /// [lex]: ../lexer/struct.Lexeme.html
-    pub fn next_if(&mut self, kinds: &'a [LexemeKind]) -> Result<'a, Lexeme> {
+    pub fn next_if(&mut self, kinds: &'a [LexemeKind]) -> Result<'a, Lexeme<'a>>
+    {
         let lexeme = match self.lexemes.get(self.offset) {
             Some(lexeme) => lexeme.clone(),
             None => return Err(Error::UnexpectedEnd {
