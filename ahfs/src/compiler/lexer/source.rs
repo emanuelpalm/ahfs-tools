@@ -24,22 +24,16 @@ impl<'a> Source<'a> {
         Source { source: source.as_bytes(), start: 0, end: 0 }
     }
 
-    /// Expands candidate to include one more byte, which is also returned.
+    /// Reads byte right after current candidate `Lexeme`.
     #[inline]
-    pub fn next(&mut self) -> Option<u8> {
-        self.source.get(self.end).map(|byte| {
-            self.end += 1;
-            *byte
-        })
+    pub fn read(&mut self) -> Option<u8> {
+        self.source.get(self.end).map(|byte| *byte)
     }
 
-    /// Shrinks candidate, making it include one less character.
+    /// Expands candidate `Lexeme`, making it include one more byte.
     #[inline]
-    pub fn undo(&mut self) {
-        if self.start == self.end {
-            return;
-        }
-        self.end -= 1;
+    pub fn next(&mut self) {
+        self.end += 1;
     }
 
     /// Collects current candidate lexeme.
@@ -67,14 +61,17 @@ mod tests {
         let mut source = Source::new(source_str);
 
         // Skip As.
-        assert_eq!(Some(b'a'), source.next());
-        assert_eq!(Some(b'a'), source.next());
+        assert_eq!(Some(b'a'), source.read());
+        source.next();
+        assert_eq!(Some(b'a'), source.read());
+        source.next();
         source.discard();
 
         // Take Bs.
-        assert_eq!(Some(b'b'), source.next());
-        assert_eq!(Some(b'b'), source.next());
-
+        assert_eq!(Some(b'b'), source.read());
+        source.next();
+        assert_eq!(Some(b'b'), source.read());
+        source.next();
         let lexeme = source.collect(());
         assert_eq!("bb", lexeme.extract(source_str));
     }

@@ -7,77 +7,85 @@ pub use self::lexeme_kind::LexemeKind;
 
 use self::source::Source;
 
-macro_rules! next_or_break {
-    ($lexer:ident) => (match $lexer.next() { Some(ch) => ch, None => break });
+/// Turns given source string into vector of [`Lexeme`s](struct.Lexeme.html).
+pub fn analyze<'a>(source: &'a str) -> Vec<Lexeme> {
+    let mut session = Session {
+        source: Source::new(source),
+        lexemes: Vec::new(),
+    };
+    session.document();
+    session.lexemes
 }
 
-/// Turns given source string into vector of [`Lexemes`](struct.Lexeme.html).
-pub fn analyze<'a>(source: &'a str) -> Vec<Lexeme> {
-    let mut source = Source::new(source);
-    let mut lexemes = Vec::new();
-    'outer: loop {
-        let mut c = next_or_break!(source);
+struct Session<'a> {
+    source: Source<'a>,
+    lexemes: Vec<Lexeme>,
+}
 
-        if is_control(c) {
-            source.discard();
-            continue 'outer;
-        }
+macro_rules! read_or_break {
+    ($lexer:expr) => (match $lexer.read() { Some(c) => c, None => break });
+}
 
-        if c == b'{' {
-            let mut left_braces = 1;
-            loop {
-                c = next_or_break!(source);
-                if c != b'{' { break; }
-                left_braces += 1;
+impl<'a> Session<'a> {
+    fn document(&mut self) {
+        loop {
+            match read_or_break!(self.source) {
+                b'\0'...b' ' | 0x7f => self.nothing(),
+                b';' => self.delimiter(LexemeKind::Semicolon),
+                b'{' => self.description(),
+                b'}' => self.delimiter(LexemeKind::BraceRight),
+                _ => self.word(),
             }
-            let mut right_braces = 0;
-            loop {
-                if c == b'}' {
-                    right_braces += 1;
-                    if left_braces == right_braces { break; }
-                } else {
-                    right_braces = 0;
-                }
-                c = next_or_break!(source);
-            }
-            let lexeme = source.collect(LexemeKind::Description);
-            lexemes.push(lexeme.shrink(left_braces, right_braces));
-            source.undo();
-            continue 'outer;
-        }
-
-        let kind = match c {
-            b';' => LexemeKind::Semicolon,
-            b'}' => LexemeKind::BraceRight,
-            _ => {
-                loop {
-                    c = next_or_break!(source);
-                    if is_control(c) || is_delimiter(c) {
-                        source.undo();
-                        break;
-                    }
-                }
-                LexemeKind::Word
-            }
-        };
-        lexemes.push(source.collect(kind));
-    }
-    return lexemes;
-
-    #[inline]
-    fn is_control(c: u8) -> bool {
-        match c {
-            b'\0'...b' ' | 0x7f => true,
-            _ => false,
         }
     }
 
-    #[inline]
-    fn is_delimiter(c: u8) -> bool {
-        match c {
-            b';' | b'{' | b'}' => true,
-            _ => false,
+    fn nothing(&mut self) {
+        self.source.next();
+        self.source.discard();
+    }
+
+    fn delimiter(&mut self, kind: LexemeKind) {
+        self.lexemes.push(self.source.collect(kind));
+        self.nothing();
+    }
+
+    fn description(&mut self) {
+        let mut c = 0u8;
+        let mut left_braces = 1;
+        loop {
+            self.source.next();
+            c = read_or_break!(self.source);
+            if c != b'{' { break; }
+            left_braces += 1;
         }
+        let mut right_braces = 0;
+        loop {
+            if c == b'}' {
+                right_braces += 1;
+                if left_braces == right_braces {
+                    self.source.next();
+                    break;
+                }
+            } else {
+                right_braces = 0;
+            }
+            self.source.next();
+            c = read_or_break!(self.source);
+        }
+        let lexeme = self.source.collect(LexemeKind::Description);
+        self.lexemes.push(lexeme.shrink(left_braces, right_braces));
+    }
+
+    fn word(&mut self) {
+        loop {
+            match read_or_break!(self.source) {
+                b'\0'...b' ' | b';' | b'{' | b'}' | 0x7f => {
+                    break;
+                }
+                _ => self.source.next(),
+            }
+        }
+        self.lexemes.push(self.source.collect(LexemeKind::Word));
     }
 }
 
@@ -89,14 +97,18 @@ mod tests {
     fn analyze() {
         const SOURCE: &'static str = concat!(
             "A type System;\n",
-            "B type Service{ # 😜🤖💩 }}");
+            "B type Service{ # 😜🤖💩 }}",
+            "C type Function {{}}\r\n",
+            "D type Model\n{{{🤖}}");
 
         let lexemes = super::analyze(SOURCE);
 
         // Check lexeme strings.
         assert_eq!(
-            vec!["A", "type", "System", ";",
-                 "B", "type", "Service", " # 😜🤖💩 ", "}"],
+            vec!["A", "type", "System", "",
+                 "B", "type", "Service", " # 😜🤖💩 ", "",
+                 "C", "type", "Function", "",
+                 "D", "type", "Model", "🤖"],
             lexemes.iter()
                 .map(|lexeme| lexeme.extract(SOURCE))
                 .collect::<Vec<_>>());
@@ -106,7 +118,11 @@ mod tests {
             vec![LexemeKind::Word, LexemeKind::Word, LexemeKind::Word,
                  LexemeKind::Semicolon,
                  LexemeKind::Word, LexemeKind::Word, LexemeKind::Word,
-                 LexemeKind::Description, LexemeKind::BraceRight],
+                 LexemeKind::Description, LexemeKind::BraceRight,
+                 LexemeKind::Word, LexemeKind::Word, LexemeKind::Word,
+                 LexemeKind::Description,
+                 LexemeKind::Word, LexemeKind::Word, LexemeKind::Word,
+                 LexemeKind::Description],
             lexemes.iter()
                 .map(|lexeme| *lexeme.kind())
                 .collect::<Vec<_>>());

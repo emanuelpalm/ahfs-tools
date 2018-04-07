@@ -31,28 +31,16 @@ pub type Result<'a, T, K: 'a = LexemeKind> = result::Result<T, Error<'a, K>>;
 /// [tri]: struct.Triple.html
 pub fn parse<'a>(lx: &'a [Lexeme], source: &'a str) -> Result<'a, Vec<Triple>> {
     let mut source = State::new(lx, source);
-
     let mut triples = Vec::new();
     while !source.at_end() {
-        triples.push(triple(&mut source)?);
+        triples.push(source.apply(|state| Ok(Triple::new(
+            state.next_if(WORD)?,
+            state.next_if(WORD)?,
+            state.next_if(WORD)?,
+            state.next_if(TRIPLE_END)?,
+        )))?);
     }
     return Ok(triples);
-
-    #[inline]
-    fn triple<'a>(source: &mut State<'a>) -> Result<'a, Triple> {
-        source.apply(|state| {
-            let subject = state.next_if(WORD)?;
-            let predicate = state.next_if(WORD)?;
-            let object = state.next_if(WORD)?;
-
-            let mut description = state.next_if(TRIPLE_END)?;
-            if *description.kind() == LexemeKind::Semicolon {
-                description = description.shrink(1, 0);
-            }
-
-            Ok(Triple::new(subject, predicate, object, description))
-        })
-    }
 }
 
 #[cfg(test)]
@@ -69,7 +57,7 @@ mod tests {
             Lexeme::new(LexemeKind::Word, 0, 1),
             Lexeme::new(LexemeKind::Word, 2, 6),
             Lexeme::new(LexemeKind::Word, 7, 13),
-            Lexeme::new(LexemeKind::Semicolon, 13, 14),
+            Lexeme::new(LexemeKind::Semicolon, 13, 13),
             Lexeme::new(LexemeKind::Word, 15, 16),
             Lexeme::new(LexemeKind::Word, 17, 21),
             Lexeme::new(LexemeKind::Word, 22, 29),
@@ -80,7 +68,7 @@ mod tests {
                 Lexeme::new((), 0, 1),
                 Lexeme::new((), 2, 6),
                 Lexeme::new((), 7, 13),
-                Lexeme::new((), 14, 14)),
+                Lexeme::new((), 13, 13)),
             Triple::new(
                 Lexeme::new((), 15, 16),
                 Lexeme::new((), 17, 21),
