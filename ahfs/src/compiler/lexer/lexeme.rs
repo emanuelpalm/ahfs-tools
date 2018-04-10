@@ -205,7 +205,7 @@ impl<'a> fmt::Display for Line<'a> {
 
         write!(f, concat!(
             "{:>5} | {}\n",
-            "      | {:start$}{:^<len$}\n"),
+            "      | \x1b[31m{:start$}{:^<len$}\x1b[0m\n"),
                self.line_number, self.source, "", "",
                start = self.start,
                len = (self.end - self.start).max(1))
@@ -231,55 +231,55 @@ mod tests {
         {
             let out = Lexeme::new((), "B").fmt_string(SOURCE).unwrap();
             assert_eq!(out.as_str(), concat!(
-                "      |\n",
+                "      | !!\n",
                 "    1 | B\n",
-                "      | ^\n"));
+                "      | \x1b[31m^\x1b[0m\n"));
         }
         {
             let out = format("X", 0, 1);
             assert_eq!(out.as_str(), concat!(
                 "      |\n",
                 "    1 | X\n",
-                "      | ^\n"));
+                "      | \x1b[31m^\x1b[0m\n"));
         }
         {
             let out = format(SOURCE, 0, 1);
             assert_eq!(out, concat!(
                 "      |\n",
                 "    1 | A type System;\n",
-                "      | ^\n"));
+                "      | \x1b[31m^\x1b[0m\n"));
         }
         {
             let out = format(SOURCE, 17, 25);
             assert_eq!(out.as_str(), concat!(
                 "      |\n",
                 "    2 | A consumes B;\n",
-                "      |   ^^^^^^^^\n"));
+                "      | \x1b[31m  ^^^^^^^^\x1b[0m\n"));
         }
         {
             let out = format(SOURCE, 30, 42);
             assert_eq!(out.as_str(), concat!(
                 "      |\n",
                 "    3 | A produces C;\n",
-                "      | ^^^^^^^^^^^^\n"));
+                "      | \x1b[31m^^^^^^^^^^^^\x1b[0m\n"));
         }
         {
             let out = format(SOURCE, 17, 40);
             assert_eq!(out.as_str(), concat!(
                 "      |\n",
                 "    2 | A consumes B;\n",
-                "      |   ^^^^^^^^^^^\n",
+                "      | \x1b[31m  ^^^^^^^^^^^\x1b[0m\n",
                 "    3 | A produces C;\n",
-                "      | ^^^^^^^^^^\n"));
+                "      | \x1b[31m^^^^^^^^^^\x1b[0m\n"));
         }
         {
             let out = format(SOURCE, 7, 40);
             assert_eq!(out.as_str(), concat!(
                 "      |\n",
                 "    1 | A type System;\n",
-                "      |        ^^^^^^^\n",
+                "      | \x1b[31m       ^^^^^^^\x1b[0m\n",
                 "    2 | A consumes B;\n",
-                "      | ^^^^^^^^^^^^^\n",
+                "      | \x1b[31m^^^^^^^^^^^^^\x1b[0m\n",
                 "     ...\n"));
         }
         {
@@ -287,7 +287,7 @@ mod tests {
             assert_eq!(out.as_str(), concat!(
                 "      |\n",
                 "    3 | A produces C;\n",
-                "      |             ^\n"));
+                "      | \x1b[31m            ^\x1b[0m\n"));
         }
     }
 }
