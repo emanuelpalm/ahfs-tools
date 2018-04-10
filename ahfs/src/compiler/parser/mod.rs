@@ -54,27 +54,29 @@ mod tests {
 
     #[test]
     fn parse() {
+        let lexeme = |kind, range| Lexeme::new(kind, &SOURCE[range]);
         let lexemes = [
-            Lexeme::new(LexemeKind::Word, &SOURCE[0..1]),
-            Lexeme::new(LexemeKind::Word, &SOURCE[2..6]),
-            Lexeme::new(LexemeKind::Word, &SOURCE[7..13]),
-            Lexeme::new(LexemeKind::Semicolon, &SOURCE[13..14]),
-            Lexeme::new(LexemeKind::Word, &SOURCE[15..16]),
-            Lexeme::new(LexemeKind::Word, &SOURCE[17..21]),
-            Lexeme::new(LexemeKind::Word, &SOURCE[22..29]),
-            Lexeme::new(LexemeKind::Description, &SOURCE[30..54]),
+            lexeme(LexemeKind::Word, 0..1),
+            lexeme(LexemeKind::Word, 2..6),
+            lexeme(LexemeKind::Word, 7..13),
+            lexeme(LexemeKind::Semicolon, 13..14),
+            lexeme(LexemeKind::Word, 15..16),
+            lexeme(LexemeKind::Word, 17..21),
+            lexeme(LexemeKind::Word, 22..29),
+            lexeme(LexemeKind::Description, 30..54),
         ];
+        let lexeme0 = |kind, range| Lexeme::new(kind, &SOURCE[range]);
         assert_eq!(super::parse(&lexemes, SOURCE).unwrap(), vec![
             Triple::new(
-                Lexeme::new((), &SOURCE[0..1]),
-                Lexeme::new((), &SOURCE[2..6]),
-                Lexeme::new((), &SOURCE[7..13]),
-                Lexeme::new(LexemeKind::Semicolon, &SOURCE[13..14])),
+                lexeme0((), 0..1),
+                lexeme0((), 2..6),
+                lexeme0((), 7..13),
+                lexeme(LexemeKind::Semicolon, 13..14)),
             Triple::new(
-                Lexeme::new((), &SOURCE[15..16]),
-                Lexeme::new((), &SOURCE[17..21]),
-                Lexeme::new((), &SOURCE[22..29]),
-                Lexeme::new(LexemeKind::Description, &SOURCE[30..54])),
+                lexeme0((), 15..16),
+                lexeme0((), 17..21),
+                lexeme0((), 22..29),
+                lexeme(LexemeKind::Description, 30..54)),
         ]);
     }
 }
