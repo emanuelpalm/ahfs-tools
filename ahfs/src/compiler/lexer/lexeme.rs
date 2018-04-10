@@ -25,36 +25,46 @@ impl<'a, K> Lexeme<'a, K> {
         &self.kind
     }
 
+    /// If this `Lexeme` originated from given `source`, get its `start..end`
+    /// range within that source.
+    #[inline]
+    pub fn range_in(&self, source: &'a str) -> Option<(usize, usize)> {
+        let region_start: usize = unsafe {
+            mem::transmute(self.region.as_ptr())
+        };
+        let mut source_start: usize = unsafe {
+            mem::transmute(source.as_ptr())
+        };
+
+        let region_end = region_start + self.region.len();
+        let source_end = source_start + source.len();
+        if region_start < source_start || region_end > source_end {
+            return None;
+        }
+
+        let start = region_start - source_start;
+        let end = start + self.region.len();
+        Some((start, end))
+    }
+
     /// Writes human-readable representation of `Lexeme` to given `writer` using
     /// provided `source` string as context.
     pub fn fmt<W>(&self, mut writer: W, mut source: &'a str) -> fmt::Result
         where W: fmt::Write,
     {
-        let region_start = unsafe {
-            mem::transmute::<_, usize>(self.region.as_ptr())
+        let (start, end) = if let Some((start, end)) = self.range_in(source) {
+            writeln!(writer, "      |")?;
+            (start, end)
+        } else {
+            source = self.region;
+            writeln!(writer, "      | !!")?;
+            (0, source.len())
         };
-        let mut source_start = unsafe {
-            mem::transmute::<_, usize>(source.as_ptr())
-        };
-
-        // Ensure `region` is substring of `source`.
-        {
-            let region_end = region_start + self.region.len();
-            let source_end = source_start + source.len();
-            if region_start < source_start || region_end > source_end {
-                source = self.region;
-                source_start = region_start;
-            }
-        }
-
-        let start = region_start - source_start;
-        let end = start + self.region.len();
-        write!(writer, "      |\n")?;
         for (i, line) in Lines::new(source, start, end).enumerate() {
             if i < 2 {
                 write!(writer, "{}", line)?;
             } else {
-                write!(writer, "     ...\n")?;
+                writeln!(writer, "     ...")?;
                 break;
             }
         }
