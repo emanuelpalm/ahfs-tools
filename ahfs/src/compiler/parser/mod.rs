@@ -1,9 +1,9 @@
-mod source;
+mod state;
 mod triple;
 
 pub use self::triple::Triple;
 
-use self::source::State;
+use self::state::State;
 use std::result;
 use super::Error;
 use super::lexer::{Lexeme, LexemeKind};
