@@ -26,6 +26,11 @@ impl Predicate {
             _ => { return None; }
         })
     }
+
+    #[inline]
+    pub fn names() -> &'static [&'static str] {
+        meta::PREDICATES
+    }
 }
 
 impl fmt::Display for Predicate {
