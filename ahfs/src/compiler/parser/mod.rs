@@ -1,12 +1,14 @@
+//! Parsing utilities.
+
 mod state;
 mod triple;
 
 pub use self::triple::Triple;
 
 use self::state::State;
-use std::result;
-use super::Error;
+use super::Compile;
 use super::lexer::{Lexeme, LexemeKind};
+use super::source::{Error, Range, Region, Result, Source, Text};
 
 const TRIPLE_END: &'static [LexemeKind] = &[
     LexemeKind::Semicolon,
@@ -16,67 +18,69 @@ const WORD: &'static [LexemeKind] = &[
     LexemeKind::Word
 ];
 
-/// The result of a parsing attempt.
-pub type Result<'a, T, K: 'a = LexemeKind> = result::Result<T, Error<'a, K>>;
+/// Source lexeme parser.
+///
+/// Transforms an array of source code lexemes into an array of
+/// [`Triple`s](struct.Triple.html).
+pub struct Parser;
 
-/// Parses given array of [`Lexeme`s][lex] into vector of [`Triple`s][tri].
-///
-/// # Panics
-///
-/// If any of the given [`Lexeme`s][lex] would have offsets out of the `source`
-/// string bounds, the method panics. This is generally avoided by ensuring that
-/// the lexemes were first extracted from the same `source` string.
-///
-/// [lex]: ../lexer/struct.Lexeme.html
-/// [tri]: struct.Triple.html
-pub fn parse<'a>(lx: &'a [Lexeme], src: &'a str) -> Result<'a, Vec<Triple<'a>>>
-{
-    let mut source = State::new(lx, src);
+impl<'a> Compile<'a, Box<[Lexeme<'a>]>, Box<[Triple<'a>]>> for Parser {
+    fn compile(source: &'a Source<'a, Box<[Lexeme<'a>]>>)
+               -> Result<'a, Source<'a, Box<[Triple<'a>]>>> {
+        source.apply(|source| {
+            parse(source).map(|triples| triples.into_boxed_slice())
+        })
+    }
+}
+
+fn parse<'a>(source: &'a Source<'a, Box<[Lexeme<'a>]>>) -> Result<'a, Vec<Triple<'a>>> {
+    let mut state = State::new(source);
     let mut triples = Vec::new();
-    while !source.at_end() {
-        triples.push(source.apply(|state| Ok(Triple::new(
-            state.next_if(WORD)?,
-            state.next_if(WORD)?,
-            state.next_if(WORD)?,
-            state.next_if(TRIPLE_END)?,
-        )))?);
+    while !state.at_end() {
+        triples.push(state.apply(|state| {
+            let subject = state.next_if(WORD)?;
+            let predicate = state.next_if(WORD)?;
+            let object = state.next_if(WORD)?;
+            let end = state.next_if(TRIPLE_END)?;
+            Ok(unsafe { Triple::new(subject, predicate, object, end) })
+        })?);
     }
     return Ok(triples);
 }
 
 #[cfg(test)]
 mod tests {
-    use super::{Lexeme, LexemeKind, Triple};
-
-    const SOURCE: &'static str = concat!(
-            "A type System;\n",
-            "B type Service { Emojis 😜🤖💩! }");
+    use super::super::source::Text;
+    use super::super::lexer::Lexer;
+    use super::*;
 
     #[test]
     fn parse() {
-        let lexeme = |kind, range| Lexeme::new(kind, &SOURCE[range]);
-        let lexemes = [
-            lexeme(LexemeKind::Word, 0..1),
-            lexeme(LexemeKind::Word, 2..6),
-            lexeme(LexemeKind::Word, 7..13),
-            lexeme(LexemeKind::Semicolon, 13..14),
-            lexeme(LexemeKind::Word, 15..16),
-            lexeme(LexemeKind::Word, 17..21),
-            lexeme(LexemeKind::Word, 22..29),
-            lexeme(LexemeKind::Description, 30..54),
+        let texts: &[Text] = &[
+            Text::new("alpha.ahs", concat!(
+                "A type System;\n",
+                "B type Service { Emojis 😜🤖💩! }",
+            )),
         ];
-        let lexeme0 = |kind, range| Lexeme::new(kind, &SOURCE[range]);
-        assert_eq!(super::parse(&lexemes, SOURCE).unwrap(), vec![
-            Triple::new(
-                lexeme0((), 0..1),
-                lexeme0((), 2..6),
-                lexeme0((), 7..13),
-                lexeme(LexemeKind::Semicolon, 13..14)),
-            Triple::new(
-                lexeme0((), 15..16),
-                lexeme0((), 17..21),
-                lexeme0((), 22..29),
-                lexeme(LexemeKind::Description, 30..54)),
-        ]);
+        let source = Source::new(texts);
+        let source = Lexer::compile(&source).unwrap();
+        let source = Parser::compile(&source).unwrap();
+        let lexeme = |kind, range| {
+            Lexeme::new(kind, texts[0].get_region(range).unwrap())
+        };
+        assert_eq!(source.tree(), &vec![
+            unsafe {
+                Triple::new(
+                    0..1, 2..6, 7..13,
+                    lexeme(LexemeKind::Semicolon, 13..14),
+                )
+            },
+            unsafe {
+                Triple::new(
+                    15..16, 17..21, 22..29,
+                    lexeme(LexemeKind::Description, 30..54),
+                )
+            },
+        ].into_boxed_slice());
     }
 }

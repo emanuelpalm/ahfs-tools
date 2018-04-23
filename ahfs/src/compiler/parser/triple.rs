@@ -1,72 +1,65 @@
-use super::{Lexeme, LexemeKind};
+use super::{Lexeme, LexemeKind, Range, Region, Text};
 
 /// A parser triple.
 ///
-/// Contains lexemes for a `subject`, a `predicate`, an `object`, and a
-/// `description`.
-///
-/// The triple is only sure to be syntactically correct. No guarantees are
-/// given about it expressing anything of relevance.
-#[derive(Debug)]
+/// Contains [`Region`s](../source/struct.Region.html) for a `subject`, a
+/// `predicate`, an `object`, and an optional `description`.
+#[derive(Debug, Eq, PartialEq)]
 pub struct Triple<'a> {
-    subject: Lexeme<'a, ()>,
-    predicate: Lexeme<'a, ()>,
-    object: Lexeme<'a, ()>,
-    description: Lexeme<'a, ()>,
+    text: &'a Text<'a>,
+    subject: Range,
+    predicate: Range,
+    object: Range,
+    description: Range,
 }
 
 impl<'a> Triple<'a> {
+    /// It is the responsibility of the caller to ensure given
+    /// [`Range`s](type.Range.html) (`subject`, `predicate`, `object`) refer
+    /// valid UTF-8 bounds within the same [`Text`](../source/struct.Text.html).
+    #[doc(hidden)]
     #[inline]
-    pub fn new<L>(subject: L, predicate: L, object: L, end: Lexeme<'a>) -> Self
-        where L: Into<Lexeme<'a, ()>>,
+    pub unsafe fn new<R, L>(subject: R, predicate: R, object: R, end: L) -> Self
+        where R: Into<Range>,
+              L: Into<Lexeme<'a>>
     {
+        let end = end.into();
         Triple {
+            text: end.region().text(),
             subject: subject.into(),
             predicate: predicate.into(),
             object: object.into(),
             description: match *end.kind() {
-                LexemeKind::Description => end.repackage(()),
-                _ => Lexeme::new((), ""),
+                LexemeKind::Description => end.into(),
+                _ => 0..0,
             },
         }
     }
 
+    /// `Triple` subject.
     #[inline]
-    pub fn subject(&self) -> &Lexeme<'a, ()> {
-        &self.subject
+    pub fn subject(&self) -> Region<'a> {
+        unsafe { Region::new(self.text, self.subject.clone()) }
     }
 
+    /// `Triple` predicate.
     #[inline]
-    pub fn predicate(&self) -> &Lexeme<'a, ()> {
-        &self.predicate
+    pub fn predicate(&self) -> Region<'a> {
+        unsafe { Region::new(self.text, self.predicate.clone()) }
     }
 
+    /// `Triple` object.
     #[inline]
-    pub fn object(&self) -> &Lexeme<'a, ()> {
-        &self.object
+    pub fn object(&self) -> Region<'a> {
+        unsafe { Region::new(self.text, self.object.clone()) }
     }
 
+    /// `Triple` description.
     #[inline]
-    pub fn description(&self) -> Option<&Lexeme<'a, ()>> {
-        if self.description.as_str().len() == 0 {
+    pub fn description(&self) -> Option<Region<'a>> {
+        if self.description.start == self.description.end {
             return None;
         }
-        Some(&self.description)
-    }
-}
-
-impl<'a> Eq for Triple<'a> {}
-
-impl<'a> PartialEq for Triple<'a> {
-    fn eq<'b>(&self, other: &Triple<'b>) -> bool {
-        return lexemes_eq(&self.subject, &other.subject)
-            && lexemes_eq(&self.predicate, &other.predicate)
-            && lexemes_eq(&self.object, &other.object)
-            && lexemes_eq(&self.description, &other.description);
-
-        #[inline]
-        fn lexemes_eq<'a, 'b>(a: &Lexeme<'a, ()>, b: &Lexeme<'b, ()>) -> bool {
-            a.as_str() == b.as_str()
-        }
+        Some(unsafe { Region::new(self.text, self.description.clone()) })
     }
 }

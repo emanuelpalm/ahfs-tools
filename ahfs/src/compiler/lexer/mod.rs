@@ -1,11 +1,15 @@
+//! Lexical analysis utilities.
+
 mod lexeme;
 mod lexeme_kind;
-mod source;
+mod reader;
 
 pub use self::lexeme::Lexeme;
 pub use self::lexeme_kind::LexemeKind;
 
-use self::source::Source;
+use self::reader::Reader;
+use super::Compile;
+use super::source::{Range, Region, Result, Source, Text};
 
 macro_rules! next_or_break {
     ($source:expr) => (match $source.next() { Some(c) => c, None => break });
@@ -14,17 +18,34 @@ macro_rules! peek_or_break {
     ($source:expr) => (match $source.peek() { Some(c) => c, None => break });
 }
 
-/// Turns given source string into vector of [`Lexeme`s](struct.Lexeme.html).
-pub fn analyze<'a>(source: &'a str) -> Vec<Lexeme<'a>> {
-    let mut source = Source::new(source);
-    let mut lexemes = Vec::new();
+/// Lexical analyzer.
+///
+/// Transforms a set of source texts into an array of
+/// [`Lexeme`s](struct.Lexeme.html).
+pub struct Lexer;
+
+impl<'a> Compile<'a, (), Box<[Lexeme<'a>]>> for Lexer {
+    fn compile(source: &'a Source<'a, ()>)
+        -> Result<'a, Source<'a, Box<[Lexeme<'a>]>>> {
+        source.apply(|source| {
+            let mut lexemes = Vec::new();
+            for text in source.texts() {
+                analyze(text, &mut lexemes);
+            }
+            Ok(lexemes.into_boxed_slice())
+        })
+    }
+}
+
+fn analyze<'a>(text: &'a Text<'a>, out: &mut Vec<Lexeme<'a>>) {
+    let mut reader = Reader::new(text);
     loop {
-        let mut c = next_or_break!(source);
+        let mut c = next_or_break!(reader);
         let kind = match c {
 
             // Whitespace.
             b'\0'...b' ' | 0x7f => {
-                source.discard();
+                reader.discard();
                 continue;
             }
 
@@ -36,7 +57,7 @@ pub fn analyze<'a>(source: &'a str) -> Vec<Lexeme<'a>> {
             b'{' => {
                 let mut left_braces = 1;
                 loop {
-                    c = next_or_break!(source);
+                    c = next_or_break!(reader);
                     if c != b'{' { break; }
                     left_braces += 1;
                 }
@@ -48,7 +69,7 @@ pub fn analyze<'a>(source: &'a str) -> Vec<Lexeme<'a>> {
                     } else {
                         right_braces = 0;
                     }
-                    c = next_or_break!(source);
+                    c = next_or_break!(reader);
                 }
                 LexemeKind::Description
             }
@@ -56,34 +77,38 @@ pub fn analyze<'a>(source: &'a str) -> Vec<Lexeme<'a>> {
             // Word.
             _ => {
                 loop {
-                    match peek_or_break!(source) {
+                    match peek_or_break!(reader) {
                         b'\0'...b' ' | b';' | b'{' | b'}' | 0x7f => {
                             break;
                         }
-                        _ => source.skip(),
+                        _ => reader.skip(),
                     }
                 }
                 LexemeKind::Word
             }
         };
-        lexemes.push(source.collect(kind));
+        out.push(reader.collect(kind));
     }
-    lexemes
 }
 
 #[cfg(test)]
 mod tests {
-    use super::LexemeKind;
+    use super::*;
 
     #[test]
     fn analyze() {
-        const SOURCE: &'static str = concat!(
-            "A type System;\n",
-            "B type Service{ # 😜🤖💩 }}",
-            "C type Function {{}}\r\n",
-            "D type Model\n{{{🤖}} c");
-
-        let lexemes = super::analyze(SOURCE);
+        let texts: &[Text] = &[
+            Text::new("alpha.ahs", concat!(
+                "A type System;\n",
+                "B type Service{ # 😜🤖💩 }}",
+            )),
+            Text::new("beta.ahs", concat!(
+                "C type Function {{}}\r\n",
+                "D type Model\n{{{🤖}} c",
+            )),
+        ];
+        let source = Source::new(texts);
+        let source = Lexer::compile(&source).unwrap();
 
         // Check lexeme strings.
         assert_eq!(
@@ -91,8 +116,8 @@ mod tests {
                  "B", "type", "Service", "{ # 😜🤖💩 }", "}",
                  "C", "type", "Function", "{{}}",
                  "D", "type", "Model", "{{{🤖}} c"],
-            lexemes.iter()
-                .map(|lexeme| lexeme.as_str())
+            source.tree().iter()
+                .map(|lexeme| lexeme.region().as_str())
                 .collect::<Vec<_>>());
 
         // Check lexeme kinds.
@@ -105,7 +130,7 @@ mod tests {
                  LexemeKind::Description,
                  LexemeKind::Word, LexemeKind::Word, LexemeKind::Word,
                  LexemeKind::Description],
-            lexemes.iter()
+            source.tree().iter()
                 .map(|lexeme| *lexeme.kind())
                 .collect::<Vec<_>>());
     }

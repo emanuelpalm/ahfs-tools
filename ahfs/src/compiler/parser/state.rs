@@ -1,4 +1,4 @@
-use super::{Error, Lexeme, LexemeKind, Result};
+use super::{Error, Lexeme, LexemeKind, Result, Source};
 
 /// A utility for reading well-defined [`Lexeme`s][lex] sequences from an array.
 ///
@@ -16,15 +16,12 @@ use super::{Error, Lexeme, LexemeKind, Result};
 pub struct State<'a>(TentativeState<'a>);
 
 impl<'a> State<'a> {
+    /// Creates new `State` object from given `source` pointer.
     #[inline]
-    pub fn new<L, S>(lexemes: L, source: S) -> Self
-        where L: Into<&'a [Lexeme<'a>]>,
-              S: Into<&'a str>,
-    {
+    pub fn new(source: &'a Source<'a, Box<[Lexeme<'a>]>>) -> Self {
         State(TentativeState {
-            lexemes: lexemes.into(),
+            source,
             offset: 0,
-            source: source.into(),
         })
     }
 
@@ -33,7 +30,7 @@ impl<'a> State<'a> {
     /// [lex]: ../lexer/struct.Lexeme.html
     #[inline]
     pub fn at_end(&self) -> bool {
-        self.0.offset >= self.0.lexemes.len()
+        self.0.offset >= self.0.source.tree().len()
     }
 
     /// Applies given rule.
@@ -53,30 +50,44 @@ impl<'a> State<'a> {
 
 /// A tentative state, used while attempting to fulfill rules.
 pub struct TentativeState<'a> {
-    lexemes: &'a [Lexeme<'a>],
+    source: &'a Source<'a, Box<[Lexeme<'a>]>>,
     offset: usize,
-    source: &'a str,
 }
 
 impl<'a> TentativeState<'a> {
     /// Returns next [Lexeme][lex] only if it has one out of given `kinds`.
     ///
     /// [lex]: ../lexer/struct.Lexeme.html
-    pub fn next_if(&mut self, kinds: &'a [LexemeKind]) -> Result<'a, Lexeme<'a>>
-    {
-        let lexeme = match self.lexemes.get(self.offset) {
+    pub fn next_if(&mut self, kinds: &'a [LexemeKind]) -> Result<'a, Lexeme<'a>> {
+        let lexeme = match self.source.tree().get(self.offset) {
             Some(lexeme) => lexeme.clone(),
-            None => return Err(Error::UnexpectedEnd {
-                expected: kinds,
-                source: self.source,
-            }),
+            None => {
+                if let Some(region) = self.source.end_region() {
+                    return Err(
+                        Error::new("P001", "Unexpected source end.", region)
+                    );
+                }
+                return Err(Error::new("P000", "No known sources.", None));
+            }
         };
         if !kinds.contains(lexeme.kind()) {
-            return Err(Error::UnexpectedLexeme {
-                expected: kinds,
-                lexeme,
-                source: self.source,
-            });
+            let mut text = String::new();
+            text.push_str(&format!("Unexpected `{}`", lexeme.kind()));
+            match kinds.len() {
+                0 => text.push_str("."),
+                1 => text.push_str(&format!(", expected `{}`.", kinds[0])),
+                _ => {
+                    text.push_str(", expected one of ");
+                    let (last, rest) = kinds.split_last().unwrap();
+                    for e in rest {
+                        text.push_str(&format!("`{}`, ", e));
+                    }
+                    text.push_str(&format!(" or `{}`.", last));
+                }
+            }
+            return Err(
+                Error::new("P002", text, lexeme.region().clone())
+            );
         }
         self.offset += 1;
         Ok(lexeme)
