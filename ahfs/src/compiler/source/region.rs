@@ -45,6 +45,13 @@ impl<'a> Region<'a> {
     }
 }
 
+impl<'a> AsRef<str> for Region<'a> {
+    #[inline]
+    fn as_ref(&self) -> &str {
+        self.as_str()
+    }
+}
+
 impl<'a> fmt::Display for Region<'a> {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         write!(f, concat!(

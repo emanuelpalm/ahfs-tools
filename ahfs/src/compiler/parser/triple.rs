@@ -1,4 +1,4 @@
-use super::{Lexeme, LexemeKind, Range, Region, Text};
+use super::{Token, Name, Range, Region, Text};
 
 /// A parser triple.
 ///
@@ -21,7 +21,7 @@ impl<'a> Triple<'a> {
     #[inline]
     pub unsafe fn new<R, L>(subject: R, predicate: R, object: R, end: L) -> Self
         where R: Into<Range>,
-              L: Into<Lexeme<'a>>
+              L: Into<Token<'a>>
     {
         let end = end.into();
         Triple {
@@ -29,8 +29,8 @@ impl<'a> Triple<'a> {
             subject: subject.into(),
             predicate: predicate.into(),
             object: object.into(),
-            description: match *end.kind() {
-                LexemeKind::Description => end.into(),
+            description: match *end.name() {
+                Name::Description => end.into(),
                 _ => 0..0,
             },
         }

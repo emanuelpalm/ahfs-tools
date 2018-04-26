@@ -32,48 +32,30 @@ pub type Range = ops::Range<usize>;
 /// The result of a source-related compiler operation.
 pub type Result<'a, T> = result::Result<T, Error<'a>>;
 
-/// A collection of source code `texts` and their `tree` interpretation.
-pub struct Source<'a, T> {
+/// A collection of source code `texts`.
+pub struct Source<'a> {
     texts: &'a [Text<'a>],
-    tree: T,
 }
 
-impl<'a, T: 'a> Source<'a, T> {
+impl<'a> Source<'a> {
+    /// Creates new `Source` from given `texts`.
+    pub fn new<S>(texts: S) -> Self
+        where S: Into<&'a [Text<'a>]>
+    {
+        Source { texts: texts.into() }
+    }
+
     /// `Source` texts.
     #[inline]
     pub fn texts(&self) -> &'a [Text<'a>] {
         self.texts
     }
 
-    /// `Source` tree.
-    #[inline]
-    pub fn tree(&self) -> &T {
-        &self.tree
-    }
-
+    /// Gets `Region` representing first byte after end of last `Source` text.
     pub fn end_region(&self) -> Option<Region<'a>> {
         self.texts().last().map(|text| text.end_region())
     }
-
-    /// Applies given `pass` to `Source`, potentially transforming its `tree`.
-    #[inline]
-    pub fn apply<P, U: 'a>(&'a self, pass: P) -> Result<'a, Source<'a, U>>
-        where P: FnOnce(&'a Self) -> Result<'a, U>,
-    {
-        let tree = pass(self)?;
-        Ok(Source { texts: self.texts, tree })
-    }
 }
-
-impl<'a> Source<'a, ()> {
-    /// Creates new `Source` from given `texts`.
-    pub fn new<S>(texts: S) -> Self
-        where S: Into<&'a [Text<'a>]>
-    {
-        Source { texts: texts.into(), tree: () }
-    }
-}
-
 
 #[cfg(test)]
 mod tests {

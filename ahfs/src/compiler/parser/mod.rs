@@ -6,46 +6,44 @@ mod triple;
 pub use self::triple::Triple;
 
 use self::state::State;
-use super::Compile;
-use super::lexer::{Lexeme, LexemeKind};
+use super::lexer::{Name, Token, TokenTree};
 use super::source::{Error, Range, Region, Result, Source, Text};
+use super::Tree;
 
-const TRIPLE_END: &'static [LexemeKind] = &[
-    LexemeKind::Semicolon,
-    LexemeKind::Description
+const TRIPLE_END: &'static [Name] = &[
+    Name::Semicolon,
+    Name::Description
 ];
-const WORD: &'static [LexemeKind] = &[
-    LexemeKind::Word
+const WORD: &'static [Name] = &[
+    Name::Word
 ];
 
-/// Source lexeme parser.
+/// A [`Tree`](../struct.Tree.html) of [`Triple`s](struct.Triple.html).
+pub type ParseTree<'a> = Tree<'a, [Triple<'a>]>;
+
+/// [`Token`](../lexer/struct.Token.html) parser.
 ///
-/// Transforms an array of source code lexemes into an array of
+/// Transforms an array of source code Tokens into an array of
 /// [`Triple`s](struct.Triple.html).
 pub struct Parser;
 
-impl<'a> Compile<'a, Box<[Lexeme<'a>]>, Box<[Triple<'a>]>> for Parser {
-    fn compile(source: &'a Source<'a, Box<[Lexeme<'a>]>>)
-               -> Result<'a, Source<'a, Box<[Triple<'a>]>>> {
-        source.apply(|source| {
-            parse(source).map(|triples| triples.into_boxed_slice())
-        })
+impl Parser {
+    pub fn parse<'a>(tokens: TokenTree<'a>) -> Result<'a, ParseTree<'a>> {
+        let mut triples = Vec::new();
+        {
+            let mut state = State::new(&tokens);
+            while !state.at_end() {
+                triples.push(state.apply(|state| {
+                    let subject = state.next_if(WORD)?;
+                    let predicate = state.next_if(WORD)?;
+                    let object = state.next_if(WORD)?;
+                    let end = state.next_if(TRIPLE_END)?;
+                    Ok(unsafe { Triple::new(subject, predicate, object, end) })
+                })?);
+            }
+        }
+        Ok(ParseTree::new(tokens, triples))
     }
-}
-
-fn parse<'a>(source: &'a Source<'a, Box<[Lexeme<'a>]>>) -> Result<'a, Vec<Triple<'a>>> {
-    let mut state = State::new(source);
-    let mut triples = Vec::new();
-    while !state.at_end() {
-        triples.push(state.apply(|state| {
-            let subject = state.next_if(WORD)?;
-            let predicate = state.next_if(WORD)?;
-            let object = state.next_if(WORD)?;
-            let end = state.next_if(TRIPLE_END)?;
-            Ok(unsafe { Triple::new(subject, predicate, object, end) })
-        })?);
-    }
-    return Ok(triples);
 }
 
 #[cfg(test)]
@@ -63,24 +61,24 @@ mod tests {
             )),
         ];
         let source = Source::new(texts);
-        let source = Lexer::compile(&source).unwrap();
-        let source = Parser::compile(&source).unwrap();
-        let lexeme = |kind, range| {
-            Lexeme::new(kind, texts[0].get_region(range).unwrap())
+        let tree = Parser::parse(Lexer::analyze(source)).unwrap();
+        let triples = tree.root();
+        let token = |kind, range| {
+            Token::new(kind, texts[0].get_region(range).unwrap())
         };
-        assert_eq!(source.tree(), &vec![
+        assert_eq!(&triples, &[
             unsafe {
                 Triple::new(
                     0..1, 2..6, 7..13,
-                    lexeme(LexemeKind::Semicolon, 13..14),
+                    token(Name::Semicolon, 13..14),
                 )
             },
             unsafe {
                 Triple::new(
                     15..16, 17..21, 22..29,
-                    lexeme(LexemeKind::Description, 30..54),
+                    token(Name::Description, 30..54),
                 )
             },
-        ].into_boxed_slice());
+        ]);
     }
 }

@@ -1,15 +1,35 @@
 //! Lexical analysis utilities.
 
-mod lexeme;
-mod lexeme_kind;
-mod reader;
+mod name;
+mod scanner;
+mod token;
 
-pub use self::lexeme::Lexeme;
-pub use self::lexeme_kind::LexemeKind;
+pub use self::name::Name;
+pub use self::token::Token;
 
-use self::reader::Reader;
-use super::Compile;
-use super::source::{Range, Region, Result, Source, Text};
+use self::scanner::Scanner;
+use super::source::{Range, Region, Source, Text};
+use super::Tree;
+
+/// A [`Tree`](../struct.Tree.html) of [`Token`s](struct.Token.html).
+pub type TokenTree<'a> = Tree<'a, [Token<'a>]>;
+
+/// Lexical analyzer.
+///
+/// Transforms a set of source texts into an array of
+/// [`Token`s](struct.Token.html).
+pub struct Lexer;
+
+impl Lexer {
+    /// Creates a slice of `Tokens` from given `source`.
+    pub fn analyze<'a>(source: Source<'a>) -> TokenTree<'a> {
+        let mut tokens = Vec::new();
+        for text in source.texts() {
+            analyze_text(text, &mut tokens);
+        }
+        TokenTree::new(source, tokens)
+    }
+}
 
 macro_rules! next_or_break {
     ($source:expr) => (match $source.next() { Some(c) => c, None => break });
@@ -18,27 +38,8 @@ macro_rules! peek_or_break {
     ($source:expr) => (match $source.peek() { Some(c) => c, None => break });
 }
 
-/// Lexical analyzer.
-///
-/// Transforms a set of source texts into an array of
-/// [`Lexeme`s](struct.Lexeme.html).
-pub struct Lexer;
-
-impl<'a> Compile<'a, (), Box<[Lexeme<'a>]>> for Lexer {
-    fn compile(source: &'a Source<'a, ()>)
-        -> Result<'a, Source<'a, Box<[Lexeme<'a>]>>> {
-        source.apply(|source| {
-            let mut lexemes = Vec::new();
-            for text in source.texts() {
-                analyze(text, &mut lexemes);
-            }
-            Ok(lexemes.into_boxed_slice())
-        })
-    }
-}
-
-fn analyze<'a>(text: &'a Text<'a>, out: &mut Vec<Lexeme<'a>>) {
-    let mut reader = Reader::new(text);
+fn analyze_text<'a>(text: &'a Text<'a>, out: &mut Vec<Token<'a>>) {
+    let mut reader = Scanner::new(text);
     loop {
         let mut c = next_or_break!(reader);
         let kind = match c {
@@ -50,8 +51,8 @@ fn analyze<'a>(text: &'a Text<'a>, out: &mut Vec<Lexeme<'a>>) {
             }
 
             // Delimiter.
-            b';' => LexemeKind::Semicolon,
-            b'}' => LexemeKind::BraceRight,
+            b';' => Name::Semicolon,
+            b'}' => Name::BraceRight,
 
             // Description.
             b'{' => {
@@ -71,7 +72,7 @@ fn analyze<'a>(text: &'a Text<'a>, out: &mut Vec<Lexeme<'a>>) {
                     }
                     c = next_or_break!(reader);
                 }
-                LexemeKind::Description
+                Name::Description
             }
 
             // Word.
@@ -84,7 +85,7 @@ fn analyze<'a>(text: &'a Text<'a>, out: &mut Vec<Lexeme<'a>>) {
                         _ => reader.skip(),
                     }
                 }
-                LexemeKind::Word
+                Name::Word
             }
         };
         out.push(reader.collect(kind));
@@ -107,31 +108,31 @@ mod tests {
                 "D type Model\n{{{🤖}} c",
             )),
         ];
-        let source = Source::new(texts);
-        let source = Lexer::compile(&source).unwrap();
+        let tree = Lexer::analyze(Source::new(texts));
+        let tokens = tree.root();
 
-        // Check lexeme strings.
+        // Check token strings.
         assert_eq!(
             vec!["A", "type", "System", ";",
                  "B", "type", "Service", "{ # 😜🤖💩 }", "}",
                  "C", "type", "Function", "{{}}",
                  "D", "type", "Model", "{{{🤖}} c"],
-            source.tree().iter()
-                .map(|lexeme| lexeme.region().as_str())
+            tokens.iter()
+                .map(|token| token.region().as_str())
                 .collect::<Vec<_>>());
 
-        // Check lexeme kinds.
+        // Check token kinds.
         assert_eq!(
-            vec![LexemeKind::Word, LexemeKind::Word, LexemeKind::Word,
-                 LexemeKind::Semicolon,
-                 LexemeKind::Word, LexemeKind::Word, LexemeKind::Word,
-                 LexemeKind::Description, LexemeKind::BraceRight,
-                 LexemeKind::Word, LexemeKind::Word, LexemeKind::Word,
-                 LexemeKind::Description,
-                 LexemeKind::Word, LexemeKind::Word, LexemeKind::Word,
-                 LexemeKind::Description],
-            source.tree().iter()
-                .map(|lexeme| *lexeme.kind())
+            vec![Name::Word, Name::Word, Name::Word,
+                 Name::Semicolon,
+                 Name::Word, Name::Word, Name::Word,
+                 Name::Description, Name::BraceRight,
+                 Name::Word, Name::Word, Name::Word,
+                 Name::Description,
+                 Name::Word, Name::Word, Name::Word,
+                 Name::Description],
+            tokens.iter()
+                .map(|token| *token.name())
                 .collect::<Vec<_>>());
     }
 }
