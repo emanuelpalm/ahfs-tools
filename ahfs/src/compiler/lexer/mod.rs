@@ -123,14 +123,11 @@ mod tests {
 
         // Check token kinds.
         assert_eq!(
-            vec![Name::Word, Name::Word, Name::Word,
-                 Name::Semicolon,
-                 Name::Word, Name::Word, Name::Word,
-                 Name::Description, Name::BraceRight,
-                 Name::Word, Name::Word, Name::Word,
-                 Name::Description,
-                 Name::Word, Name::Word, Name::Word,
-                 Name::Description],
+            vec![Name::Word, Name::Word, Name::Word, Name::Semicolon,
+                 Name::Word, Name::Word, Name::Word, Name::Description,
+                 Name::BraceRight,
+                 Name::Word, Name::Word, Name::Word, Name::Description,
+                 Name::Word, Name::Word, Name::Word, Name::Description],
             tokens.iter()
                 .map(|token| *token.name())
                 .collect::<Vec<_>>());
