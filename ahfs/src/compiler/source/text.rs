@@ -10,7 +10,10 @@ pub struct Text<'a> {
 impl<'a> Text<'a> {
     /// Creates new `Text` instance from given source `name` and `body`.
     #[inline]
-    pub fn new<S: Into<&'a str>>(name: S, body: S) -> Self {
+    pub fn new<N, B>(name: N, body: B) -> Self
+        where N: Into<&'a str>,
+              B: Into<&'a str>,
+    {
         Text { name: name.into(), body: body.into() }
     }
 

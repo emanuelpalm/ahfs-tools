@@ -1,4 +1,4 @@
-use super::{Error, Name, Result, Token, Tree};
+use super::{Error, Name, Result, Token, TokenTree};
 
 /// A utility for reading well-defined [`Token`s][lex] sequences from an array.
 ///
@@ -18,7 +18,7 @@ pub struct State<'a: 'b, 'b>(TentativeState<'a, 'b>);
 impl<'a: 'b, 'b> State<'a, 'b> {
     /// Creates new `State` object from given `source` pointer.
     #[inline]
-    pub fn new(tree: &'b Tree<'a, [Token<'a>]>) -> Self {
+    pub fn new(tree: &'b TokenTree<'a>) -> Self {
         State(TentativeState { tree, offset: 0 })
     }
 
@@ -47,7 +47,7 @@ impl<'a: 'b, 'b> State<'a, 'b> {
 
 /// A tentative state, used while attempting to fulfill rules.
 pub struct TentativeState<'a: 'b, 'b> {
-    tree: &'b Tree<'a, [Token<'a>]>,
+    tree: &'b TokenTree<'a>,
     offset: usize,
 }
 
