@@ -30,10 +30,17 @@ impl Text {
             .into_string()
             .map_err(|path| io::Error::new(
                 io::ErrorKind::Other,
-                format!("Path not valid unicode {}", path.to_string_lossy()),
+                format!("Path not valid unicode {}", path.to_string_lossy())
             ))?;
-        let mut body = String::new();
-        fs::File::open(&path)?.read_to_string(&mut body)?;
+        let body = {
+            let mut file = fs::File::open(&path)?;
+            let capacity = file.metadata()
+                .map(|metadata| metadata.len() as usize + 1)
+                .unwrap_or(0);
+            let mut string = String::with_capacity(capacity);
+            file.read_to_string(&mut string)?;
+            string
+        };
         Ok(Self::new(path, body))
     }
 
