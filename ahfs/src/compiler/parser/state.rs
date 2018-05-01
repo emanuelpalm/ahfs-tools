@@ -9,17 +9,17 @@ use super::{Error, Name, Result, Token, TokenTree};
 /// the number of [`Token`s][tok] consumed by the applied rule. If, on the
 /// other hand, a rule application fails, the internal offset is unchanged.
 ///
-/// Rules are lambdas operating on a given [`TentativeState`][ten].
+/// Rules are lambdas operating on a given [`RuleState`][rul].
 ///
 /// [tok]: ../lexer/struct.Token.html
-/// [ten]: struct.TentativeState.html
-pub struct State<'a: 'b, 'b>(TentativeState<'a, 'b>);
+/// [rul]: struct.RuleState.html
+pub struct State<'a: 'b, 'b>(RuleState<'a, 'b>);
 
 impl<'a: 'b, 'b> State<'a, 'b> {
-    /// Creates new `State` object from given `source` pointer.
+    /// Creates new `State` instance from given `tree` pointer.
     #[inline]
     pub fn new(tree: &'b TokenTree<'a>) -> Self {
-        State(TentativeState { tree, offset: 0 })
+        State(RuleState { tree, offset: 0 })
     }
 
     /// Whether or not all internal [`Token`s][lex] have been consumed.
@@ -32,7 +32,7 @@ impl<'a: 'b, 'b> State<'a, 'b> {
 
     /// Applies given rule.
     pub fn apply<R, T>(&mut self, rule: R) -> Result<'a, T>
-        where R: FnOnce(&mut TentativeState<'a, 'b>) -> Result<'a, T>
+        where R: FnOnce(&mut RuleState<'a, 'b>) -> Result<'a, T>
     {
         let offset = self.0.offset;
         match rule(&mut self.0) {
@@ -46,12 +46,12 @@ impl<'a: 'b, 'b> State<'a, 'b> {
 }
 
 /// A tentative state, used while attempting to fulfill rules.
-pub struct TentativeState<'a: 'b, 'b> {
+pub struct RuleState<'a: 'b, 'b> {
     tree: &'b TokenTree<'a>,
     offset: usize,
 }
 
-impl<'a: 'b, 'b> TentativeState<'a, 'b> {
+impl<'a: 'b, 'b> RuleState<'a, 'b> {
     /// Returns next [Token][lex] only if it has one out of given `names`.
     ///
     /// [lex]: ../lexer/struct.Token.html
