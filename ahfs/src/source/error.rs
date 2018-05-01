@@ -5,18 +5,18 @@ use super::Region;
 #[derive(Debug)]
 pub struct Error<'a> {
     code: &'static str,
-    text: Box<str>,
+    description: Box<str>,
     region: Option<Region<'a>>,
 }
 
 impl<'a> Error<'a> {
-    /// Creates new `Error` from given `code`, `text` and optional
+    /// Creates new `Error` from given `code`, `description` and optional
     /// [`region`](struct.Region.html).
-    pub fn new<S, R>(code: &'static str, text: S, region: R) -> Self
-        where S: Into<Box<str>>,
+    pub fn new<D, R>(code: &'static str, description: D, region: R) -> Self
+        where D: Into<Box<str>>,
               R: Into<Option<Region<'a>>>,
     {
-        Error { code, text: text.into(), region: region.into() }
+        Error { code, description: description.into(), region: region.into() }
     }
 
     /// Returns machine-readable error identifier.
@@ -25,10 +25,10 @@ impl<'a> Error<'a> {
         self.code
     }
 
-    /// Returns human-readable error description.
+    /// Returns description of error.
     #[inline]
-    pub fn text(&self) -> &str {
-        &self.text
+    pub fn description(&self) -> &str {
+        &self.description
     }
 
     /// Region within a source text being subject of error, if any.
@@ -40,8 +40,12 @@ impl<'a> Error<'a> {
 
 impl<'a> fmt::Display for Error<'a> {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(f, concat!(str_color!(red: "error["), "{}", str_color!(red: "]"),
-               ": {}"), self.code(), self.text())?;
+        write!(f, concat!(
+            str_color!( red: "error["),
+            str_color!(none: "{}"),
+            str_color!( red: "]"),
+            str_color!(none: ": {}")),
+               self.code(), self.description())?;
         if let Some(ref region) = self.region {
             write!(f, "\n{}", region)?;
         }
