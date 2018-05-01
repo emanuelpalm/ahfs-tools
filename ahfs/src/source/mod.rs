@@ -22,21 +22,21 @@ pub type Range = ops::Range<usize>;
 pub type Result<'a, T> = result::Result<T, Error<'a>>;
 
 /// A collection of source code [`Text`s](struct.Text.html).
-pub struct Source<'a> {
-    texts: Box<[Text<'a>]>,
+pub struct Source {
+    texts: Box<[Text]>,
 }
 
-impl<'a> Source<'a> {
+impl Source {
     /// Creates new `Source` from given `texts`.
     pub fn new<S>(texts: S) -> Self
-        where S: Into<Box<[Text<'a>]>>
+        where S: Into<Box<[Text]>>
     {
         Source { texts: texts.into() }
     }
 
     /// `Source` texts.
     #[inline]
-    pub fn texts(&self) -> &[Text<'a>] {
+    pub fn texts(&self) -> &[Text] {
         &self.texts
     }
 }

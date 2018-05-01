@@ -13,7 +13,7 @@ use super::{Name, Region, Text, Token};
 #[derive(Debug)]
 pub struct Scanner<'a> {
     bytes: &'a [u8],
-    text: &'a Text<'a>,
+    text: &'a Text,
     start: usize,
     end: usize,
 }
@@ -21,7 +21,7 @@ pub struct Scanner<'a> {
 impl<'a> Scanner<'a> {
     /// Creates new `Scanner` from given source code `text`.
     #[inline]
-    pub fn new(text: &'a Text<'a>) -> Self {
+    pub fn new(text: &'a Text) -> Self {
         Scanner { bytes: text.body().as_bytes(), text, start: 0, end: 0 }
     }
 

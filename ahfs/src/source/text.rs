@@ -1,44 +1,46 @@
 use std::fs;
 use std::io;
 use std::io::Read;
-use std::path::Path;
+use std::path::PathBuf;
 use super::{Range, Region};
 
 /// A named source code text.
 #[derive(Debug, Eq, PartialEq)]
-pub struct Text<'a> {
-    name: &'a str,
+pub struct Text {
+    name: Box<str>,
     body: Box<str>,
 }
 
-impl<'a> Text<'a> {
+impl Text {
     /// Creates new `Text` instance from given source `name` and `body`.
     #[inline]
     pub fn new<N, B>(name: N, body: B) -> Self
-        where N: Into<&'a str>,
+        where N: Into<Box<str>>,
               B: Into<Box<str>>,
     {
         Text { name: name.into(), body: body.into() }
     }
 
     /// Reads contents of file at `path` into a source `Text`.
-    pub fn read(path: &'a Path) -> io::Result<Text<'a>> {
-        let name = path.to_str().ok_or_else(|| {
-            io::Error::new(
+    pub fn read<P>(path: P) -> io::Result<Text>
+        where P: Into<PathBuf>
+    {
+        let path = path.into()
+            .into_os_string()
+            .into_string()
+            .map_err(|path| io::Error::new(
                 io::ErrorKind::Other,
                 format!("Path not valid unicode {}", path.to_string_lossy()),
-            )
-        })?;
-        let mut file = fs::File::open(path)?;
+            ))?;
         let mut body = String::new();
-        file.read_to_string(&mut body)?;
-        Ok(Self::new(name, body))
+        fs::File::open(&path)?.read_to_string(&mut body)?;
+        Ok(Self::new(path, body))
     }
 
     /// `Text` name.
     #[inline]
     pub fn name(&self) -> &str {
-        self.name
+        &self.name
     }
 
     /// `Text` body.
@@ -50,7 +52,7 @@ impl<'a> Text<'a> {
     /// Gets `&'a str` representing given `range` within this `Text`.
     ///
     /// Returns `None` if `range` is out of bounds.
-    pub fn get<R>(&'a self, range: R) -> Option<&'a str>
+    pub fn get<R>(&self, range: R) -> Option<&str>
         where R: Into<Range>
     {
         self.get_region(range).map(|region| region.as_str())
@@ -60,7 +62,7 @@ impl<'a> Text<'a> {
     /// this `Text`.
     ///
     /// Returns `None` if `range` is out of bounds.
-    pub fn get_region<R>(&'a self, range: R) -> Option<Region<'a>>
+    pub fn get_region<'a, R>(&'a self, range: R) -> Option<Region<'a>>
         where R: Into<Range>
     {
         let range = range.into();

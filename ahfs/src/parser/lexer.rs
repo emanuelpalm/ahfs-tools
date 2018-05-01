@@ -4,7 +4,7 @@ use super::scanner::Scanner;
 use super::{Name, Source, Text, Token};
 
 /// Creates a slice of `Tokens` from given `source`.
-pub fn analyze<'a>(source: &'a Source<'a>) -> Box<[Token<'a>]> {
+pub fn analyze<'a>(source: &'a Source) -> Box<[Token<'a>]> {
     let mut tokens = Vec::new();
     for text in source.texts() {
         analyze_text(text, &mut tokens);
@@ -19,7 +19,7 @@ macro_rules! peek_or_break {
     ($source:expr) => (match $source.peek() { Some(c) => c, None => break });
 }
 
-fn analyze_text<'a>(text: &'a Text<'a>, out: &mut Vec<Token<'a>>) {
+fn analyze_text<'a>(text: &'a Text, out: &mut Vec<Token<'a>>) {
     let mut reader = Scanner::new(text);
     loop {
         let mut c = next_or_break!(reader);

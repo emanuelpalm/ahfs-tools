@@ -4,7 +4,7 @@ use super::{Lines, Range, Text};
 /// Represents a significant region within a source code text.
 #[derive(Clone, Debug)]
 pub struct Region<'a> {
-    text: &'a Text<'a>,
+    text: &'a Text,
     range: Range,
 }
 
@@ -14,7 +14,7 @@ impl<'a> Region<'a> {
     /// [`text`](struct.Text.html).
     #[doc(hidden)]
     #[inline]
-    pub unsafe fn new(text: &'a Text<'a>, range: Range) -> Self {
+    pub unsafe fn new(text: &'a Text, range: Range) -> Self {
         Region { text, range }
     }
 
@@ -40,7 +40,7 @@ impl<'a> Region<'a> {
 
     /// [`Text`](struct.Text.html) in which `Region` is located.
     #[inline]
-    pub fn text(&self) -> &'a Text<'a> {
+    pub fn text(&self) -> &'a Text {
         self.text
     }
 }

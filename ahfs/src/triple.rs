@@ -33,7 +33,7 @@ use super::source::{Range, Region, Text};
 /// [txt]: source/struct.Text.html
 #[derive(Debug, Eq, PartialEq)]
 pub struct Triple<'a> {
-    text: &'a Text<'a>,
+    text: &'a Text,
     subject: Range,
     predicate: Range,
     object: Range,

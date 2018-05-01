@@ -54,7 +54,7 @@ const WORD: &'static [Name] = &[
 /// ```
 ///
 /// [tri]: struct.Triple.html
-pub fn parse<'a>(source: &'a Source<'a>) -> Result<'a, Box<[Triple<'a>]>> {
+pub fn parse<'a>(source: &'a Source) -> Result<'a, Box<[Triple<'a>]>> {
     let tokens = lexer::analyze(source);
     let mut state = State::new(&tokens);
     let mut triples = Vec::new();
