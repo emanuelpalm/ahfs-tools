@@ -62,7 +62,7 @@ mod tests {
             )),
         ];
         let source = Source::new(texts);
-        let tree = Parser::parse(Lexer::analyze(source)).unwrap();
+        let tree = Parser::parse(lexer::analyze(source)).unwrap();
         let triples = tree.root();
         let token = |kind, range| {
             Token::new(kind, texts[0].get_region(range).unwrap())

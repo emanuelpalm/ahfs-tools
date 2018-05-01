@@ -14,21 +14,13 @@ use super::Tree;
 /// A [`Tree`](../struct.Tree.html) of [`Token`s](struct.Token.html).
 pub type TokenTree<'a> = Tree<'a, [Token<'a>]>;
 
-/// Lexical analyzer.
-///
-/// Transforms a set of source texts into an array of
-/// [`Token`s](struct.Token.html).
-pub struct Lexer;
-
-impl Lexer {
-    /// Creates a slice of `Tokens` from given `source`.
-    pub fn analyze<'a>(source: Source<'a>) -> TokenTree<'a> {
-        let mut tokens = Vec::new();
-        for text in source.texts() {
-            analyze_text(text, &mut tokens);
-        }
-        TokenTree::new(source, tokens)
+/// Creates a slice of `Tokens` from given `source`.
+pub fn analyze<'a>(source: Source<'a>) -> TokenTree<'a> {
+    let mut tokens = Vec::new();
+    for text in source.texts() {
+        analyze_text(text, &mut tokens);
     }
+    TokenTree::new(source, tokens)
 }
 
 macro_rules! next_or_break {
@@ -108,7 +100,7 @@ mod tests {
                 "D type Model\n{{{🤖}} c",
             )),
         ];
-        let tree = Lexer::analyze(Source::new(texts));
+        let tree = super::analyze(Source::new(texts));
         let tokens = tree.root();
 
         // Check token strings.
