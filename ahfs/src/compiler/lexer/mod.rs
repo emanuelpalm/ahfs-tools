@@ -8,7 +8,7 @@ pub use self::name::Name;
 pub use self::token::Token;
 
 use self::scanner::Scanner;
-use super::source::{Range, Region, Source, Text};
+use super::{Range, Region, Source, Text};
 use super::Tree;
 
 /// A [`Tree`](../struct.Tree.html) of [`Token`s](struct.Token.html).

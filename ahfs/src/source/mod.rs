@@ -1,15 +1,4 @@
 //! Various types and utilities related to managing source code texts.
-//!
-//! # Compiler Passes
-//!
-//! This module significantly contains the [`Source`][source] type, which is
-//! used to hold both a collection of source code texts and an arbitrary data
-//! structure created by analyzing its texts. The data structure, referred to as
-//! as the source _tree_, can be transformed using the
-//! [`Source::apply()`][apply] method by providing it with a _compiler pass_.
-//!
-//! [source]: struct.Source.html
-//! [apply]: struct.Source.html#method.apply
 
 mod error;
 mod line;

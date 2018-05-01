@@ -1,4 +1,4 @@
-use super::source::Source;
+use super::Source;
 
 pub struct Tree<'a, T: ? Sized> {
     source: Source<'a>,

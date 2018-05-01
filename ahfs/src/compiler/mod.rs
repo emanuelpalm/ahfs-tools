@@ -5,8 +5,9 @@
 
 pub mod lexer;
 pub mod parser;
-pub mod source;
 
 mod tree;
 
 pub use self::tree::Tree;
+
+use super::source::{Error, Range, Region, Result, Source, Text};

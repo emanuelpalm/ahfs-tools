@@ -7,7 +7,7 @@ pub use self::triple::Triple;
 
 use self::state::State;
 use super::lexer::{Name, Token, TokenTree};
-use super::source::{Error, Range, Region, Result, Source, Text};
+use super::{Error, Range, Region, Result, Text};
 use super::Tree;
 
 const TRIPLE_END: &'static [Name] = &[
@@ -48,8 +48,9 @@ impl Parser {
 
 #[cfg(test)]
 mod tests {
-    use super::super::source::Text;
     use super::super::lexer::Lexer;
+    use super::super::Text;
+    use super::super::Source;
     use super::*;
 
     #[test]
