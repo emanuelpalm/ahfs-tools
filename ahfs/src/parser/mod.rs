@@ -23,8 +23,37 @@ const WORD: &'static [Name] = &[
     Name::Word
 ];
 
-/// Attempts to parse given source code texts into boxed slice of
-/// [`Triple`s](struct.Triple.html).
+/// Parses given source code texts into boxed slice of [`Triple`s][tri].
+///
+/// # Syntax
+///
+/// A valid source code text contains only triples. A triple is three _words_,
+/// separated by whitespace, followed by an _end_ designator. The _end_
+/// designator can either be a simple semi-colon `;`, or curly braces containing
+/// a description of the triple. A _word_ may consist of any characters except
+/// for whitespace, `;` `{` or `}`. A description _end_ designator is closed by
+/// the same number of consecutive closing curly braces it was opened with,
+/// meaning that the opening and closing can be adjusted to allow patterns of
+/// curly braces to be used inside a description. There is no way to express
+/// comments ignored by the parser.
+///
+/// # Example
+///
+/// ```ahfs
+/// Orchestrator is: System;
+/// Orchestrator consumes: ServiceDiscovery {
+///     The ServiceDiscovery is consumed to allow the Orchestrator to make
+///     itself findable by other services.
+/// }
+/// Orchestrator produces: Orchestration {{
+///     As this description was opened with two consecutive `{` characters, it
+///     is not closed until it encounters two consecutive `}` characters. Any
+///     number of `{` can be used to open a description, as long as the same
+///     number of `}` are used to close it.
+/// }}
+/// ```
+///
+/// [tri]: struct.Triple.html
 pub fn parse<'a>(source: &Source<'a>) -> Result<'a, Box<[Triple<'a>]>> {
     let tokens = lexer::analyze(source);
     let mut state = State::new(&tokens);

@@ -3,8 +3,34 @@ use super::source::{Range, Region, Text};
 
 /// A specification triple.
 ///
-/// Contains [`Region`s](../source/struct.Region.html) for a `subject`, a
-/// `predicate`, an `object`, and an optional `description`.
+/// # Usage
+///
+/// Identifies a `subject`, a `predicate`, an `object` and an optional
+/// `description` within some [`Source`][src] code [`Text`][txt]. These fields
+/// are permitted to have any kinds of values, meaning it is up to the user of
+/// the type to interpret the meaning a given `Triple`. Generally, however, the
+/// `subject` should name an _entity_ being subject of the triple, the
+/// `object` should name an _entity_ associated with the `subject`, while the
+/// `predicate` identifies the nature of the association. The `description`, if
+/// available, describes the association in human language.
+///
+/// # Examples
+///
+/// The following are examples of potentially relevant triples in the syntax
+/// parsed by the library [`parse`][prs] function:
+///
+/// ```ahfs
+/// Orchestrator is: System;
+/// Orchestrator consumes: ServiceDiscovery {
+///     The ServiceDiscovery is consumed to allow the Orchestrator to make
+///     itself findable by other services.
+/// }
+/// Orchestrator produces: Orchestration;
+/// ```
+///
+/// [prs]: parser/fn.parse.html
+/// [src]: source/struct.Source.html
+/// [txt]: source/struct.Text.html
 #[derive(Debug, Eq, PartialEq)]
 pub struct Triple<'a> {
     text: &'a Text<'a>,
