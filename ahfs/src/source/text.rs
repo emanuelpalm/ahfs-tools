@@ -4,7 +4,7 @@ use super::{Range, Region};
 #[derive(Debug, Eq, PartialEq)]
 pub struct Text<'a> {
     name: &'a str,
-    body: &'a str,
+    body: Box<str>,
 }
 
 impl<'a> Text<'a> {
@@ -12,21 +12,21 @@ impl<'a> Text<'a> {
     #[inline]
     pub fn new<N, B>(name: N, body: B) -> Self
         where N: Into<&'a str>,
-              B: Into<&'a str>,
+              B: Into<Box<str>>,
     {
         Text { name: name.into(), body: body.into() }
     }
 
     /// `Text` name.
     #[inline]
-    pub fn name(&self) -> &'a str {
+    pub fn name(&self) -> &str {
         self.name
     }
 
     /// `Text` body.
     #[inline]
-    pub fn body(&self) -> &'a str {
-        self.body
+    pub fn body(&self) -> &str {
+        &self.body
     }
 
     /// Gets `&'a str` representing given `range` within this `Text`.
