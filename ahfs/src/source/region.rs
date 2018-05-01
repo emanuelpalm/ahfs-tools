@@ -68,3 +68,17 @@ impl<'a> fmt::Display for Region<'a> {
         Ok(())
     }
 }
+
+impl<'a> PartialEq<str> for Region<'a> {
+    #[inline]
+    fn eq(&self, other: &str) -> bool {
+        self.as_str() == other
+    }
+}
+
+impl<'a> PartialEq<Region<'a>> for str {
+    #[inline]
+    fn eq(&self, other: &Region<'a>) -> bool {
+        other == self
+    }
+}
