@@ -1,4 +1,4 @@
-use super::{Error, Name, Result, Token, TokenTree};
+use super::{Error, Name, Result, Token};
 
 /// A utility for reading well-defined [`Token`s][lex] sequences from an array.
 ///
@@ -16,10 +16,10 @@ use super::{Error, Name, Result, Token, TokenTree};
 pub struct State<'a: 'b, 'b>(RuleState<'a, 'b>);
 
 impl<'a: 'b, 'b> State<'a, 'b> {
-    /// Creates new `State` instance from given `tree` pointer.
+    /// Creates new `State` instance from given `tokens` pointer.
     #[inline]
-    pub fn new(tree: &'b TokenTree<'a>) -> Self {
-        State(RuleState { tree, offset: 0 })
+    pub fn new(tokens: &'b [Token<'a>]) -> Self {
+        State(RuleState { tokens, offset: 0 })
     }
 
     /// Whether or not all internal [`Token`s][lex] have been consumed.
@@ -27,7 +27,7 @@ impl<'a: 'b, 'b> State<'a, 'b> {
     /// [lex]: ../lexer/struct.Token.html
     #[inline]
     pub fn at_end(&self) -> bool {
-        self.0.offset >= self.0.tree.root().len()
+        self.0.offset >= self.0.tokens.len()
     }
 
     /// Applies given rule.
@@ -47,7 +47,7 @@ impl<'a: 'b, 'b> State<'a, 'b> {
 
 /// A tentative state, used while attempting to fulfill rules.
 pub struct RuleState<'a: 'b, 'b> {
-    tree: &'b TokenTree<'a>,
+    tokens: &'b [Token<'a>],
     offset: usize,
 }
 
@@ -56,15 +56,17 @@ impl<'a: 'b, 'b> RuleState<'a, 'b> {
     ///
     /// [lex]: ../lexer/struct.Token.html
     pub fn next_if(&mut self, names: &'b [Name]) -> Result<'a, Token<'a>> {
-        let token = match self.tree.root().get(self.offset) {
+        let token = match self.tokens.get(self.offset) {
             Some(token) => token.clone(),
             None => {
-                if let Some(region) = self.tree.source().end_region() {
-                    return Err(
+                return Err(self.tokens.last()
+                    .map(|token| {
+                        let region = token.region().clone();
                         Error::new("P001", "Unexpected source end.", region)
-                    );
-                }
-                return Err(Error::new("P000", "No known sources.", None));
+                    })
+                    .unwrap_or_else(|| {
+                        Error::new("P000", "No known sources.", None)
+                    }));
             }
         };
         if !names.contains(token.name()) {

@@ -1,6 +1,7 @@
-use super::{Token, Name, Range, Region, Text};
+use super::{Name, Token};
+use super::source::{Range, Region, Text};
 
-/// A parser triple.
+/// A specification triple.
 ///
 /// Contains [`Region`s](../source/struct.Region.html) for a `subject`, a
 /// `predicate`, an `object`, and an optional `description`.

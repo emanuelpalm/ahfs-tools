@@ -51,10 +51,4 @@ impl<'a> Text<'a> {
         }
         Some(unsafe { Region::new(self, range) })
     }
-
-    /// Constructs [`Region`](struct.Region.html) representing first byte after
-    /// end of this `Text`.
-    pub fn end_region(&'a self) -> Region<'a> {
-        unsafe { Region::new(self, self.body.len()..self.body.len()) }
-    }
 }

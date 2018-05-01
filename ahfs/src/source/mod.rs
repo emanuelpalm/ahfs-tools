@@ -39,11 +39,6 @@ impl<'a> Source<'a> {
     pub fn texts(&self) -> &'a [Text<'a>] {
         self.texts
     }
-
-    /// Gets `Region` representing first byte after end of last `Source` text.
-    pub fn end_region(&self) -> Option<Region<'a>> {
-        self.texts().last().map(|text| text.end_region())
-    }
 }
 
 #[cfg(test)]

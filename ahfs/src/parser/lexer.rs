@@ -1,26 +1,15 @@
 //! Lexical analysis utilities.
 
-mod name;
-mod scanner;
-mod token;
-
-pub use self::name::Name;
-pub use self::token::Token;
-
-use self::scanner::Scanner;
-use super::{Range, Region, Source, Text};
-use super::Tree;
-
-/// A [`Tree`](../struct.Tree.html) of [`Token`s](struct.Token.html).
-pub type TokenTree<'a> = Tree<'a, [Token<'a>]>;
+use super::scanner::Scanner;
+use super::{Name, Source, Text, Token};
 
 /// Creates a slice of `Tokens` from given `source`.
-pub fn analyze<'a>(source: Source<'a>) -> TokenTree<'a> {
+pub fn analyze<'a>(source: &Source<'a>) -> Box<[Token<'a>]> {
     let mut tokens = Vec::new();
     for text in source.texts() {
         analyze_text(text, &mut tokens);
     }
-    TokenTree::new(source, tokens)
+    tokens.into_boxed_slice()
 }
 
 macro_rules! next_or_break {
@@ -100,8 +89,8 @@ mod tests {
                 "D type Model\n{{{🤖}} c",
             )),
         ];
-        let tree = super::analyze(Source::new(texts));
-        let tokens = tree.root();
+        let source = Source::new(texts);
+        let tokens = super::analyze(&source);
 
         // Check token strings.
         assert_eq!(
