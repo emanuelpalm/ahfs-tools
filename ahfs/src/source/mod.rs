@@ -21,23 +21,23 @@ pub type Range = ops::Range<usize>;
 /// The result of a source-related compiler operation.
 pub type Result<'a, T> = result::Result<T, Error<'a>>;
 
-/// A collection of source code `texts`.
+/// A collection of source code [`Text`s](struct.Text.html).
 pub struct Source<'a> {
-    texts: &'a [Text<'a>],
+    texts: Box<[Text<'a>]>,
 }
 
 impl<'a> Source<'a> {
     /// Creates new `Source` from given `texts`.
     pub fn new<S>(texts: S) -> Self
-        where S: Into<&'a [Text<'a>]>
+        where S: Into<Box<[Text<'a>]>>
     {
         Source { texts: texts.into() }
     }
 
     /// `Source` texts.
     #[inline]
-    pub fn texts(&self) -> &'a [Text<'a>] {
-        self.texts
+    pub fn texts(&self) -> &[Text<'a>] {
+        &self.texts
     }
 }
 
@@ -47,7 +47,7 @@ mod tests {
 
     #[test]
     fn display() {
-        let texts: &[Text] = &[
+        let texts = vec![
             Text::new("alpha.ahs", concat!(
                 "A type System;\n",
                 "A consumes B;\r\n",

@@ -54,7 +54,7 @@ const WORD: &'static [Name] = &[
 /// ```
 ///
 /// [tri]: struct.Triple.html
-pub fn parse<'a>(source: &Source<'a>) -> Result<'a, Box<[Triple<'a>]>> {
+pub fn parse<'a>(source: &'a Source<'a>) -> Result<'a, Box<[Triple<'a>]>> {
     let tokens = lexer::analyze(source);
     let mut state = State::new(&tokens);
     let mut triples = Vec::new();
@@ -76,7 +76,7 @@ mod tests {
 
     #[test]
     fn parse() {
-        let texts: &[Text] = &[
+        let texts = vec![
             Text::new("alpha.ahs", concat!(
                 "A type System;\n",
                 "B type Service { Emojis 😜🤖💩! }",
@@ -85,7 +85,7 @@ mod tests {
         let source = Source::new(texts);
         let triples = super::parse(&source).unwrap();
         let token = |kind, range| {
-            Token::new(kind, texts[0].get_region(range).unwrap())
+            Token::new(kind, source.texts()[0].get_region(range).unwrap())
         };
         assert_eq!(triples.as_ref(), &[
             unsafe {

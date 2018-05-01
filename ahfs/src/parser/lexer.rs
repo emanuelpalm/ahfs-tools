@@ -4,7 +4,7 @@ use super::scanner::Scanner;
 use super::{Name, Source, Text, Token};
 
 /// Creates a slice of `Tokens` from given `source`.
-pub fn analyze<'a>(source: &Source<'a>) -> Box<[Token<'a>]> {
+pub fn analyze<'a>(source: &'a Source<'a>) -> Box<[Token<'a>]> {
     let mut tokens = Vec::new();
     for text in source.texts() {
         analyze_text(text, &mut tokens);
@@ -79,7 +79,7 @@ mod tests {
 
     #[test]
     fn analyze() {
-        let texts: &[Text] = &[
+        let texts = vec![
             Text::new("alpha.ahs", concat!(
                 "A type System;\n",
                 "B type Service{ # 😜🤖💩 }}",
