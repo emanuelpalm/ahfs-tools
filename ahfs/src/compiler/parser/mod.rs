@@ -21,29 +21,23 @@ const WORD: &'static [Name] = &[
 /// A [`Tree`](../struct.Tree.html) of [`Triple`s](struct.Triple.html).
 pub type ParseTree<'a> = Tree<'a, [Triple<'a>]>;
 
-/// [`Token`](../lexer/struct.Token.html) parser.
-///
 /// Transforms an array of source code Tokens into an array of
 /// [`Triple`s](struct.Triple.html).
-pub struct Parser;
-
-impl Parser {
-    pub fn parse<'a>(tokens: TokenTree<'a>) -> Result<'a, ParseTree<'a>> {
-        let mut triples = Vec::new();
-        {
-            let mut state = State::new(&tokens);
-            while !state.at_end() {
-                triples.push(state.apply(|state| {
-                    let subject = state.next_if(WORD)?;
-                    let predicate = state.next_if(WORD)?;
-                    let object = state.next_if(WORD)?;
-                    let end = state.next_if(TRIPLE_END)?;
-                    Ok(unsafe { Triple::new(subject, predicate, object, end) })
-                })?);
-            }
+pub fn parse<'a>(tokens: TokenTree<'a>) -> Result<'a, ParseTree<'a>> {
+    let mut triples = Vec::new();
+    {
+        let mut state = State::new(&tokens);
+        while !state.at_end() {
+            triples.push(state.apply(|state| {
+                let subject = state.next_if(WORD)?;
+                let predicate = state.next_if(WORD)?;
+                let object = state.next_if(WORD)?;
+                let end = state.next_if(TRIPLE_END)?;
+                Ok(unsafe { Triple::new(subject, predicate, object, end) })
+            })?);
         }
-        Ok(ParseTree::new(tokens, triples))
     }
+    Ok(ParseTree::new(tokens, triples))
 }
 
 #[cfg(test)]
@@ -62,7 +56,7 @@ mod tests {
             )),
         ];
         let source = Source::new(texts);
-        let tree = Parser::parse(lexer::analyze(source)).unwrap();
+        let tree = super::parse(lexer::analyze(source)).unwrap();
         let triples = tree.root();
         let token = |kind, range| {
             Token::new(kind, texts[0].get_region(range).unwrap())
