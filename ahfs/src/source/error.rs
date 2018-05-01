@@ -1,4 +1,5 @@
 use std::fmt;
+use std::io;
 use super::Region;
 
 /// A source-related compiler error.
@@ -50,5 +51,21 @@ impl<'a> fmt::Display for Error<'a> {
             write!(f, "\n{}", region)?;
         }
         Ok(())
+    }
+}
+
+impl<'a> From<io::Error> for Error<'a> {
+    fn from(error: io::Error) -> Self {
+        let code = match error.kind() {
+            io::ErrorKind::NotFound => "F001",
+            io::ErrorKind::PermissionDenied => "F002",
+            io::ErrorKind::Interrupted => "F003",
+            _ => "F000",
+        };
+        let description = format!(
+            "I/O failed; {}.",
+            ::std::error::Error::description(&error)
+        );
+        Error::new(code, description, None)
     }
 }
