@@ -1,3 +1,7 @@
+use std::fs;
+use std::io;
+use std::io::Read;
+use std::path::Path;
 use super::{Range, Region};
 
 /// A named source code text.
@@ -15,6 +19,20 @@ impl<'a> Text<'a> {
               B: Into<Box<str>>,
     {
         Text { name: name.into(), body: body.into() }
+    }
+
+    /// Reads contents of file at `path` into a source `Text`.
+    pub fn read(path: &'a Path) -> io::Result<Text<'a>> {
+        let name = path.to_str().ok_or_else(|| {
+            io::Error::new(
+                io::ErrorKind::Other,
+                format!("Path not valid unicode {}", path.to_string_lossy()),
+            )
+        })?;
+        let mut file = fs::File::open(path)?;
+        let mut body = String::new();
+        file.read_to_string(&mut body)?;
+        Ok(Self::new(name, body))
     }
 
     /// `Text` name.
