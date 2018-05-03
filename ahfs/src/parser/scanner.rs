@@ -1,4 +1,5 @@
-use super::{Name, Region, Text, Token};
+use super::{Name, Token};
+use ::source::{Region, Text};
 
 /// A utility for creating [`Token`s](struct.Token.html) from source texts.
 ///
@@ -69,7 +70,6 @@ impl<'a> Scanner<'a> {
 
 #[cfg(test)]
 mod tests {
-    use super::super::Text;
     use super::*;
 
     #[test]

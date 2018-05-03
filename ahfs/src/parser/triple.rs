@@ -1,5 +1,5 @@
 use super::{Name, Token};
-use super::source::{Range, Region, Text};
+use ::source::{Range, Region, Text};
 
 /// A specification triple.
 ///
@@ -20,12 +20,12 @@ use super::source::{Range, Region, Text};
 /// parsed by the library [`parse`][prs] function:
 ///
 /// ```ahfs
-/// Orchestrator is: System;
-/// Orchestrator consumes: ServiceDiscovery {
-///     The ServiceDiscovery is consumed to allow the Orchestrator to make
-///     itself findable by other services.
+/// Orchestrator type System;
+/// Orchestrator consumes ServiceDiscovery {
+///     The ServiceDiscovery service is consumed to allow the Orchestrator to
+///     make itself findable by other services.
 /// }
-/// Orchestrator produces: Orchestration;
+/// Orchestrator produces Orchestration;
 /// ```
 ///
 /// [prs]: parser/fn.parse.html

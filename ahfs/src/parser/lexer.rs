@@ -1,7 +1,7 @@
 //! Lexical analysis utilities.
 
-use super::scanner::Scanner;
-use super::{Name, Source, Text, Token};
+use super::{Name, Scanner, Token};
+use ::source::{Source, Text};
 
 /// Creates a slice of `Tokens` from given `source`.
 pub fn analyze<'a>(source: &'a Source) -> Box<[Token<'a>]> {

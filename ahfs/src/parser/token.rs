@@ -1,4 +1,5 @@
-use super::{Name, Range, Region};
+use super::Name;
+use ::source::{Range, Region};
 
 /// Identifies a typed [`Region`][reg] of some [`Source`][src] [`Text`][txt].
 ///

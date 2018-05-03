@@ -1,4 +1,5 @@
-use super::{Error, Name, Result, Token};
+use super::{Name, Token};
+use ::source::{Error, Result};
 
 /// A utility for reading well-defined [`Token`s][lex] sequences from an array.
 ///
