@@ -1,4 +1,3 @@
-use super::{Name, Token};
 use ::source::{Range, Region, Text};
 
 /// A specification triple.
@@ -41,25 +40,30 @@ pub struct Triple<'a> {
 }
 
 impl<'a> Triple<'a> {
-    /// It is the responsibility of the caller to ensure given
-    /// [`Range`s](type.Range.html) (`subject`, `predicate`, `object`) refer
-    /// valid UTF-8 bounds within the same [`Text`](../source/struct.Text.html).
+    /// It is the responsibility of the caller to ensure given [`Ranges`][ran]
+    /// (`subject`, `predicate`, `object`, `description`) all refer to valid
+    /// UTF-8 bounds within the given [`text`][txt].
+    ///
+    /// [ran]: source/type.Range.html
+    /// [txt]: source/struct.Text.html
     #[doc(hidden)]
     #[inline]
-    pub unsafe fn new<R, L>(subject: R, predicate: R, object: R, end: L) -> Self
+    pub unsafe fn new<R, L>(
+        text: &'a Text,
+        subject: R,
+        predicate: R,
+        object: R,
+        description: L,
+    ) -> Self
         where R: Into<Range>,
-              L: Into<Token<'a>>
+              L: Into<Option<Range>>
     {
-        let end = end.into();
         Triple {
-            text: end.region().text(),
+            text,
             subject: subject.into(),
             predicate: predicate.into(),
             object: object.into(),
-            description: match *end.name() {
-                Name::Description => end.into(),
-                _ => 0..0,
-            },
+            description: description.into().unwrap_or(0..0),
         }
     }
 
