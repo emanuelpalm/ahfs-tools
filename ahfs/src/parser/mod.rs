@@ -8,18 +8,18 @@ mod scanner;
 mod state;
 mod token;
 
-pub use self::name::Name;
-pub use self::token::Token;
-
+use self::name::Name;
+use self::scanner::Scanner;
 use self::state::State;
-use super::source::{Error, Range, Region, Result, Source, Text};
-use super::Triple;
+use self::token::Token;
+use ::source::{Result, Source};
+use ::Triple;
 
 const TRIPLE_END: &'static [Name] = &[
     Name::Semicolon,
     Name::Description
 ];
-const WORD: &'static [Name] = &[
+const TRIPLE_WORD: &'static [Name] = &[
     Name::Word
 ];
 
@@ -27,7 +27,7 @@ const WORD: &'static [Name] = &[
 ///
 /// # Syntax
 ///
-/// A valid source code text contains only triples. A triple is three _words_,
+/// A valid source code text contains only triples. A triple is three  _words_,
 /// separated by whitespace, followed by an _end_ designator. The _end_
 /// designator can either be a simple semi-colon `;`, or curly braces containing
 /// a description of the triple. A _word_ may consist of any characters except
@@ -40,16 +40,16 @@ const WORD: &'static [Name] = &[
 /// # Example
 ///
 /// ```ahfs
-/// Orchestrator is: System;
-/// Orchestrator consumes: ServiceDiscovery {
-///     The ServiceDiscovery is consumed to allow the Orchestrator to make
-///     itself findable by other services.
+/// Orchestrator type System;
+/// Orchestrator consumes ServiceDiscovery {
+///     The service is consumed to allow the Orchestrator to make itself
+///     findable by other services.
 /// }
-/// Orchestrator produces: Orchestration {{
-///     As this description was opened with two consecutive `{` characters, it
-///     is not closed until it encounters two consecutive `}` characters. Any
-///     number of `{` can be used to open a description, as long as the same
-///     number of `}` are used to close it.
+/// Orchestrator produces Orchestration {{
+///     As this description was opened with two consecutive `{` characters,
+///     it is not closed until it encounters two consecutive `}` characters.
+///     Any number of `{` can be used to open a description, as long as the
+///     same number of `}` are used to close it.
 /// }}
 /// ```
 ///
@@ -60,11 +60,24 @@ pub fn parse<'a>(source: &'a Source) -> Result<'a, Box<[Triple<'a>]>> {
     let mut triples = Vec::new();
     while !state.at_end() {
         triples.push(state.apply(|state| {
-            let subject = state.next_if(WORD)?;
-            let predicate = state.next_if(WORD)?;
-            let object = state.next_if(WORD)?;
+            let subject = state.next_if(TRIPLE_WORD)?;
+            let predicate = state.next_if(TRIPLE_WORD)?;
+            let object = state.next_if(TRIPLE_WORD)?;
             let end = state.next_if(TRIPLE_END)?;
-            Ok(unsafe { Triple::new(subject, predicate, object, end) })
+            Ok(unsafe {
+                Triple::new(
+                    subject.region().text(),
+                    subject,
+                    predicate,
+                    object,
+                    match end.name() {
+                        &Name::Description => {
+                            Some(end.region().range().clone())
+                        },
+                        _ => None,
+                    }
+                )
+            })
         })?);
     }
     Ok(triples.into_boxed_slice())
@@ -72,6 +85,7 @@ pub fn parse<'a>(source: &'a Source) -> Result<'a, Box<[Triple<'a>]>> {
 
 #[cfg(test)]
 mod tests {
+    use ::source::Text;
     use super::*;
 
     #[test]
@@ -84,22 +98,10 @@ mod tests {
         ];
         let source = Source::new(texts);
         let triples = super::parse(&source).unwrap();
-        let token = |kind, range| {
-            Token::new(kind, source.texts()[0].get_region(range).unwrap())
-        };
+        let text = &source.texts()[0];
         assert_eq!(triples.as_ref(), &[
-            unsafe {
-                Triple::new(
-                    0..1, 2..6, 7..13,
-                    token(Name::Semicolon, 13..14),
-                )
-            },
-            unsafe {
-                Triple::new(
-                    15..16, 17..21, 22..29,
-                    token(Name::Description, 30..54),
-                )
-            },
+            unsafe { Triple::new(text, 0..1, 2..6, 7..13, None) },
+            unsafe { Triple::new(text, 15..16, 17..21, 22..29, Some(30..54)) },
         ]);
     }
 }
