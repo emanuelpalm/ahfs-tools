@@ -56,20 +56,20 @@ impl Text {
         &self.body
     }
 
-    /// Gets `&'a str` representing given `range` within this `Text`.
+    /// Creates new `Text` containing copy of given `range` within this `Text`.
     ///
     /// Returns `None` if `range` is out of bounds.
-    pub fn get<R>(&self, range: R) -> Option<&str>
-        where R: Into<Range>
+    pub fn extract<R>(&self, range: R) -> Option<Text>
+        where R: Into<Range>,
     {
-        self.get_region(range).map(|region| region.as_str())
+        self.get(range).map(|body| Self::new(self.name(), body.as_str()))
     }
 
     /// Gets [`Region`](struct.Region.html) representing given `range` within
     /// this `Text`.
     ///
     /// Returns `None` if `range` is out of bounds.
-    pub fn get_region<'a, R>(&'a self, range: R) -> Option<Region<'a>>
+    pub fn get<'a, R>(&'a self, range: R) -> Option<Region<'a>>
         where R: Into<Range>
     {
         let range = range.into();

@@ -1,27 +1,25 @@
 //! Various types and utilities related to managing source code texts.
 
-mod error;
+mod excerpt;
 mod line;
 mod lines;
+mod line_iter;
 mod region;
 mod text;
 
-pub use self::error::Error;
+pub use self::excerpt::Excerpt;
 pub use self::line::Line;
 pub use self::lines::Lines;
+pub use self::line_iter::LineIter;
 pub use self::region::Region;
 pub use self::text::Text;
 
 use std::io;
 use std::ops;
 use std::path::PathBuf;
-use std::result;
 
 /// Refers to a range of bytes within some arbitrary `str`.
 pub type Range = ops::Range<usize>;
-
-/// The result of a source-related compiler operation.
-pub type Result<'a, T> = result::Result<T, Error<'a>>;
 
 /// A collection of source code [`Text`s](struct.Text.html).
 pub struct Source {
@@ -100,7 +98,7 @@ mod tests {
         let get = |index: usize, range: Range| {
             format!("{}", source.texts()
                 .get(index).unwrap()
-                .get_region(range)
+                .get(range)
                 .unwrap())
         };
         {

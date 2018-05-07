@@ -5,8 +5,8 @@ pub mod parser;
 pub mod project;
 pub mod source;
 
-mod error_code;
+mod error;
 mod triple;
 
-pub use self::error_code::ErrorCode;
+pub use self::error::Error;
 pub use self::triple::Triple;

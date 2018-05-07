@@ -2,18 +2,24 @@
 //!
 //! This module contains tools useful for parsing specification source texts.
 
+mod error;
 mod lexer;
 mod name;
 mod scanner;
 mod state;
 mod token;
 
+pub use self::error::Error;
+
 use self::name::Name;
 use self::scanner::Scanner;
 use self::state::State;
 use self::token::Token;
-use ::source::{Result, Source};
+use std::result;
+use ::source::Source;
 use ::Triple;
+
+pub type Result<T> = result::Result<T, Error>;
 
 const TRIPLE_END: &'static [Name] = &[
     Name::Semicolon,
@@ -54,7 +60,7 @@ const TRIPLE_WORD: &'static [Name] = &[
 /// ```
 ///
 /// [tri]: struct.Triple.html
-pub fn parse<'a>(source: &'a Source) -> Result<'a, Box<[Triple<'a>]>> {
+pub fn parse<'a>(source: &'a Source) -> Result<Box<[Triple<'a>]>> {
     let tokens = lexer::analyze(source);
     let mut state = State::new(&tokens);
     let mut triples = Vec::new();
