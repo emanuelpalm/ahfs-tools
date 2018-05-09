@@ -16,9 +16,10 @@ use self::scanner::Scanner;
 use self::state::State;
 use self::token::Token;
 use std::result;
+use ::graph::Triple;
 use ::source::Source;
-use ::Triple;
 
+/// The `Result` of parsing.
 pub type Result<T> = result::Result<T, Error>;
 
 const TRIPLE_END: &'static [Name] = &[

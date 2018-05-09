@@ -30,7 +30,7 @@ use ::source::{Range, Region, Text};
 /// [prs]: parser/fn.parse.html
 /// [src]: source/struct.Source.html
 /// [txt]: source/struct.Text.html
-#[derive(Debug, Eq, PartialEq)]
+#[derive(Clone, Debug, Eq, PartialEq)]
 pub struct Triple<'a> {
     text: &'a Text,
     subject: Range,
