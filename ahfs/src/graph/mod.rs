@@ -19,14 +19,23 @@ pub trait Graph<'a, 'b: 'a> {
     type Query: Query<'a, 'b>;
 
     /// Creates new object useful for making a query against this `Graph`.
-    fn query(&self) -> Self::Query;
+    fn query(&'a self) -> Self::Query;
 }
 
-impl<'a, 'b: 'a> Graph<'a, 'b> for &'a [Triple<'b>] {
+impl<'a, 'b: 'a> Graph<'a, 'b> for [Triple<'b>] {
     type Query = QueryIter<'a, 'b, Iter<'a, Triple<'b>>>;
 
     #[inline]
-    fn query(&self) -> Self::Query {
+    fn query(&'a self) -> Self::Query {
+        QueryIter::new(self.iter())
+    }
+}
+
+impl<'a, 'b: 'a> Graph<'a, 'b> for Box<[Triple<'b>]> {
+    type Query = QueryIter<'a, 'b, Iter<'a, Triple<'b>>>;
+
+    #[inline]
+    fn query(&'a self) -> Self::Query {
         QueryIter::new(self.iter())
     }
 }
