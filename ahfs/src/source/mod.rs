@@ -78,6 +78,13 @@ impl Source {
     }
 }
 
+impl From<Box<str>> for Source {
+    #[inline]
+    fn from(body: Box<str>) -> Self {
+        Source::new(vec![Text::new("<string>", body)])
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
