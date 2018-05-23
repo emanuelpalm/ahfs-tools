@@ -81,7 +81,7 @@ mod tests {
 
     #[test]
     fn create_and_locate() {
-        let path: PathBuf = "project".into();
+        let path: PathBuf = ".test-project-folder-0".into();
         let version = Version::new(
             meta::VERSION_MAJOR,
             meta::VERSION_MINOR,
