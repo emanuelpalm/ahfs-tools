@@ -25,13 +25,7 @@ pub enum Error {
 
 impl fmt::Display for Error {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(f, concat!(
-            str_color!( red: "error["),
-            str_color!(none: "{}"),
-            str_color!( red: "]"),
-            str_color!(none: ":")),
-               ::Error::code(self))?;
-
+        ::ErrorCode::fmt(self, f)?;
         match *self {
             Error::NoSource => write!(f, "No known sources."),
             Error::UnexpectedSourceEnd { ref excerpt, expected } => {
@@ -78,8 +72,8 @@ impl error::Error for Error {
     }
 }
 
-impl ::Error for Error {
-    fn code(&self) -> &'static str {
+impl ::ErrorCode for Error {
+    fn error_code(&self) -> &'static str {
         match *self {
             Error::NoSource => "P001",
             Error::UnexpectedSourceEnd { .. } => "P002",

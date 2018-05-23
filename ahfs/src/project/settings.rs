@@ -1,29 +1,47 @@
-use std::collections::HashMap;
-use std::fs::File;
-use std::io;
-use std::io::Read;
-use std::path::Path;
+use std::path::{Path, PathBuf};
+use super::{Error, Version};
+use ::error::Result;
+use ::graph::{Graph, Query};
+use ::source::Source;
 
 pub struct Settings {
     path: Box<Path>,
-    data: HashMap<Box<str>, Box<str>>,
+    ahfs_version: Version,
 }
 
 impl Settings {
-    pub fn read<P>(path: P) -> io::Result<Settings>
-        where P: Into<Box<Path>>,
+    pub fn read<P>(path: P) -> Result<Settings>
+        where P: Into<PathBuf>,
     {
         let path = path.into();
-        let mut source = String::new();
-        File::open(&path)?.read_to_string(&mut source)?;
-        Ok(Settings { // TODO: Parse key:value pairs directly. No hash map!
-            path,
-            data: source.lines()
-                .filter_map(|line| {
-                    let (key, value) = line.split_at(line.find(":")?);
-                    Some((key.into(), value.into()))
-                })
-                .collect(),
+        let source = Source::read_file(path.clone())?;
+        let triples = ::parser::parse(&source)?;
+
+        let ahfs_version_obj = triples.query()
+            .subject("Project")
+            .predicate("ahfs.version")
+            .next()
+            .ok_or(Error::AhfsVersionMissing)?
+            .object();
+        let ahfs_version_opt = Version::parse(ahfs_version_obj.as_str());
+        let ahfs_version = match ahfs_version_opt {
+            Some(v) => v,
+            None => {
+                return Err(Box::new(Error::AhfsVersionInvalid {
+                    excerpt: ahfs_version_obj.into()
+                }));
+            }
+        };
+        if ahfs_version.major() != ::meta::VERSION_MAJOR ||
+            ahfs_version.minor() > ::meta::VERSION_MINOR {
+            return Err(Box::new(Error::AhfsVersionIncompatible {
+                excerpt: ahfs_version_obj.into(),
+            }));
+        }
+
+        Ok(Settings {
+            path: path.into(),
+            ahfs_version: ahfs_version.into(),
         })
     }
 }

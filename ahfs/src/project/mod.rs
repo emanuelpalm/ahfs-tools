@@ -3,13 +3,18 @@
 //! This module contains tools useful for managing a folder containing a
 //! specification project.
 
+mod error;
 mod settings;
+mod version;
 
+pub use self::error::Error;
 pub use self::settings::Settings;
+pub use self::version::Version;
 
 use std::fs;
 use std::io;
 use std::path::{Path, PathBuf};
+use ::error::Result;
 
 pub struct Project {
     root: Box<Path>,
@@ -17,7 +22,7 @@ pub struct Project {
 }
 
 impl Project {
-    pub fn create<P>(path: P) -> io::Result<Project>
+    pub fn create<P>(path: P) -> Result<Project>
         where P: Into<PathBuf>
     {
         let mut path = path.into();
@@ -27,7 +32,7 @@ impl Project {
         Self::read(path)
     }
 
-    pub fn locate<P>(path: P) -> io::Result<Project>
+    pub fn locate<P>(path: P) -> Result<Project>
         where P: Into<PathBuf>
     {
         let mut path = path.into();
@@ -39,13 +44,14 @@ impl Project {
                 break;
             }
             if !path.pop() {
-                return Err(io::ErrorKind::NotFound.into());
+                let err: io::Error = io::ErrorKind::NotFound.into();
+                return Err(err.into());
             }
         }
         Self::read(path)
     }
 
-    fn read<P>(root: P) -> io::Result<Project>
+    fn read<P>(root: P) -> Result<Project>
         where P: Into<Box<Path>>
     {
         let root = root.into();
