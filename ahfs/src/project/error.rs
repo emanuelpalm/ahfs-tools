@@ -2,14 +2,18 @@ use std::error;
 use std::fmt;
 use ::source::Excerpt;
 
+/// A project-related error.
 #[derive(Debug)]
 pub enum Error {
+    /// Project AHFS version incompatible with current AHFS version.
     AhfsVersionIncompatible {
         excerpt: Excerpt,
     },
+    /// Project AHFS version indicator is invalid.
     AhfsVersionInvalid {
         excerpt: Excerpt,
     },
+    /// Project contains no AHFS version indicator.
     AhfsVersionMissing,
 }
 
