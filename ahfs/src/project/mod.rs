@@ -15,7 +15,6 @@ use std::fs;
 use std::io;
 use std::path::{Path, PathBuf};
 use ::error::Result;
-use ::meta;
 
 /// Represents an AHFS project.
 pub struct Project {
@@ -78,6 +77,7 @@ impl Project {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use ::meta;
 
     #[test]
     fn create_and_locate() {
