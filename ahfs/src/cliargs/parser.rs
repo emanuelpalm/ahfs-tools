@@ -1,3 +1,4 @@
+use std::fmt;
 use super::{Result, Rule, Error};
 
 /// A description of how command line arguments are to be parsed.
@@ -24,5 +25,15 @@ impl<'a> Parser<'a> {
             }
         }
         Err(Error::ArgUnknown(args[0].clone()))
+    }
+}
+
+impl<'a> fmt::Display for Parser<'a> {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        writeln!(f, "{}\n\nCOMMANDS:\n", self.description)?;
+        for rule in self.rules {
+            writeln!(f, "{}", rule)?;
+        }
+        Ok(())
     }
 }

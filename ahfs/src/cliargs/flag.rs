@@ -1,5 +1,6 @@
 use std::cell::Cell;
 use std::error;
+use std::fmt;
 use std::rc::Rc;
 use std::result;
 use std::str::FromStr;
@@ -18,6 +19,21 @@ pub struct Flag {
 
     /// Reference to [`FlagCell`](struct.FlagCell.html).
     pub out: FlagOut,
+}
+
+impl fmt::Display for Flag {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        if let Some(short) = self.short {
+            write!(f, "-{} ", short)?;
+        } else {
+            f.write_str("\t")?;
+        }
+        write!(f, "--{}", self.long)?;
+        if let Some(value_name) = self.out.name {
+            write!(f, "={}", value_name)?;
+        }
+        write!(f, "\t{}", self.description)
+    }
 }
 
 /// Holds the value of a parsed command line flag.

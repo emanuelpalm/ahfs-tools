@@ -22,29 +22,41 @@ pub enum Error {
 
 impl error::Error for Error {
     fn description(&self) -> &str {
-        match self {
-            &Error::ArgUnknown(_) => "Unknown argument encountered",
-            &Error::FlagUnknown(_) => "Unknown flag encountered",
-            &Error::FlagUnexpected(_) => "Flag not expected",
-            &Error::FlagValueInvalid { .. } => "Flag value invalid"
+        match *self {
+            Error::ArgUnknown(_) => "Unknown argument encountered",
+            Error::FlagUnknown(_) => "Unknown flag encountered",
+            Error::FlagUnexpected(_) => "Flag not expected",
+            Error::FlagValueInvalid { .. } => "Flag value invalid",
+        }
+    }
+}
+
+impl ::ErrorCode for Error {
+    fn error_code(&self) -> &'static str {
+        match *self {
+            Error::ArgUnknown(_) => "C001",
+            Error::FlagUnknown(_) => "C002",
+            Error::FlagUnexpected(_) => "C003",
+            Error::FlagValueInvalid { .. } => "C004",
         }
     }
 }
 
 impl fmt::Display for Error {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        match self {
-            &Error::ArgUnknown(ref arg) => {
-                write!(f, "Unknown argument `{}`", arg)
-            },
-            &Error::FlagUnknown(ref flag) => {
-                write!(f, "Unknown flag `{}`", flag)
-            },
-            &Error::FlagUnexpected(ref flag) => {
-                write!(f, "Unexpected flag `{}`", flag)
-            },
-            &Error::FlagValueInvalid { ref flag, ref cause } => {
-                write!(f, "Invalid flag value `{}`, reason: {}", flag, cause)
+        ::ErrorCode::fmt(self, f)?;
+        match *self {
+            Error::ArgUnknown(ref arg) => {
+                write!(f, " Unknown argument `{}`.", arg)
+            }
+            Error::FlagUnknown(ref flag) => {
+                write!(f, " Unknown flag `{}`.", flag)
+            }
+            Error::FlagUnexpected(ref flag) => {
+                write!(f, " Unexpected flag `{}`.", flag)
+            }
+            Error::FlagValueInvalid { ref flag, ref cause } => {
+                write!(f, " Invalid flag value `{}`, reason:\n{}", flag, cause)
             }
         }
     }
