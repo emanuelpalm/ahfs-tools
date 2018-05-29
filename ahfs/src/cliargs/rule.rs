@@ -1,25 +1,42 @@
 use super::{Error, Flag, Result};
 
+/// A command line argument parsing rule.
 pub enum Rule<'a> {
+    /// A named action with associated flags.
     Action {
+        /// Command line name, used to invoke action.
         name: &'static str,
+
+        /// Human-readable description.
         description: &'static str,
+
+        /// Any flags associated with action.
         flags: &'a [Flag],
-        on_select: fn(&[String]),
+
+        /// Function called if action is invoked.
+        callback: &'a Fn(&[String]),
     },
+    /// A named submenu.
     Menu {
+        /// Command line name, used to select menu.
         name: &'static str,
+
+        /// Human-readable description.
         description: &'static str,
+
+        /// Menu items.
         items: &'a [Rule<'a>],
     },
 }
 
 impl<'a> Rule<'a> {
+    /// Tries to apply rule to given `args`.
+    #[doc(hidden)]
     pub fn try_args(&self, args: &[String]) -> Result<bool> {
         if let Some((first, rest)) = args.split_first() {
             // TODO: Check if flag ...
             match self {
-                &Rule::Action { name, flags, on_select, .. } => {
+                &Rule::Action { name, flags, callback, .. } => {
                     if first != name {
                         return Ok(false);
                     }
@@ -30,7 +47,7 @@ impl<'a> Rule<'a> {
                         let (flag, value) = pair?;
                         flag.out.write(value)?;
                     }
-                    (on_select)(&args[offset..]);
+                    (callback)(&args[offset..]);
                     return Ok(true);
                 }
                 &Rule::Menu { name, items, .. } => {
