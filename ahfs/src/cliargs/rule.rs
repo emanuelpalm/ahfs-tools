@@ -25,8 +25,14 @@ pub enum Rule<'a> {
         /// Human-readable description.
         description: &'static str,
 
+        /// Header of items menu.
+        items_header: &'static str,
+
         /// Menu items.
         items: &'a [Rule<'a>],
+
+        /// Function called if menu is invoked without an item.
+        callback: &'a Fn(),
     },
 }
 
@@ -43,7 +49,7 @@ impl<'a> Rule<'a> {
                     if first != name {
                         return Ok(false);
                     }
-                    let mut offset = 0;
+                    let mut offset = 1;
                     for pair in ArgFlagIter::new(rest, flags) {
                         offset += 1;
                         let (flag, value) = pair?;
@@ -52,15 +58,21 @@ impl<'a> Rule<'a> {
                     (callback)(&args[offset..]);
                     return Ok(true);
                 }
-                &Rule::Menu { name, items, .. } => {
+                &Rule::Menu { name, items, callback, .. } => {
                     if first != name {
                         return Ok(false);
+                    }
+                    if rest.len() == 0 {
+                        (callback)();
+                        return Ok(true);
                     }
                     for rule in items {
                         if rule.try_args(rest)? {
                             return Ok(true);
                         }
                     }
+                    let arg = format!("{} {}", first, rest[0]);
+                    return Err(Error::ArgUnknown(arg));
                 }
             }
         }
@@ -72,24 +84,29 @@ impl<'a> fmt::Display for Rule<'a> {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match self {
             &Rule::Action { name, description, flags, .. } => {
-                writeln!(f, "{}\n    {}\n", name, description)?;
+                writeln!(f, "{}\n    {}", name, description)?;
                 if flags.len() > 0 {
+                    writeln!(f)?;
                     for flag in flags {
-                        write!(f, "    {}\n", flag)?;
+                        writeln!(f, "    {}", flag)?;
                     }
                 }
             }
-            &Rule::Menu { name, description, items } => {
-                write!(f, "{}\n    {}\n\n        COMMANDS:\n",
-                       name, description)?;
-                for item in items {
-                    let (name, description) = match *item {
-                        Rule::Action { name, description, .. } |
-                        Rule::Menu { name, description, .. } => {
-                            (name, description)
-                        }
-                    };
-                    write!(f, "    \t{}\t    {}\n", name, description)?;
+            &Rule::Menu { name, description, items_header, items, .. } => {
+                writeln!(f, "{}\n    {}", name, description)?;
+                if items.len() > 0 {
+                    writeln!(f, "\n    {}", items_header)?;
+                    for item in items {
+                        let (name, description) = match *item {
+                            Rule::Action { name, description, .. } |
+                            Rule::Menu { name, description, .. } => {
+                                (name, description)
+                            }
+                        };
+                        writeln!(f, "        {}{:offset$}    {}",
+                                 name, "", description,
+                                 offset = 18usize.saturating_sub(name.len()))?;
+                    }
                 }
             }
         }

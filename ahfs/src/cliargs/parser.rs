@@ -30,9 +30,9 @@ impl<'a> Parser<'a> {
 
 impl<'a> fmt::Display for Parser<'a> {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        writeln!(f, "{}\n\nCOMMANDS:\n", self.description)?;
+        writeln!(f, "{}", self.description)?;
         for rule in self.rules {
-            writeln!(f, "{}", rule)?;
+            write!(f, "\n{}", rule)?;
         }
         Ok(())
     }

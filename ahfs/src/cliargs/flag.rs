@@ -24,15 +24,18 @@ pub struct Flag {
 impl fmt::Display for Flag {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         if let Some(short) = self.short {
-            write!(f, "-{} ", short)?;
+            write!(f, "-{:2} ", short)?;
         } else {
-            f.write_str("\t")?;
+            f.write_str("    ")?;
         }
+        let mut len = self.long.len();
         write!(f, "--{}", self.long)?;
         if let Some(value_name) = self.out.name {
             write!(f, "={}", value_name)?;
+            len += 1 + value_name.len();
         }
-        write!(f, "\t{}", self.description)
+        write!(f, "{:offset$} {}",
+               "", self.description, offset = 19usize.saturating_sub(len))
     }
 }
 
