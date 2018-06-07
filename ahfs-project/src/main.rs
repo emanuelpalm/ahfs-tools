@@ -1,7 +1,8 @@
 extern crate ahfs;
 
+mod app;
+
 use ahfs::cliargs;
-use ahfs::project::Project;
 use std::env;
 use std::process;
 
@@ -23,10 +24,7 @@ fn main() {
                         out: cliargs::FlagOut::new(&ignore_if_exists),
                     }
                 ],
-                callback: &|_args| {
-                    new(ignore_if_exists.take().unwrap_or(false));
-                    process::exit(0);
-                },
+                callback: &|args| app::new(args, ignore_if_exists.take_or(false)),
             },
             cliargs::Rule::Menu {
                 name: "status",
@@ -37,16 +35,10 @@ fn main() {
                         name: "ahfs-version",
                         description: "Display only AHFS compatibility version.",
                         flags: &[],
-                        callback: &|_args| {
-                            status_ahfs_version(None);
-                            process::exit(0);
-                        },
+                        callback: &|_args| app::status(app::Status::AhfsVersion),
                     }
                 ],
-                callback: &|| {
-                    status();
-                    process::exit(0);
-                },
+                callback: &|| app::status(app::Status::Summary),
             },
             cliargs::Rule::Action {
                 name: "help",
@@ -66,16 +58,4 @@ fn main() {
         process::exit(1)
     }
     println!("{}", cli);
-}
-
-fn new(ignore_if_exists: bool) {
-    println!("Hello! {}", ignore_if_exists);
-}
-
-fn status() {
-    status_ahfs_version(None);
-}
-
-fn status_ahfs_version(_project: Option<Project>) {
-
 }

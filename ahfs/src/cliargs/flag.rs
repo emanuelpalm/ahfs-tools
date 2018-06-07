@@ -54,6 +54,12 @@ impl<T: FromStr> FlagCell<T> {
     pub fn take(&self) -> Option<T> {
         self.0.take()
     }
+
+    /// Takes the value of the cell, or provides `def` if not set.
+    #[inline]
+    pub fn take_or(&self, def: T) -> T {
+        self.take().unwrap_or(def)
+    }
 }
 
 /// A reference to a [`FlagCell`](struct.FlagCell.html).

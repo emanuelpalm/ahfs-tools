@@ -20,7 +20,7 @@ pub trait ErrorCode: error::Error {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         write!(f, concat!(
             str_color!( red: "error[{}]"),
-            str_color!(none: ":")),
+            str_color!(none: ": ")),
                self.error_code())
     }
 }

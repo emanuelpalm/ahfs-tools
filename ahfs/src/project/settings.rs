@@ -25,7 +25,11 @@ impl Settings {
             meta::VERSION_MINOR,
             meta::VERSION_PATCH);
         let file = format!("Project ahfs.version {};\n", meta::VERSION_STR);
-        fs::File::create(&path)?.write_all(file.as_ref())?;
+        fs::OpenOptions::new()
+            .write(true)
+            .create_new(true)
+            .open(&path)?
+            .write_all(file.as_ref())?;
         Ok(Settings { path: path.into(), ahfs_version })
     }
 
