@@ -38,7 +38,7 @@ fn main() {
                         callback: &|_args| app::status(app::Status::AhfsVersion),
                     }
                 ],
-                callback: &|| app::status(app::Status::Summary),
+                callback: &|_args| app::status(app::Status::Summary),
             },
             cliargs::Rule::Action {
                 name: "help",

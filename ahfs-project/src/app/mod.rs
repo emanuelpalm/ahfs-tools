@@ -6,7 +6,7 @@ use ahfs::project::Project;
 use ahfs::util;
 
 /// Creates new project at first path in `args`.
-pub fn new(args: &[String], ignore_if_exists: bool) -> ! {
+pub fn new(args: &[&str], ignore_if_exists: bool) -> ! {
     util::exit_after(|| {
         if args.len() != 1 {
             return Err(Error::NewArgMissing.into());

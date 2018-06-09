@@ -99,6 +99,12 @@ impl FlagOut {
         }
     }
 
+    /// Name of flag out value.
+    #[inline]
+    pub fn name(&self) -> Option<&str> {
+        self.name
+    }
+
     /// Writes given flag value `s` to cell.
     #[doc(hidden)]
     pub fn write<S: AsRef<str>>(&self, s: S) -> Result<()> {

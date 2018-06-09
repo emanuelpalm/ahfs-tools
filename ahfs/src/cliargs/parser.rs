@@ -19,12 +19,24 @@ impl<'a> Parser<'a> {
         if self.rules.len() == 0 || args.len() == 0 {
             return Ok(());
         }
+        let (arg_flags, arg_values) = args.iter()
+            .take_while(|arg| arg.as_str() != "--")
+            .fold((Vec::new(), Vec::new()), |(mut flags, mut values), arg| {
+                match arg.starts_with("-") && arg.len() > 1 {
+                    true => flags.push(arg as &str),
+                    false => values.push(arg as &str),
+                };
+                (flags, values)
+            });
         for rule in self.rules {
-            if rule.try_args(args)? {
-                return Ok(());
+            if rule.apply(&arg_values, &arg_flags)? {
+               return Ok(())
             }
         }
-        Err(Error::ArgUnknown(args[0].clone()))
+        Err(match arg_values.get(0) {
+            Some(arg) => Error::ArgUnknown(arg.to_string()),
+            None => Error::FlagUnknown(arg_flags[0].to_string()),
+        })
     }
 }
 
