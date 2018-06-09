@@ -7,41 +7,37 @@ use std::env;
 use std::process;
 
 fn main() {
-    let ignore_if_exists = cliargs::FlagCell::new();
+    let new_i = cliargs::FlagCell::new();
+
     let cli = cliargs::Parser {
         description: concat!(
             "AHFS Project Tool"
         ),
         rules: &[
-            cliargs::Rule::Action {
+            cliargs::Rule {
                 name: "new",
-                description: "Create new AHFS project in current folder.",
+                name_details: "<path>",
+                description: "Create new AHFS project at <path>.",
                 flags: &[
                     cliargs::Flag {
                         short: Some("i"),
                         long: "ignore-if-exists",
                         description: "Raise no error if project exists.",
-                        out: cliargs::FlagOut::new(&ignore_if_exists),
+                        out: cliargs::FlagOut::new(&new_i),
                     }
                 ],
-                callback: &|args| app::new(args, ignore_if_exists.take_or(false)),
+                callback: &|args| app::new(args, new_i.take_or(false)),
             },
-            cliargs::Rule::Menu {
+            cliargs::Rule {
                 name: "status",
+                name_details: "",
                 description: "Show project status.",
-                items_header: "Subcommands:",
-                items: &[
-                    cliargs::Rule::Action {
-                        name: "ahfs-version",
-                        description: "Display only AHFS compatibility version.",
-                        flags: &[],
-                        callback: &|_args| app::status(app::Status::AhfsVersion),
-                    }
-                ],
-                callback: &|_args| app::status(app::Status::Summary),
+                callback: &|args| app::status(args),
+                flags: &[],
             },
-            cliargs::Rule::Action {
+            cliargs::Rule {
                 name: "help",
+                name_details: "",
                 description: "Display this help message.",
                 flags: &[],
                 callback: &|_args| {},
@@ -53,8 +49,8 @@ fn main() {
         println!(concat!(
             "{}\n",
             "\n",
-            "Run `{} help` for a list of available commands.")
-                 , err, &args[0]);
+            "Run `{} help` to see a list of available commands.")
+                 , ahfs::format_error(&err).unwrap(), &args[0]);
         process::exit(1)
     }
     println!("{}", cli);

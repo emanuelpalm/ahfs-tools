@@ -25,9 +25,8 @@ pub enum Error {
 
 impl fmt::Display for Error {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        ::ErrorCode::fmt(self, f)?;
         match *self {
-            Error::NoSource => write!(f, "No known sources."),
+            Error::NoSource => write!(f, "No known sources"),
             Error::UnexpectedSourceEnd { ref excerpt, expected } => {
                 write!(f, "Unexpected source end")?;
                 write_unexpected(f, expected, excerpt)
@@ -48,17 +47,17 @@ fn write_unexpected(
 ) -> fmt::Result
 {
     match expected.len() {
-        0 => write!(f, "."),
-        1 => write!(f, ", expected `{}`.", expected[0]),
+        0 => {},
+        1 => write!(f, ", expected `{}`", expected[0])?,
         _ => {
             write!(f, ", expected one of ")?;
             let (last, rest) = expected.split_last().unwrap();
             for item in rest {
                 write!(f, "`{}`, ", item)?;
             }
-            write!(f, " or `{}`.", last)
+            write!(f, " or `{}`", last)?
         }
-    }?;
+    };
     write!(f, "\n{}", excerpt)
 }
 

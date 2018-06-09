@@ -10,4 +10,4 @@ pub mod util;
 
 mod error;
 
-pub use self::error::ErrorCode;
+pub use self::error::{ErrorCode, format_error};

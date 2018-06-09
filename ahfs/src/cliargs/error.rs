@@ -44,16 +44,15 @@ impl ::ErrorCode for Error {
 
 impl fmt::Display for Error {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        ::ErrorCode::fmt(self, f)?;
         match *self {
             Error::ArgUnknown(ref arg) => {
-                write!(f, "Unknown argument `{}`.", arg)
+                write!(f, "Unknown argument `{}`", arg)
             }
             Error::FlagUnknown(ref flag) => {
-                write!(f, "Unknown flag `{}`.", flag)
+                write!(f, "Unknown flag `{}`", flag)
             }
             Error::FlagUnexpected(ref flag) => {
-                write!(f, "Unexpected flag `{}`.", flag)
+                write!(f, "Unexpected flag `{}`", flag)
             }
             Error::FlagValueInvalid { ref flag, ref cause } => {
                 write!(f, "Invalid flag value `{}`, reason:\n{}", flag, cause)

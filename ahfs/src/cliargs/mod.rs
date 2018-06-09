@@ -27,8 +27,9 @@ mod tests {
         let parser = Parser {
             description: "A CLI application.",
             rules: &[
-                Rule::Action {
+                Rule {
                     name: "help",
+                    name_details: "",
                     description: "Lists all available commands.",
                     flags: &[
                         Flag {

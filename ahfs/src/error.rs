@@ -3,11 +3,8 @@ use std::fmt;
 use std::io;
 use std::result;
 
-/// A boxed AHFS error.
-pub type Error = Box<ErrorCode>;
-
 /// A generic AHFS result.
-pub type Result<T> = result::Result<T, Error>;
+pub type Result<T> = result::Result<T, Box<ErrorCode>>;
 
 /// Error trait implemented by all AHFS error types.
 pub trait ErrorCode: error::Error {
@@ -17,11 +14,15 @@ pub trait ErrorCode: error::Error {
     /// of error should, if possible, provide its own unique code.
     fn error_code(&self) -> &'static str;
 
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(f, concat!(
-            str_color!( red: "error[{}]"),
-            str_color!(none: ": ")),
-               self.error_code())
+    /// Tries to cast error into an I/O `Error`.
+    fn as_io_error(&self) -> Option<&io::Error> {
+        None
+    }
+}
+
+impl ErrorCode for fmt::Error {
+    fn error_code(&self) -> &'static str {
+        "FMT1"
     }
 }
 
@@ -48,11 +49,27 @@ impl ErrorCode for io::Error {
             _ => "F0XX",
         }
     }
+
+    fn as_io_error(&self) -> Option<&io::Error> {
+        Some(self)
+    }
 }
 
-impl<E: ErrorCode + 'static> From<E> for Error {
+impl<E: ErrorCode + 'static> From<E> for Box<ErrorCode> {
     #[inline]
     fn from(err: E) -> Self {
-        Box::new(err) as Error
+        Box::new(err) as Box<ErrorCode>
     }
+}
+
+/// Formats given [`ErrorCode`](trait.ErrorCode.html) error.
+pub fn format_error(err: &ErrorCode) -> Result<String> {
+    use std::fmt::Write;
+
+    let mut f = String::new();
+    write!(f, concat!(
+            str_color!( red: "error[{}]"),
+            str_color!(none: ": {}")),
+           err.error_code(), err)?;
+    Ok(f)
 }

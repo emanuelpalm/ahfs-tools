@@ -5,13 +5,15 @@ use std::fmt;
 /// Describes a project application error.
 #[derive(Debug)]
 pub enum Error {
-    NewArgMissing,
+    NewArgCountNot1,
+    StatusArgCountNot0,
 }
 
 impl ahfs::ErrorCode for Error {
     fn error_code(&self) -> &'static str {
         match *self {
-            Error::NewArgMissing => "R101",
+            Error::NewArgCountNot1 => "R101",
+            Error::StatusArgCountNot0 => "R102",
         }
     }
 }
@@ -19,14 +21,14 @@ impl ahfs::ErrorCode for Error {
 impl error::Error for Error {
     fn description(&self) -> &str {
         match *self {
-            Error::NewArgMissing => "`new` requires exactly one path argument.",
+            Error::NewArgCountNot1 => "`new` requires one <path> argument",
+            Error::StatusArgCountNot0 => "`status` takes no arguments"
         }
     }
 }
 
 impl fmt::Display for Error {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        ahfs::ErrorCode::fmt(self, f)?;
         f.write_str(::std::error::Error::description(self))
     }
 }

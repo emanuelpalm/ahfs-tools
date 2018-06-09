@@ -39,8 +39,7 @@ impl ::ErrorCode for Error {
 
 impl fmt::Display for Error {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        ::ErrorCode::fmt(self, f)?;
-        write!(f, " {}", error::Error::description(self))?;
+        write!(f, "{}", error::Error::description(self))?;
         match *self {
             Error::AhfsVersionIncompatible { ref excerpt } |
             Error::AhfsVersionInvalid { ref excerpt } => {
