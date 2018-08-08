@@ -2,11 +2,14 @@ mod error;
 
 pub use self::error::Error;
 
+use ahfs::graph::{Graph, Query, Triple};
+use ahfs::parser;
 use ahfs::project::Project;
+use ahfs::source::Source;
 use ahfs::util;
 use std::io;
 
-/// Creates new project at first path in `args`.
+/// Creates new project at first path in `args` and exits.
 pub fn new(args: &[&str], ignore_if_exists: bool) -> ! {
     util::exit_after(|| {
         if args.len() != 1 {
@@ -26,6 +29,29 @@ pub fn new(args: &[&str], ignore_if_exists: bool) -> ! {
                 Err(err)
             }
         }
+    })
+}
+
+/// Generates graph files from all project source files and exits.
+pub fn graph(args: &[&str]) -> ! {
+    util::exit_after(|| {
+        if args.len() != 0 {
+            return Err(Error::GraphArgCountNot0.into());
+        }
+        let project = Project::locate(".")?;
+        let files = project.files()?;
+        let source = Source::read_files(files.iter())?;
+        let triples = parser::parse(&source)?;
+
+        // TODO: Actually generate graph files.
+        let types: Vec<&Triple> = triples.query()
+            .predicate("ahfs.type")
+            .collect();
+        for triple in types {
+            println!("{}", triple.predicate());
+        }
+
+        Ok(())
     })
 }
 

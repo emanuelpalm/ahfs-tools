@@ -31,6 +31,13 @@ fn main() {
                 callback: &|args| app::new(args, new_i.take_or(false)),
             },
             cliargs::Rule {
+                name: "graph",
+                name_details: "",
+                description: "Creates graphs from project source files.",
+                flags: &[],
+                callback: &|args| app::graph(args),
+            },
+            cliargs::Rule {
                 name: "list",
                 name_details: "",
                 description: "Lists all project source files.",
