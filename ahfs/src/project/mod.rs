@@ -61,6 +61,32 @@ impl Project {
         Ok(Project { root: path.into(), settings: settings.into() })
     }
 
+    pub fn files(&self) -> Result<Box<[PathBuf]>> {
+        let mut files = Vec::new();
+        files_inner(self.root(), &mut files)?;
+        return Ok(files.into_boxed_slice());
+
+        fn files_inner(dir: &Path, files: &mut Vec<PathBuf>) -> Result {
+            for entry in dir.read_dir()? {
+                let entry = entry?;
+                match entry.file_type()? {
+                    t @ _ if t.is_dir() => {
+                        files_inner(&entry.path(), files)?;
+                        continue;
+                    },
+                    t @ _ if t.is_file() => {}
+                    _ => { continue; }
+                }
+                let path = entry.path();
+                if path.extension().unwrap_or_default() != "ahfs" {
+                    continue;
+                }
+                files.push(path);
+            }
+            Ok(())
+        }
+    }
+
     /// Project root folder.
     #[inline]
     pub fn root(&self) -> &Path {

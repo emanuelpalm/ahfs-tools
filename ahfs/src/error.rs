@@ -4,7 +4,7 @@ use std::io;
 use std::result;
 
 /// A generic AHFS result.
-pub type Result<T> = result::Result<T, Box<ErrorCode>>;
+pub type Result<T = ()> = result::Result<T, Box<ErrorCode>>;
 
 /// Error trait implemented by all AHFS error types.
 pub trait ErrorCode: error::Error {

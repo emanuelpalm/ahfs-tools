@@ -36,8 +36,12 @@ pub fn list(args: &[&str]) -> ! {
             return Err(Error::ListArgCountNot0.into());
         }
         let project = Project::locate(".")?;
-        unimplemented!();
-        //Ok(())
+        let files = project.files()?;
+        for file in files.iter() {
+            println!("{}", file.canonicalize()?.to_string_lossy());
+        }
+        println!("Files found: {}", files.len());
+        Ok(())
     })
 }
 
