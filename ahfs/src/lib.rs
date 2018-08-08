@@ -1,6 +1,5 @@
 include!("util/macros.rs");
 
-pub mod cliargs;
 pub mod graph;
 pub mod meta;
 pub mod parser;

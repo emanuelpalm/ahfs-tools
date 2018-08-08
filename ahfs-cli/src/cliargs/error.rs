@@ -31,7 +31,7 @@ impl error::Error for Error {
     }
 }
 
-impl ::ErrorCode for Error {
+impl ::ahfs::ErrorCode for Error {
     fn error_code(&self) -> &'static str {
         match *self {
             Error::ArgUnknown(_) => "C001",

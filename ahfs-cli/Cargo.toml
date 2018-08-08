@@ -1,5 +1,5 @@
 [package]
-name = "ahfs-project"
+name = "ahfs-cli"
 version = "0.1.0"
 authors = ["Emanuel Palm <emanuel.palm@ltu.se>"]
 

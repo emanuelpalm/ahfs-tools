@@ -1,8 +1,8 @@
 extern crate ahfs;
 
 mod app;
+mod cliargs;
 
-use ahfs::cliargs;
 use std::env;
 use std::process;
 
@@ -27,6 +27,13 @@ fn main() {
                     }
                 ],
                 callback: &|args| app::new(args, new_i.take_or(false)),
+            },
+            cliargs::Rule {
+                name: "list",
+                name_details: "",
+                description: "Lists all project source files.",
+                flags: &[],
+                callback: &|args| app::list(args),
             },
             cliargs::Rule {
                 name: "status",

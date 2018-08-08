@@ -1,6 +1,7 @@
 use std::fmt;
 use super::{Error, Flag, Result};
 
+/// A command line argument rule.
 pub struct Rule<'a> {
     /// Name used to invoke rule.
     pub name: &'static str,
@@ -14,7 +15,7 @@ pub struct Rule<'a> {
     /// Command line flags.
     pub flags: &'a [Flag],
 
-    /// Function called if action is invoked.
+    /// Function called if rule is invoked.
     pub callback: &'a Fn(&[&str]),
 }
 

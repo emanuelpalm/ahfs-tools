@@ -29,7 +29,19 @@ pub fn new(args: &[&str], ignore_if_exists: bool) -> ! {
     })
 }
 
-/// Prints various project status information and exists.
+/// Prints list of all project source files and exits.
+pub fn list(args: &[&str]) -> ! {
+    util::exit_after(|| {
+        if args.len() != 0 {
+            return Err(Error::ListArgCountNot0.into());
+        }
+        let project = Project::locate(".")?;
+        unimplemented!();
+        //Ok(())
+    })
+}
+
+/// Prints various project status information and exits.
 pub fn status(args: &[&str]) -> ! {
     util::exit_after(|| {
         if args.len() != 0 {
