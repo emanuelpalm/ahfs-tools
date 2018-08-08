@@ -10,9 +10,6 @@ pub enum Error {
     /// Encountered argument matches no known [`Flag`](struct.Flag.html).
     FlagUnknown(String),
 
-    /// [`Flag`](struct.Flag.html) not expected.
-    FlagUnexpected(String),
-
     /// [`Flag`](struct.Flag.html) value could not be parsed.
     FlagValueInvalid {
         flag: String,
@@ -25,7 +22,6 @@ impl error::Error for Error {
         match *self {
             Error::ArgUnknown(_) => "Unknown argument encountered",
             Error::FlagUnknown(_) => "Unknown flag encountered",
-            Error::FlagUnexpected(_) => "Flag not expected",
             Error::FlagValueInvalid { .. } => "Flag value invalid",
         }
     }
@@ -36,8 +32,7 @@ impl ::ahfs::ErrorCode for Error {
         match *self {
             Error::ArgUnknown(_) => "C001",
             Error::FlagUnknown(_) => "C002",
-            Error::FlagUnexpected(_) => "C003",
-            Error::FlagValueInvalid { .. } => "C004",
+            Error::FlagValueInvalid { .. } => "C003",
         }
     }
 }
@@ -50,9 +45,6 @@ impl fmt::Display for Error {
             }
             Error::FlagUnknown(ref flag) => {
                 write!(f, "Unknown flag `{}`", flag)
-            }
-            Error::FlagUnexpected(ref flag) => {
-                write!(f, "Unexpected flag `{}`", flag)
             }
             Error::FlagValueInvalid { ref flag, ref cause } => {
                 write!(f, "Invalid flag value `{}`, reason:\n{}", flag, cause)
