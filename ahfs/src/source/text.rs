@@ -69,7 +69,7 @@ impl Text {
     /// this `Text`.
     ///
     /// Returns `None` if `range` is out of bounds.
-    pub fn get<'a, R>(&'a self, range: R) -> Option<Region<'a>>
+    pub fn get<R>(&self, range: R) -> Option<Region>
         where R: Into<Range>
     {
         let range = range.into();

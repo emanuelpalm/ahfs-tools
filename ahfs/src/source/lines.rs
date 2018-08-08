@@ -5,7 +5,7 @@ use super::{LineIter};
 /// region of characters.
 pub trait Lines {
     /// Creates new line iterator.
-    fn lines<'a>(&'a self) -> LineIter<'a>;
+    fn lines(&self) -> LineIter;
 
     /// Writes lines, with given `header`, in human-readable form.
     fn fmt(&self, f: &mut fmt::Formatter, header: &str) -> fmt::Result {

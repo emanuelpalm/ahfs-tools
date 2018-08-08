@@ -4,7 +4,7 @@ use super::{Name, Scanner, Token};
 use ::source::{Source, Text};
 
 /// Creates a slice of `Tokens` from given `source`.
-pub fn analyze<'a>(source: &'a Source) -> Box<[Token<'a>]> {
+pub fn analyze(source: &Source) -> Box<[Token]> {
     let mut tokens = Vec::new();
     for text in source.texts() {
         analyze_text(text, &mut tokens);
