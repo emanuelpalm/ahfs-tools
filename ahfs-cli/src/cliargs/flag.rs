@@ -113,7 +113,7 @@ impl FlagOut {
 
     /// Writes given flag value `s` to cell.
     #[doc(hidden)]
-    pub fn write<S: AsRef<str>>(&self, s: S) -> Result<()> {
+    pub fn write<S: AsRef<str>>(&self, s: S) -> Result {
         let s = s.as_ref();
         (self.out)(s).map_err(|err| Error::FlagValueInvalid {
             flag: s.into(),

@@ -35,7 +35,7 @@ impl<'a> Rule<'a> {
 }
 
 #[inline]
-fn parse_flags(flags: &[Flag], args: &[&str]) -> Result<()> {
+fn parse_flags(flags: &[Flag], args: &[&str]) -> Result {
     for arg in args {
         let (is_long, name) = match arg.starts_with("--") {
             true => (true, &arg[2..]),

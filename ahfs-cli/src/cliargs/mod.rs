@@ -15,7 +15,7 @@ pub use self::flag::{Flag, FlagCell, FlagOut};
 use std::result;
 
 /// The result of parsing command line arguments.
-pub type Result<T> = result::Result<T, Error>;
+pub type Result<T = ()> = result::Result<T, Error>;
 
 #[cfg(test)]
 mod tests {

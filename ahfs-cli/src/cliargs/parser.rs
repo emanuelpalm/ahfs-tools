@@ -12,7 +12,7 @@ pub struct Parser<'a> {
 
 impl<'a> Parser<'a> {
     /// Parses given array of `String`s.
-    pub fn parse<S>(&self, args: S) -> Result<()>
+    pub fn parse<S>(&self, args: S) -> Result
         where S: AsRef<[String]>,
     {
         let args = args.as_ref();
