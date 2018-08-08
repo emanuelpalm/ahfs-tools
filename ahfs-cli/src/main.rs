@@ -4,9 +4,11 @@ mod app;
 mod cliargs;
 
 use std::env;
+use std::fmt;
 use std::process;
 
 fn main() {
+    let help = cliargs::FlagCell::new();
     let new_i = cliargs::FlagCell::new();
 
     let cli = cliargs::Parser {
@@ -47,18 +49,27 @@ fn main() {
                 name_details: "",
                 description: "Display this help message.",
                 flags: &[],
-                callback: &|_args| {},
+                callback: &|_args| help.set(true),
             },
         ],
     };
     let args = env::args().collect::<Vec<String>>();
+    if args.len() <= 1 {
+        error(&args[0], &"No command specified.");
+    }
     if let Err(err) = cli.parse(&args[1..]) {
-        println!(concat!(
+        error(&args[0], &err);
+    }
+    if help.take_or(false) {
+        println!("{}", cli);
+    }
+}
+
+fn error(bin: &str, message: &fmt::Display) -> ! {
+    println!(concat!(
             "{}\n",
             "\n",
-            "Run `{} help` to see a list of available commands.")
-                 , ahfs::format_error(&err).unwrap(), &args[0]);
-        process::exit(1)
-    }
-    println!("{}", cli);
+            "Run `{} help` to see a list of available commands."),
+             message, bin);
+    process::exit(1)
 }

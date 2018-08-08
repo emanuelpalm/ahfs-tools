@@ -49,6 +49,12 @@ impl<T: FromStr> FlagCell<T> {
         FlagCell(Rc::new(Cell::new(None)))
     }
 
+    /// Sets cell value to `v`, replacing any existing value.
+    #[inline]
+    pub fn set(&self, v: T) {
+        self.0.set(Some(v))
+    }
+
     /// Takes the value of the cell, leaving `Default::default()` in its place.
     #[inline]
     pub fn take(&self) -> Option<T> {
