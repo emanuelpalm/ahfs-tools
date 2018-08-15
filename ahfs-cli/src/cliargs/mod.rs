@@ -39,7 +39,7 @@ mod tests {
                             out: FlagOut::new(&verbose),
                         }
                     ],
-                    callback: &|_args| {},
+                    callback: &|_args| Ok(()),
                 }
             ],
         };

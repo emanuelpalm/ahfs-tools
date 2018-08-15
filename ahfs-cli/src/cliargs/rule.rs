@@ -1,4 +1,5 @@
 use std::fmt;
+use std::result;
 use super::{Error, Flag, Result};
 
 /// A command line argument rule.
@@ -16,7 +17,7 @@ pub struct Rule<'a> {
     pub flags: &'a [Flag],
 
     /// Function called if rule is invoked.
-    pub callback: &'a Fn(&[&str]),
+    pub callback: &'a Fn(&[&str]) -> result::Result<(), Box<::ahfs::ErrorCode>>,
 }
 
 impl<'a> Rule<'a> {
@@ -27,8 +28,9 @@ impl<'a> Rule<'a> {
                 return Ok(false);
             }
             parse_flags(self.flags, flags)?;
-            (self.callback)(rest);
-            return Ok(true);
+            return (self.callback)(rest)
+                .map(|_| true)
+                .map_err(|err| Error::RuleFailed(err));
         }
         Ok(false)
     }

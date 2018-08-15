@@ -3,8 +3,9 @@ extern crate ahfs;
 mod app;
 mod cliargs;
 
+use ahfs::ErrorCode;
+use ahfs::log;
 use std::env;
-use std::fmt;
 use std::process;
 
 fn main() {
@@ -56,27 +57,27 @@ fn main() {
                 name_details: "",
                 description: "Display this help message.",
                 flags: &[],
-                callback: &|_args| help.set(true),
+                callback: &|_args| {
+                    help.set(true);
+                    Ok(())
+                },
             },
         ],
     };
     let args = env::args().collect::<Vec<String>>();
     if args.len() <= 1 {
-        error(&args[0], &"No command specified.");
+        log::anomaly(&"No command specified.");
     }
     if let Err(err) = cli.parse(&args[1..]) {
-        error(&args[0], &err);
+        failure(&err);
     }
     if help.take_or(false) {
-        println!("{}", cli);
+        log::completion(&cli);
     }
 }
 
-fn error(bin: &str, message: &fmt::Display) -> ! {
-    println!(concat!(
-            "{}\n",
-            "\n",
-            "Run `{} help` to see a list of available commands."),
-             message, bin);
+fn failure(message: &ErrorCode) -> ! {
+    log::failure(message);
+    log::suggestion(&"Run `ahfs help` to see a list of available commands.");
     process::exit(1)
 }

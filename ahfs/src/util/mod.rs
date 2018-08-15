@@ -1,4 +1,5 @@
 use std::process;
+use ::log;
 
 /// Executes `f`, and then exits application after it returns.
 ///
@@ -10,7 +11,7 @@ pub fn exit_after<F>(f: F) -> !
     process::exit(match f() {
         Ok(()) => 0,
         Err(err) => {
-            println!("{}", ::format_error(err.as_ref()).unwrap());
+            log::failure(err.as_ref());
             1
         }
     })

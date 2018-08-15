@@ -21,6 +21,7 @@ pub trait ErrorCode: error::Error {
 }
 
 impl ErrorCode for fmt::Error {
+    #[inline]
     fn error_code(&self) -> &'static str {
         "FMT1"
     }

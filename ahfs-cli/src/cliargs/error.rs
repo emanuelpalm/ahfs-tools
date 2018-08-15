@@ -15,6 +15,9 @@ pub enum Error {
         flag: String,
         cause: Box<error::Error>,
     },
+
+    /// A command line rule failed to complete.
+    RuleFailed(Box<::ahfs::ErrorCode>),
 }
 
 impl error::Error for Error {
@@ -23,6 +26,7 @@ impl error::Error for Error {
             Error::ArgUnknown(_) => "Unknown argument encountered",
             Error::FlagUnknown(_) => "Unknown flag encountered",
             Error::FlagValueInvalid { .. } => "Flag value invalid",
+            Error::RuleFailed(ref err) => err.description(),
         }
     }
 }
@@ -33,6 +37,7 @@ impl ::ahfs::ErrorCode for Error {
             Error::ArgUnknown(_) => "C001",
             Error::FlagUnknown(_) => "C002",
             Error::FlagValueInvalid { .. } => "C003",
+            Error::RuleFailed(ref err) => err.error_code(),
         }
     }
 }
@@ -48,6 +53,9 @@ impl fmt::Display for Error {
             }
             Error::FlagValueInvalid { ref flag, ref cause } => {
                 write!(f, "Invalid flag value `{}`, reason:\n{}", flag, cause)
+            }
+            Error::RuleFailed(ref err) => {
+                fmt::Display::fmt(err, f)
             }
         }
     }
