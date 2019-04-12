@@ -3,7 +3,6 @@ use std::io::Write;
 use std::path::{Path, PathBuf};
 use super::{Error, Version};
 use ::error::Result;
-use ::graph::{Graph, Query};
 use ::meta;
 use ::source::Source;
 
@@ -37,6 +36,7 @@ impl Settings {
     pub fn read<P>(path: P) -> Result<Settings>
         where P: Into<PathBuf>,
     {
+        /*
         let path = path.into();
         let source = Source::read_file(path.clone())?;
         let triples = ::parser::parse(&source)?;
@@ -62,10 +62,10 @@ impl Settings {
                 excerpt: ahfs_version_obj.into(),
             }));
         }
-
+*/
         Ok(Settings {
-            path: path.into(),
-            ahfs_version: ahfs_version.into(),
+            path: Path::new(".").into(),
+            ahfs_version: Version::parse("0.0.0").unwrap().into(),
         })
     }
 

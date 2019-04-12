@@ -2,7 +2,6 @@ mod error;
 
 pub use self::error::Error;
 
-use ahfs::graph::{Graph, Query, Triple};
 use ahfs::log;
 use ahfs::parser;
 use ahfs::project::Project;
@@ -38,15 +37,10 @@ pub fn graph(args: &[&str]) -> Result<(), Box<::ahfs::ErrorCode>> {
     let project = Project::locate(".")?;
     let files = project.files()?;
     let source = Source::read_files(files.iter())?;
-    let triples = parser::parse(&source)?;
+    let _tree = parser::parse(&source)?;
 
     // TODO: Actually generate graph files.
-    let types: Vec<&Triple> = triples.query()
-        .predicate("ahfs.type")
-        .collect();
-    for triple in types {
-        println!("{}", triple.predicate());
-    }
+
 
     Ok(())
 }

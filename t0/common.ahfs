@@ -1,0 +1,22 @@
+record ArrowheadSystem {
+    SystemName: String,
+    Address: String,
+    Port: u16,
+    AuthenticationInfo: String?,
+}
+
+record ArrowheadService {
+    ServiceDefinition: String,
+    Interfaces: Set<String>,
+    ServiceMetadata: Map<String, String>,
+}
+
+record ArrowheadCloud {
+    Operator: String,
+    CloudName: String,
+    Address: String,
+    Port: u16,
+    GatekeeperServiceURI: String,
+    AuthenticationInfo: String?,
+    IsSecure: Boolean,
+}

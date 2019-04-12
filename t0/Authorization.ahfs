@@ -1,0 +1,62 @@
+import "common.ahfs";
+
+system Authorization {
+    produces AuthorizationControl;
+    produces TokenGeneration;
+}
+
+service AuthorizationControl {
+    interface IntraCloud {
+        method VerifyAccess(IntraCloudAuthRequest): IntraCloudAuthResponse;
+    }
+
+    interface InterCloud {
+        method VerifyAccess(InterCloudAuthRequest): InterCloudAuthResponse;
+    }
+}
+
+implement AuthorizationControl using HTTP/JSON {
+    property BasePath: "/authorization";
+    property RequireTLS: true;
+
+    interface IntraCloud {
+        method VerifyAccess {
+            Method: "PUT",
+            Path: "/intracloud",
+        }
+    }
+
+    interface InterCloud {
+        method VerifyAccess {
+            Method: "PUT",
+            Path: "/intercloud",
+        }
+    }
+}
+
+record IntraCloudAuthRequest {
+    /// The System which requested Service.
+    Consumer: ArrowheadSystem,
+
+    /// A list of provider Systems who can provide Service.
+    Providers: Set<ArrowheadSystem>,
+
+    /// The requested Service.
+    Service: ArrowheadService,
+}
+
+record IntraCloudAuthResponse {
+    AuthorizationState: Map<String, Boolean>,
+}
+
+record InterCloudAuthRequest {
+    /// The Cloud requesting a Service from the Local Cloud.
+    Cloud: ArrowheadCloud,
+
+    /// The requested Service.
+    Service: ArrowheadService,
+}
+
+record InterCloudAuthResponse {
+    Authorized: Boolean,
+}

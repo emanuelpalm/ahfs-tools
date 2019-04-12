@@ -8,27 +8,20 @@ mod name;
 mod scanner;
 mod state;
 mod token;
+mod tree;
 
 pub use self::error::Error;
+pub use self::tree::Tree;
 
 use self::name::Name;
 use self::scanner::Scanner;
 use self::state::State;
 use self::token::Token;
 use std::result;
-use ::graph::Triple;
 use ::source::Source;
 
 /// The `Result` of parsing.
 pub type Result<T> = result::Result<T, Error>;
-
-const TRIPLE_END: &'static [Name] = &[
-    Name::Semicolon,
-    Name::Description
-];
-const TRIPLE_WORD: &'static [Name] = &[
-    Name::Word
-];
 
 /// Parses given source code texts into boxed slice of [`Triple`s][tri].
 ///
@@ -61,33 +54,8 @@ const TRIPLE_WORD: &'static [Name] = &[
 /// ```
 ///
 /// [tri]: struct.Triple.html
-pub fn parse(source: &Source) -> Result<Box<[Triple]>> {
-    let tokens = lexer::analyze(source);
-    let mut state = State::new(&tokens);
-    let mut triples = Vec::new();
-    while !state.at_end() {
-        triples.push(state.apply(|state| {
-            let subject = state.next_if(TRIPLE_WORD)?;
-            let predicate = state.next_if(TRIPLE_WORD)?;
-            let object = state.next_if(TRIPLE_WORD)?;
-            let end = state.next_if(TRIPLE_END)?;
-            Ok(unsafe {
-                Triple::new(
-                    subject.region().text(),
-                    subject,
-                    predicate,
-                    object,
-                    match end.name() {
-                        &Name::Description => {
-                            Some(end.region().range().clone())
-                        },
-                        _ => None,
-                    }
-                )
-            })
-        })?);
-    }
-    Ok(triples.into_boxed_slice())
+pub fn parse(source: &Source) -> Result<()> {
+    Ok(())
 }
 
 #[cfg(test)]
@@ -97,18 +65,23 @@ mod tests {
 
     #[test]
     fn parse() {
-        let texts = vec![
-            Text::new("alpha.ahs", concat!(
-                "A type System;\n",
-                "B type Service { Emojis 😜🤖💩! }",
+        let _texts = vec![
+            Text::new("alpha.ahfs", concat!(
+                "import \"test.ahfs\";\n",
+                "\n",
+                "// This comment is ignored.\n",
+                "/* This one too! */\n",
+                "system TestSystem {\n",
+                "    /// Comment A.\n",
+                "    produces TestServiceA;\n",
+                "    produces TestServiceB;\n",
+                "\n",
+                "    /** Comment B. */\n",
+                "    consumes TestServiceX;\n",
+                "    consumes TestServiceY;\n",
+                "}\n",
             )),
         ];
-        let source = Source::new(texts);
-        let triples = super::parse(&source).unwrap();
-        let text = &source.texts()[0];
-        assert_eq!(triples.as_ref(), &[
-            unsafe { Triple::new(text, 0..1, 2..6, 7..13, None) },
-            unsafe { Triple::new(text, 15..16, 17..21, 22..29, Some(30..54)) },
-        ]);
+        // TODO
     }
 }

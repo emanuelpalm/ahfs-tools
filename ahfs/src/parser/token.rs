@@ -30,6 +30,12 @@ impl<'a> Token<'a> {
     pub fn region(&self) -> &Region<'a> {
         &self.region
     }
+
+    /// Shrinks `Token` region, from end to start, with `size` bytes.
+    #[inline]
+    pub fn shrink(&mut self, size: usize) {
+        self.region.shrink(size)
+    }
 }
 
 impl<'a> From<Token<'a>> for Range {
