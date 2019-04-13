@@ -12,14 +12,14 @@ pub enum Error {
     /// A parsed source [`Text`](../source/struct.Text.html) ended unexpectedly.
     UnexpectedSourceEnd {
         excerpt: Excerpt,
-        expected: &'static [Name],
+        expected: Box<[Name]>,
     },
 
     /// An unexpected [`Token`](struct.Token.html) was read while parsing.
     UnexpectedToken {
         name: Name,
         excerpt: Excerpt,
-        expected: &'static [Name],
+        expected: Box<[Name]>,
     },
 }
 
@@ -27,13 +27,13 @@ impl fmt::Display for Error {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match *self {
             Error::NoSource => write!(f, "No known sources"),
-            Error::UnexpectedSourceEnd { ref excerpt, expected } => {
+            Error::UnexpectedSourceEnd { ref excerpt, ref expected } => {
                 write!(f, "Unexpected source end")?;
-                write_unexpected(f, expected, excerpt)
+                write_unexpected(f, &expected, excerpt)
             }
-            Error::UnexpectedToken { name, ref excerpt, expected } => {
+            Error::UnexpectedToken { name, ref excerpt, ref expected } => {
                 write!(f, "Unexpected `{}`", name)?;
-                write_unexpected(f, expected, excerpt)
+                write_unexpected(f, &expected, excerpt)
             }
         }?;
         Ok(())

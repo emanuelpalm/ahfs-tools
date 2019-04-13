@@ -12,30 +12,19 @@ pub fn analyze(source: &Source) -> Box<[Token]> {
     tokens.into_boxed_slice()
 }
 
-macro_rules! next {
-    ($source:expr) => {
-        match $source.next() {
-            Some(c) => c,
-            None => { return; }
-        }
-    };
-}
+#[inline]
+fn analyze_text<'a>(text: &'a Text, out: &mut Vec<Token<'a>>) -> Option<()> {
+    let mut scanner = Scanner::new(text);
+    let mut ch;
+    loop {
+        ch = scanner.next()?;
 
-fn analyze_text<'a>(text: &'a Text, out: &mut Vec<Token<'a>>) {
-    let mut reader = Scanner::new(text);
-    let mut c: char;
-
-    'outer: loop {
-        c = next!(reader);
-
-        // Whitespace.
-        if c.is_whitespace() {
-            reader.discard();
-            continue 'outer;
+        if ch.is_whitespace() {
+            scanner.discard();
+            continue;
         }
 
-        let name = match c {
-            // Delimiters.
+        let name = match ch {
             '<' => Name::AngleLeft,
             '>' => Name::AngleRight,
             '{' => Name::BraceLeft,
@@ -47,184 +36,224 @@ fn analyze_text<'a>(text: &'a Text, out: &mut Vec<Token<'a>>) {
             '[' => Name::SquareLeft,
             ']' => Name::SquareRight,
             ';' => Name::Semicolon,
+            '0' => scan_radix_number(&mut scanner)?,
+            '1'...'9' => scan_number(&mut scanner)?,
+            '+' | '-' => scan_number_or_symbol(&mut scanner)?,
+            '"' => scan_string(&mut scanner)?,
+            '/' => match scan_comment(&mut scanner) {
+                Some(name) => name,
+                None => continue,
+            },
+            _ => scan_symbol(&mut scanner, ch)?,
+        };
 
-            // Integer or Float.
-            '+' | '-' | '0'...'9' => {
-                if c == '0' {
-                    c = next!(reader);
-                    match c {
-                        'b' => loop {
-                            c = next!(reader);
-                            match c {
-                                '0'...'1' => continue,
-                                _ => break,
+        out.push(scanner.collect(name));
+    }
+
+    fn scan_radix_number(scanner: &mut Scanner) -> Option<Name> {
+        let mut ch = scanner.next()?;
+        match ch {
+            'b' => loop {
+                ch = scanner.next()?;
+                match ch {
+                    '0'...'1' => continue,
+                    _ => break,
+                }
+            }
+            'c' => loop {
+                ch = scanner.next()?;
+                match ch {
+                    '0'...'7' => continue,
+                    _ => break,
+                }
+            },
+            'x' => loop {
+                ch = scanner.next()?;
+                match ch {
+                    '0'...'9' | 'A'...'F' | 'a'...'f' => continue,
+                    _ => break,
+                }
+            },
+            '0'...'9' => {
+                return scan_number(scanner);
+            }
+            _ => {}
+        };
+        scanner.undo();
+        Some(Name::Integer)
+    }
+
+    fn scan_number(scanner: &mut Scanner) -> Option<Name> {
+        let mut is_float = false;
+        let mut ch;
+
+        // Integral.
+        loop {
+            ch = scanner.next()?;
+            match ch {
+                '0'...'9' => continue,
+                _ => break,
+            }
+        }
+
+        // Fraction.
+        if ch == '.' {
+            loop {
+                ch = scanner.next()?;
+                match ch {
+                    '0'...'9' => continue,
+                    _ => break,
+                }
+            }
+            is_float = true;
+        }
+
+        // Exponent.
+        if ch == 'E' || ch == 'e' {
+            ch = scanner.next()?;
+            if ch == '+' || ch == '-' {
+                ch = scanner.next()?;
+            }
+            loop {
+                match ch {
+                    '0'...'9' => {
+                        ch = scanner.next()?;
+                        continue;
+                    },
+                    _ => break,
+                }
+            }
+            is_float = true;
+        }
+
+        scanner.undo();
+
+        Some(if is_float { Name::Float } else { Name::Integer })
+    }
+
+    fn scan_number_or_symbol(mut scanner: &mut Scanner) -> Option<Name> {
+        let ch = scanner.next()?;
+        if ch >= '0' && ch <= '9' {
+            scan_number(&mut scanner)
+        } else if ch.is_whitespace() {
+            scanner.undo();
+            Some(Name::Error)
+        } else {
+            scan_symbol(&mut scanner, ch)
+        }
+    }
+
+    fn scan_string(scanner: &mut Scanner) -> Option<Name> {
+        let mut ch;
+        'outer: loop {
+            ch = scanner.next()?;
+            match ch {
+                '"' => break Some(Name::String),
+                '\\' => {
+                    ch = scanner.next()?;
+                    match ch {
+                        'u' => {
+                            ch = scanner.next()?;
+                            for _ in 0..4 {
+                                match ch {
+                                    '0'...'9' |
+                                    'A'...'F' |
+                                    'a'...'f' => continue,
+                                    _ => break 'outer Some(Name::Error),
+                                }
                             }
                         }
-                        'c' => loop {
-                            c = next!(reader);
-                            match c {
-                                '0'...'7' => continue,
-                                _ => break,
-                            }
-                        },
-                        'x' => loop {
-                            c = next!(reader);
-                            match c {
-                                '0'...'9' | 'A'...'F' | 'a'...'f' => continue,
-                                _ => break,
-                            }
-                        },
                         _ => {}
                     }
-                    reader.undo();
-                    Name::Integer
-                } else {
-                    loop {
-                        c = next!(reader);
-                        match c {
-                            '0'...'9' => continue,
-                            _ => break,
-                        }
-                    }
-                    let mut is_float = false;
-                    if c == '.' {
-                        loop {
-                            c = next!(reader);
-                            match c {
-                                '0'...'9' => continue,
-                                _ => break,
-                            }
-                        }
-                        is_float = true;
-                    }
-                    if c == 'E' || c == 'e' {
-                        c = next!(reader);
-                        if c == '+' || c == '-' {
-                            c = next!(reader);
-                        }
-                        loop {
-                            c = next!(reader);
-                            match c {
-                                '0'...'9' => continue,
-                                _ => break,
-                            }
-                        }
-                        is_float = true;
-                    }
-                    reader.undo();
-                    if is_float {
-                        Name::Float
-                    } else {
-                        Name::Integer
-                    }
                 }
+                c if !c.is_control() => {}
+                _ => break Some(Name::Error),
             }
+        }
+    }
 
-            // String.
-            '"' => {
-                loop {
-                    c = next!(reader);
-                    match c {
-                        '"' => break Name::String,
-                        '\\' => {
-                            c = next!(reader);
-                            match c {
-                                'u' => {
-                                    c = next!(reader);
-                                    for i in 0..4 {
-                                        match c {
-                                            '0'...'9' |
-                                            'A'...'F' |
-                                            'a'...'f' => continue,
-                                            _ => break,
-                                        }
-                                    }
-                                }
-                                _ => {}
-                            }
-                        }
-                        c if !c.is_control() => {}
-                        _ => break Name::Error,
-                    }
-                }
-            }
-
-            // Comment.
+    fn scan_comment(scanner: &mut Scanner) -> Option<Name> {
+        let mut ch = scanner.next()?;
+        match ch {
             '/' => {
-                c = next!(reader);
-                match c {
-                    '/' => {
-                        c = next!(reader);
-                        let keep = c == '/';
-                        loop {
-                            if c == '\r' || c == '\n' {
-                                reader.undo();
-                                break;
-                            }
-                            c = next!(reader);
-                        }
-                        if keep {
-                            Name::Comment
-                        } else {
-                            reader.discard();
-                            continue 'outer;
-                        }
-                    }
-                    '*' => {
-                        c = next!(reader);
-                        let keep = c == '*';
-                        loop {
-                            if c == '*' {
-                                c = next!(reader);
-                                if c == '/' {
-                                    break;
-                                }
-                            }
-                            c = next!(reader);
-                        }
-                        if keep {
-                            Name::Comment
-                        } else {
-                            reader.discard();
-                            continue 'outer;
-                        }
-                    }
-                    _ => Name::Error,
-                }
-            }
-
-            x if x.is_alphabetic() || x == '_' => {
+                ch = scanner.next()?;
+                let keep = ch == '/';
                 loop {
-                    c = next!(reader);
-                    if !(c.is_alphanumeric() || c == '_') {
-                        reader.undo();
+                    if ch == '\r' || ch == '\n' {
+                        scanner.undo();
                         break;
                     }
+                    ch = scanner.next()?;
                 }
-                match reader.review() {
-                    // Keywords.
-                    "consumes" => Name::Consumes,
-                    "implement" => Name::Implement,
-                    "import" => Name::Import,
-                    "interface" => Name::Interface,
-                    "method" => Name::Method,
-                    "produces" => Name::Produces,
-                    "record" => Name::Record,
-                    "service" => Name::Service,
-                    "system" => Name::System,
-
-                    // Boolean.
-                    "true" => Name::Boolean(true),
-                    "false" => Name::Boolean(false),
-
-                    // Identifier.
-                    _ => Name::Identifier,
+                if keep {
+                    Some(Name::Comment)
+                } else {
+                    scanner.discard();
+                    return None;
                 }
             }
+            '*' => {
+                ch = scanner.next()?;
+                let keep = ch == '*';
+                loop {
+                    if ch == '*' {
+                        ch = scanner.next()?;
+                        if ch == '/' {
+                            break;
+                        }
+                    }
+                    ch = scanner.next()?;
+                }
+                if keep {
+                    Some(Name::Comment)
+                } else {
+                    scanner.discard();
+                    return None;
+                }
+            }
+            _ => {
+                scanner.undo();
+                Some(Name::Error)
+            },
+        }
+    }
 
-            _ => Name::Error,
-        };
-        out.push(reader.collect(name));
+    fn scan_symbol(scanner: &mut Scanner, mut ch: char) -> Option<Name> {
+        if !ch.is_alphabetic() && ch != '_' {
+            return Some(Name::Error);
+        }
+        loop {
+            ch = scanner.next()?;
+            if !(ch.is_alphanumeric() || ch == '_') {
+                scanner.undo();
+                break;
+            }
+        }
+        Some(match scanner.review() {
+            // Keywords.
+            "consumes" => Name::Consumes,
+            "implement" => Name::Implement,
+            "import" => Name::Import,
+            "interface" => Name::Interface,
+            "method" => Name::Method,
+            "produces" => Name::Produces,
+            "record" => Name::Record,
+            "service" => Name::Service,
+            "system" => Name::System,
+            "using" => Name::Using,
+
+            // Boolean.
+            "true" | "false" => Name::Boolean,
+
+            // Float.
+            "inf" | "+inf" | "-inf" | "NaN" => Name::Float,
+
+            // Error.
+            "+" | "-" => Name::Error,
+
+            // Identifier.
+            _ => Name::Identifier,
+        })
     }
 }
 
@@ -237,15 +266,18 @@ mod tests {
         let texts = vec![
             Text::new("alpha.ahfs", concat!(
                 "consumes implement import interface method\n",
-                "produces record service system\n",
+                "produces record service system using\n",
                 "\n",
                 "<>{}:,()[];\n",
                 "\n",
                 "true false\n",
-                "0 1 202 -30 +40 50.0 6.12 7e+20 8e-10 1e9\n",
+                "0 1 202 -30 +40\n",
+                "50.0 6.1234 7.e+20 8e-10 1e9\n",
+                "inf +inf -inf NaN\n",
                 "\"Hello, World!\"\n",
                 "\n",
                 "IdentifierName smallCaps _underscore\n",
+                "+ - * / # ! ^ ~ ..\n",
             )),
             Text::new("beta.ahfs", concat!(
                 "/// This is a doc comment.\n",
@@ -260,13 +292,16 @@ mod tests {
         // Check token strings.
         assert_eq!(
             vec!["consumes", "implement", "import", "interface",
-                 "method", "produces", "record", "service", "system",
+                 "method", "produces", "record", "service",
+                 "system", "using",
                  "<", ">", "{", "}", ":", ",", "(", ")", "[", "]", ";",
                  "true", "false",
-                 "0", "1", "202", "-30", "+40", "50.0", "6.12", "7e+20",
-                 "8e-10", "1e9",
+                 "0", "1", "202", "-30", "+40",
+                 "50.0", "6.1234", "7.e+20", "8e-10", "1e9",
+                 "inf", "+inf", "-inf", "NaN",
                  "\"Hello, World!\"",
                  "IdentifierName", "smallCaps", "_underscore",
+                 "+", "-", "*", "/", "#", "!", "^", "~", ".", ".",
                  "/// This is a doc comment.",
                  "/** This too! */",
             ],
@@ -277,19 +312,24 @@ mod tests {
         assert_eq!(
             vec![Name::Consumes, Name::Implement, Name::Import, Name::Interface,
                  Name::Method, Name::Produces, Name::Record, Name::Service,
-                 Name::System,
+                 Name::System, Name::Using,
                  Name::AngleLeft, Name::AngleRight,
                  Name::BraceLeft, Name::BraceRight,
                  Name::Colon, Name::Comma,
                  Name::ParenLeft, Name::ParenRight,
                  Name::SquareLeft, Name::SquareRight,
                  Name::Semicolon,
-                 Name::Boolean(true), Name::Boolean(false),
-                 Name::Integer, Name::Integer, Name::Integer, Name::Integer,
-                 Name::Integer, Name::Float, Name::Float, Name::Float,
+                 Name::Boolean, Name::Boolean,
+                 Name::Integer, Name::Integer, Name::Integer,
+                 Name::Integer, Name::Integer,
+                 Name::Float, Name::Float, Name::Float,
                  Name::Float, Name::Float,
+                 Name::Float, Name::Float, Name::Float, Name::Float,
                  Name::String,
                  Name::Identifier, Name::Identifier, Name::Identifier,
+                 Name::Error, Name::Error, Name::Error, Name::Error,
+                 Name::Error, Name::Error, Name::Error, Name::Error,
+                 Name::Error, Name::Error,
                  Name::Comment, Name::Comment,
             ],
             tokens.iter().map(|item| *item.name()).collect::<Vec<_>>()

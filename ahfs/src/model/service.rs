@@ -1,24 +1,20 @@
-use std::io;
-use std::rc::Rc;
-use super::Function;
+use super::Method;
 
 pub struct Service {
     name: Box<str>,
-    label: Box<str>,
-    functions: Box<[Rc<Function>]>,
+    methods: Box<[Method]>,
 }
 
 impl Service {
     #[inline]
-    pub fn new<N, L, F>(name: N, label: L, functions: F) -> Self
+    pub fn new<N, L, F>(name: N, label: L, methods: F) -> Self
         where N: Into<Box<str>>,
               L: Into<Box<str>>,
-              F: Into<Box<[Rc<Function>]>>,
+              F: Into<Box<[Method]>>,
     {
         Service {
             name: name.into(),
-            label: label.into(),
-            functions: functions.into(),
+            methods: methods.into(),
         }
     }
 
@@ -28,12 +24,7 @@ impl Service {
     }
 
     #[inline]
-    pub fn label(&self) -> &str {
-        &self.label
-    }
-
-    #[inline]
-    pub fn functions(&self) -> &[Rc<Function>] {
-        &self.functions
+    pub fn methods(&self) -> &[Method] {
+        &self.methods
     }
 }

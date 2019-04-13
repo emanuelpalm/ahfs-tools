@@ -32,18 +32,6 @@ impl<'a> Region<'a> {
         &self.range
     }
 
-    /// Shrinks region, from end to start, with `size` bytes.
-    pub fn shrink(&mut self, size: usize) {
-        if self.range.start + size < self.range.end {
-            let end = self.range.end - size;
-            if let Some(_) = self.text.get(self.range.start..end) {
-                self.range.end -= size;
-            }
-        } else {
-            self.range.end = self.range.start;
-        }
-    }
-
     /// [`Text`](struct.Text.html) in which `Region` is located.
     #[inline]
     pub fn text(&self) -> &'a Text {

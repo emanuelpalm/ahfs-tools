@@ -1,10 +1,9 @@
 use std::fs;
 use std::io::Write;
 use std::path::{Path, PathBuf};
-use super::{Error, Version};
+use super::Version;
 use ::error::Result;
 use ::meta;
-use ::source::Source;
 
 /// AHFS Project settings.
 pub struct Settings {
@@ -33,7 +32,7 @@ impl Settings {
     }
 
     /// Attempts to read `Settings` from file at given `path`.
-    pub fn read<P>(path: P) -> Result<Settings>
+    pub fn read<P>(_path: P) -> Result<Settings>
         where P: Into<PathBuf>,
     {
         /*

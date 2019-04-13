@@ -1,6 +1,6 @@
 use super::{Error, Name, Result, Token};
 
-/// A utility for reading well-defined [`Token`s][lex] sequences from an array.
+/// A utility for reading well-defined [`Token`s][tok] sequences from an array.
 ///
 /// # Operation
 ///
@@ -20,14 +20,6 @@ impl<'a, 'b: 'a> State<'a, 'b> {
     #[inline]
     pub fn new(tokens: &'a [Token<'b>]) -> Self {
         State(RuleState { tokens, offset: 0 })
-    }
-
-    /// Whether or not all internal [`Token`s][lex] have been consumed.
-    ///
-    /// [lex]: ../lexer/struct.Token.html
-    #[inline]
-    pub fn at_end(&self) -> bool {
-        self.0.offset >= self.0.tokens.len()
     }
 
     /// Applies given rule.
@@ -52,26 +44,70 @@ pub struct RuleState<'a, 'b: 'a> {
 }
 
 impl<'a, 'b: 'a> RuleState<'a, 'b> {
-    /// Returns next [Token][lex] only if it has one out of given `names`.
+    /// Whether or not all internal [`Token`s][lex] have been consumed.
     ///
     /// [lex]: ../lexer/struct.Token.html
-    pub fn next_if(&mut self, names: &'static [Name]) -> Result<Token<'b>> {
+    #[inline]
+    pub fn at_end(&self) -> bool {
+        self.offset >= self.tokens.len()
+    }
+
+    pub fn all(&mut self, names: &'static [Name]) -> Result<Box<[Token<'b>]>> {
+        let mut buffer = Vec::with_capacity(names.len());
+
+        let mut offset = self.offset;
+        for name in names {
+            let token = match self.tokens.get(offset) {
+                Some(token) => token.clone(),
+                None => {
+                    return Err(self.tokens.last()
+                        .map(|token| Error::UnexpectedSourceEnd {
+                            excerpt: token.region().end().into(),
+                            expected: vec![*name].into(),
+                        })
+                        .unwrap_or(Error::NoSource));
+                }
+            };
+            if name != token.name() {
+                println!("{} != {}", name, token.name());
+                return Err(self.tokens.last()
+                    .map(|token| Error::UnexpectedToken {
+                        name: *token.name(),
+                        excerpt: token.region().into(),
+                        expected: vec![*name].into(),
+                    })
+                    .unwrap_or(Error::NoSource));
+            }
+            buffer.push(token);
+            offset += 1;
+        }
+        self.offset = offset;
+
+        Ok(buffer.into())
+    }
+
+    /// Returns next [Token][lex] only if its [`Name`][nam] matches one out of
+    /// given `alternatives`.
+    ///
+    /// [lex]: ../lexer/struct.Token.html
+    /// [nam]: ../name/enum.Name.html
+    pub fn any(&mut self, alternatives: &'static [Name]) -> Result<Token<'b>> {
         let token = match self.tokens.get(self.offset) {
             Some(token) => token.clone(),
             None => {
                 return Err(self.tokens.last()
                     .map(|token| Error::UnexpectedSourceEnd {
                         excerpt: token.region().end().into(),
-                        expected: names,
+                        expected: alternatives.into(),
                     })
                     .unwrap_or(Error::NoSource));
             }
         };
-        if !names.contains(token.name()) {
+        if !alternatives.contains(token.name()) {
             return Err(Error::UnexpectedToken {
                 name: *token.name(),
                 excerpt: token.region().into(),
-                expected: names,
+                expected: alternatives.into(),
             });
         }
         self.offset += 1;

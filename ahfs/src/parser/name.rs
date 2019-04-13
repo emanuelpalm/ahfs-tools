@@ -20,7 +20,7 @@ pub enum Name {
     Semicolon,
 
     // Literals.
-    Boolean(bool),
+    Boolean,
     Integer,
     Float,
     String,
@@ -35,6 +35,7 @@ pub enum Name {
     Record,
     Service,
     System,
+    Using,
 
     // Other.
     Identifier,
@@ -57,7 +58,7 @@ impl fmt::Display for Name {
             Name::SquareRight => "]",
             Name::Semicolon => ";",
 
-            Name::Boolean(_) => "Boolean",
+            Name::Boolean => "Boolean",
             Name::Integer => "Integer",
             Name::Float => "Float",
             Name::String => "String",
@@ -71,6 +72,7 @@ impl fmt::Display for Name {
             Name::Record => "record",
             Name::Service => "service",
             Name::System => "system",
+            Name::Using => "using",
 
             Name::Identifier => "Identifier",
             Name::Comment => "Comment",

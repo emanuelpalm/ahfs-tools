@@ -1,5 +1,5 @@
 use super::Name;
-use ::source::{Range, Region};
+use source::{Range, Region};
 
 /// Identifies a typed [`Region`][reg] of some [`Source`][src] [`Text`][txt].
 ///
@@ -31,10 +31,10 @@ impl<'a> Token<'a> {
         &self.region
     }
 
-    /// Shrinks `Token` region, from end to start, with `size` bytes.
+    /// `Token` region.
     #[inline]
-    pub fn shrink(&mut self, size: usize) {
-        self.region.shrink(size)
+    pub fn into_region(self) -> Region<'a> {
+        self.region
     }
 }
 
