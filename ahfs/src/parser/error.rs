@@ -51,14 +51,18 @@ fn write_unexpected(
         1 => write!(f, ", expected `{}`", expected[0])?,
         _ => {
             write!(f, ", expected one of ")?;
-            let (last, rest) = expected.split_last().unwrap();
+
+            let (first, rest) = expected.split_first().unwrap();
+            write!(f, "`{}`", first)?;
+
+            let (last, rest) = rest.split_last().unwrap();
             for item in rest {
-                write!(f, "`{}`, ", item)?;
+                write!(f, ", `{}`", item)?;
             }
             write!(f, " or `{}`", last)?
         }
     };
-    write!(f, "\n{}", excerpt)
+    write!(f, ".\n{}", excerpt)
 }
 
 impl error::Error for Error {

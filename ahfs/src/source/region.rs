@@ -2,7 +2,7 @@ use std::fmt;
 use super::{LineIter, Lines, Range, Text};
 
 /// Represents a significant region within a borrowed source code text.
-#[derive(Clone, Debug)]
+#[derive(Clone)]
 pub struct Region<'a> {
     text: &'a Text,
     range: Range,
@@ -49,6 +49,17 @@ impl<'a> AsRef<str> for Region<'a> {
     #[inline]
     fn as_ref(&self) -> &str {
         self.as_str()
+    }
+}
+
+impl<'a> fmt::Debug for Region<'a> {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(
+            f, "Region {{ text: `{}` ({}), range: {:?} }}",
+            &self.text.body()[self.range.clone()],
+            self.text.name(),
+            self.range.clone()
+        )
     }
 }
 

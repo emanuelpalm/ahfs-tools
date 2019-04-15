@@ -65,10 +65,10 @@ impl<'a> Scanner<'a> {
         self.next_byte().unwrap_or(0)
     }
 
-    /// Undoes last call to `next()`.
-    pub fn undo(&mut self) {
+    /// Shrinks candidate by one character, unless candidate has length zero.
+    pub fn unwind(&mut self) {
         loop {
-            if self.end == 0 {
+            if self.start == self.end {
                 break;
             }
             self.end -= 1;
@@ -127,7 +127,7 @@ mod tests {
         // Take Cs.
         assert_eq!(Some('c'), reader.next());
         assert_eq!(Some('c'), reader.next());
-        reader.undo();
+        reader.unwind();
         let candidate = reader.review();
         assert_eq!("c", candidate);
     }

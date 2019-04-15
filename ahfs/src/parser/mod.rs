@@ -4,20 +4,20 @@
 
 mod error;
 mod lexer;
+mod matcher;
 mod name;
 mod scanner;
-mod state;
 mod token;
 mod tree;
 
 pub use self::error::Error;
 pub use self::tree::Tree;
 
+use self::matcher::Matcher;
 use self::name::Name;
 use self::scanner::Scanner;
-use self::state::{RuleState, State};
 use self::token::Token;
-use source::Source;
+use source::{Region, Source};
 use std::result;
 
 /// The `Result` of parsing.
@@ -26,71 +26,79 @@ pub type Result<T> = result::Result<T, Error>;
 /// Parses given source code texts.
 pub fn parse(source: &Source) -> Result<Tree> {
     let tokens = lexer::analyze(source);
-    let mut state = State::new(&tokens);
+    let mut m = Matcher::new(&tokens);
+    let mut t = Tree::new();
 
-    return state.apply(|mut state| {
-        let mut imports = Vec::new();
-        let mut systems = Vec::new();
+    while !m.at_end() {
+        match_root(&mut m, &mut t)?;
+    }
 
-        while !state.at_end() {
-            let token = state.any(&[Name::Import, Name::System])?;
-            match *token.name() {
-                Name::Import => parse_import(&mut state, &mut imports)?,
-                Name::System => parse_system(&mut state, &mut systems)?,
-                _ => unreachable!(),
-            }
+    Ok(t)
+}
+
+fn match_root<'a, 'b>(m: &mut Matcher<'a, 'b>, t: &mut Tree<'b>) -> Result<()>
+    where 'b: 'a,
+{
+    let c = m.try_one(Name::Comment);
+    let token = m.any(&[Name::Import, Name::System])?;
+    match *token.name() {
+        Name::Import => match_import(m, t),
+        Name::System => match_system(m, t, c),
+        _ => unreachable!(),
+    }
+}
+
+fn match_import<'a, 'b>(m: &mut Matcher<'a, 'b>, t: &mut Tree<'b>) -> Result<()>
+    where 'b: 'a,
+{
+    let head = m.all(&[Name::String, Name::Semicolon])?;
+    let name = head[0].region();
+
+    t.imports.push(tree::Import { name: name.clone() });
+
+    Ok(())
+}
+
+fn match_system<'a, 'b: 'a>(
+    m: &mut Matcher<'a, 'b>,
+    t: &mut Tree<'b>,
+    comment: Option<Token<'b>>,
+) -> Result<()> {
+    let head = m.all(&[Name::Identifier, Name::BraceLeft])?;
+    let mut s = tree::System::new(head[0].region().clone());
+    s.comment = comment.map(|c| c.region().clone());
+
+    loop {
+        let c = m.try_one(Name::Comment);
+        let next = m.any(&[
+            Name::Consumes,
+            Name::Produces,
+            Name::BraceRight,
+        ])?;
+        match *next.name() {
+            Name::Consumes => match_system_service_ref(m, &mut s.consumes, c)?,
+            Name::Produces => match_system_service_ref(m, &mut s.produces, c)?,
+            Name::BraceRight => { break; }
+            _ => unreachable!(),
         }
+    }
 
-        Ok(Tree {
-            imports: imports.into(),
-            systems: systems.into(),
-        })
+    t.systems.push(s);
+
+    Ok(())
+}
+
+fn match_system_service_ref<'a, 'b>(
+    m: &mut Matcher<'a, 'b>,
+    s: &mut Vec<tree::ServiceRef<'b>>,
+    comment: Option<Token<'b>>,
+) -> Result<()> {
+    let head = m.all(&[Name::Identifier, Name::Semicolon])?;
+    s.push(tree::ServiceRef {
+        name: head[0].region().clone(),
+        comment: comment.map(|c| c.region().clone()),
     });
-
-    fn parse_import<'a, 'b: 'a>(state: &mut RuleState<'a, 'b>, out: &mut Vec<tree::Import<'b>>) -> Result<()> {
-        let head = state.all(&[Name::String, Name::Semicolon])?;
-        out.push(tree::Import {
-            name: head[0].region().clone(),
-        });
-        Ok(())
-    }
-
-    fn parse_system<'a, 'b: 'a>(state: &mut RuleState<'a, 'b>, out: &mut Vec<tree::System<'b>>) -> Result<()> {
-        let mut consumes = Vec::new();
-        let mut produces = Vec::new();
-
-        let head = state.all(&[Name::Identifier, Name::BraceLeft])?;
-        loop {
-            let next = state.any(&[
-                Name::Consumes,
-                Name::Produces,
-                Name::Comment,
-                Name::BraceRight,
-            ])?;
-            match *next.name() {
-                Name::Consumes => {
-                    let head = state.all(&[Name::Identifier, Name::Semicolon])?;
-                    consumes.push(head[0].region().clone());
-                }
-                Name::Produces => {
-                    let head = state.all(&[Name::Identifier, Name::Semicolon])?;
-                    produces.push(head[0].region().clone());
-                }
-                Name::Comment => {}
-                Name::BraceRight => { break; }
-                _ => unreachable!(),
-            }
-        }
-
-        out.push(tree::System {
-            name: head[0].region().clone(),
-            consumes: consumes.into(),
-            produces: produces.into(),
-            comment: None,
-        });
-
-        Ok(())
-    }
+    Ok(())
 }
 
 #[cfg(test)]
@@ -106,21 +114,28 @@ mod tests {
                 "\n",
                 "// This comment is ignored.\n",
                 "/* This one too! */\n",
+                "/**\n",
+                " * Comment A.\n",
+                " * More comment A.\n",
+                " */\n",
                 "system TestSystem {\n",
-                "    /// Comment A.\n",
+                "    /// Comment B.\n",
                 "    consumes TestServiceX;\n",
                 "    consumes TestServiceY;\n",
                 "\n",
-                "    /** Comment B. */\n",
+                "    /** Comment C. */\n",
                 "    produces TestServiceA;\n",
                 "    produces TestServiceB;\n",
                 "}\n",
             )),
         ];
         let source = Source::new(texts);
-        if let Err(error) = super::parse(&source) {
-            println!("{}", error);
-            panic!("{:?}", error);
+        match super::parse(&source) {
+            Ok(tree) => panic!("{:?}", tree),
+            Err(err) => {
+                println!("{}", err);
+                panic!("{:?}", err);
+            }
         }
     }
 }

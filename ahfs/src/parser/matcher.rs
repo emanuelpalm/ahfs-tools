@@ -2,51 +2,22 @@ use super::{Error, Name, Result, Token};
 
 /// A utility for reading well-defined [`Token`s][tok] sequences from an array.
 ///
-/// # Operation
-///
-/// To advance an internal read offset, _rules_ are applied to the `State`. If
-/// a rule application is successful, the internal offset is updated to reflect
-/// the number of [`Token`s][tok] consumed by the applied rule. If, on the
-/// other hand, a rule application fails, the internal offset is unchanged.
-///
-/// Rules are lambdas operating on a given [`RuleState`][rul].
-///
 /// [tok]: ../lexer/struct.Token.html
-/// [rul]: struct.RuleState.html
-pub struct State<'a, 'b: 'a>(RuleState<'a, 'b>);
-
-impl<'a, 'b: 'a> State<'a, 'b> {
-    /// Creates new `State` instance from given `tokens` pointer.
-    #[inline]
-    pub fn new(tokens: &'a [Token<'b>]) -> Self {
-        State(RuleState { tokens, offset: 0 })
-    }
-
-    /// Applies given rule.
-    pub fn apply<R, T>(&mut self, rule: R) -> Result<T>
-        where R: FnOnce(&mut RuleState<'a, 'b>) -> Result<T>
-    {
-        let offset = self.0.offset;
-        match rule(&mut self.0) {
-            Ok(result) => Ok(result),
-            Err(error) => {
-                self.0.offset = offset;
-                Err(error)
-            }
-        }
-    }
-}
-
-/// A tentative state, used while attempting to fulfill rules.
-pub struct RuleState<'a, 'b: 'a> {
+pub struct Matcher<'a, 'b: 'a> {
     tokens: &'a [Token<'b>],
     offset: usize,
 }
 
-impl<'a, 'b: 'a> RuleState<'a, 'b> {
+impl<'a, 'b: 'a> Matcher<'a, 'b> {
+    /// Creates new `State` instance from given `tokens` pointer.
+    #[inline]
+    pub fn new(tokens: &'a [Token<'b>]) -> Self {
+        Matcher { tokens, offset: 0 }
+    }
+
     /// Whether or not all internal [`Token`s][lex] have been consumed.
-    ///
-    /// [lex]: ../lexer/struct.Token.html
+        ///
+        /// [lex]: ../lexer/struct.Token.html
     #[inline]
     pub fn at_end(&self) -> bool {
         self.offset >= self.tokens.len()
@@ -69,7 +40,6 @@ impl<'a, 'b: 'a> RuleState<'a, 'b> {
                 }
             };
             if name != token.name() {
-                println!("{} != {}", name, token.name());
                 return Err(self.tokens.last()
                     .map(|token| Error::UnexpectedToken {
                         name: *token.name(),
@@ -112,5 +82,15 @@ impl<'a, 'b: 'a> RuleState<'a, 'b> {
         }
         self.offset += 1;
         Ok(token)
+    }
+
+    pub fn try_one(&mut self, name: Name) -> Option<Token<'b>> {
+        match self.tokens.get(self.offset) {
+            Some(token) if name == *token.name() => {
+                self.offset += 1;
+                Some(token.clone())
+            },
+            _ => None
+        }
     }
 }

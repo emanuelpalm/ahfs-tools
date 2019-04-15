@@ -79,7 +79,7 @@ fn analyze_text<'a>(text: &'a Text, out: &mut Vec<Token<'a>>) -> Option<()> {
             }
             _ => {}
         };
-        scanner.undo();
+        scanner.unwind();
         Some(Name::Integer)
     }
 
@@ -126,7 +126,7 @@ fn analyze_text<'a>(text: &'a Text, out: &mut Vec<Token<'a>>) -> Option<()> {
             is_float = true;
         }
 
-        scanner.undo();
+        scanner.unwind();
 
         Some(if is_float { Name::Float } else { Name::Integer })
     }
@@ -136,7 +136,7 @@ fn analyze_text<'a>(text: &'a Text, out: &mut Vec<Token<'a>>) -> Option<()> {
         if ch >= '0' && ch <= '9' {
             scan_number(&mut scanner)
         } else if ch.is_whitespace() {
-            scanner.undo();
+            scanner.unwind();
             Some(Name::Error)
         } else {
             scan_symbol(&mut scanner, ch)
@@ -180,7 +180,7 @@ fn analyze_text<'a>(text: &'a Text, out: &mut Vec<Token<'a>>) -> Option<()> {
                 let keep = ch == '/';
                 loop {
                     if ch == '\r' || ch == '\n' {
-                        scanner.undo();
+                        scanner.unwind();
                         break;
                     }
                     ch = scanner.next()?;
@@ -212,7 +212,7 @@ fn analyze_text<'a>(text: &'a Text, out: &mut Vec<Token<'a>>) -> Option<()> {
                 }
             }
             _ => {
-                scanner.undo();
+                scanner.unwind();
                 Some(Name::Error)
             },
         }
@@ -225,7 +225,7 @@ fn analyze_text<'a>(text: &'a Text, out: &mut Vec<Token<'a>>) -> Option<()> {
         loop {
             ch = scanner.next()?;
             if !(ch.is_alphanumeric() || ch == '_') {
-                scanner.undo();
+                scanner.unwind();
                 break;
             }
         }
@@ -237,18 +237,19 @@ fn analyze_text<'a>(text: &'a Text, out: &mut Vec<Token<'a>>) -> Option<()> {
             "interface" => Name::Interface,
             "method" => Name::Method,
             "produces" => Name::Produces,
+            "property" => Name::Property,
             "record" => Name::Record,
             "service" => Name::Service,
             "system" => Name::System,
             "using" => Name::Using,
 
-            // Boolean.
+            // Booleans.
             "true" | "false" => Name::Boolean,
 
-            // Float.
+            // Floats.
             "inf" | "+inf" | "-inf" | "NaN" => Name::Float,
 
-            // Error.
+            // Errors.
             "+" | "-" => Name::Error,
 
             // Identifier.
@@ -266,7 +267,7 @@ mod tests {
         let texts = vec![
             Text::new("alpha.ahfs", concat!(
                 "consumes implement import interface method\n",
-                "produces record service system using\n",
+                "produces property record service system using\n",
                 "\n",
                 "<>{}:,()[];\n",
                 "\n",
@@ -292,8 +293,8 @@ mod tests {
         // Check token strings.
         assert_eq!(
             vec!["consumes", "implement", "import", "interface",
-                 "method", "produces", "record", "service",
-                 "system", "using",
+                 "method", "produces", "property", "record",
+                 "service", "system", "using",
                  "<", ">", "{", "}", ":", ",", "(", ")", "[", "]", ";",
                  "true", "false",
                  "0", "1", "202", "-30", "+40",
@@ -311,8 +312,8 @@ mod tests {
         // Check token kinds.
         assert_eq!(
             vec![Name::Consumes, Name::Implement, Name::Import, Name::Interface,
-                 Name::Method, Name::Produces, Name::Record, Name::Service,
-                 Name::System, Name::Using,
+                 Name::Method, Name::Produces, Name::Property, Name::Record,
+                 Name::Service, Name::System, Name::Using,
                  Name::AngleLeft, Name::AngleRight,
                  Name::BraceLeft, Name::BraceRight,
                  Name::Colon, Name::Comma,
