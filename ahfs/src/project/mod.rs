@@ -11,10 +11,10 @@ pub use self::error::Error;
 pub use self::settings::Settings;
 pub use self::version::Version;
 
+use error::Result;
 use std::fs;
 use std::io;
 use std::path::{Path, PathBuf};
-use ::error::Result;
 
 /// Represents an AHFS project.
 pub struct Project {

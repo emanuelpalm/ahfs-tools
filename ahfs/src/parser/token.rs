@@ -1,4 +1,4 @@
-use super::Name;
+use parser::Name;
 use source::{Range, Region};
 
 /// Identifies a typed [`Region`][reg] of some [`Source`][src] [`Text`][txt].
@@ -41,7 +41,7 @@ impl<'a> Token<'a> {
 impl<'a> From<Token<'a>> for Range {
     #[inline]
     fn from(token: Token<'a>) -> Self {
-        token.region.range().clone()
+        *token.region.range()
     }
 }
 

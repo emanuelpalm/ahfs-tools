@@ -1,4 +1,4 @@
-use super::Method;
+use model::Method;
 
 pub struct Service {
     name: Box<str>,

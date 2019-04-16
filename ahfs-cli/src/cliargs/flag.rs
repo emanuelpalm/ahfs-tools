@@ -1,10 +1,10 @@
+use cliargs::{Error, Result};
 use std::cell::Cell;
 use std::error;
 use std::fmt;
 use std::rc::Rc;
 use std::result;
 use std::str::FromStr;
-use super::{Error, Result};
 
 /// Describes a command line flag.
 pub struct Flag {

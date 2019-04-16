@@ -1,8 +1,8 @@
+use source::{Range, Region};
 use std::fs;
 use std::io;
 use std::io::Read;
 use std::path::PathBuf;
-use super::{Range, Region};
 
 /// A named source code text.
 #[derive(Debug, Eq, PartialEq)]

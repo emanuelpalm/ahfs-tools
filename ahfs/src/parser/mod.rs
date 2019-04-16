@@ -17,7 +17,7 @@ use self::matcher::Matcher;
 use self::name::Name;
 use self::scanner::Scanner;
 use self::token::Token;
-use source::{Region, Source};
+use source::Source;
 use std::result;
 
 /// The `Result` of parsing.

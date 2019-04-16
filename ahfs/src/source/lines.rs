@@ -1,5 +1,5 @@
+use source::LineIter;
 use std::fmt;
-use super::{LineIter};
 
 /// Represents a type holding a set of lines that touches some significant
 /// region of characters.

@@ -1,5 +1,5 @@
+use source::Range;
 use std::fmt;
-use super::Range;
 
 /// A source code line touching some significant range of characters.
 pub struct Line<'a> {

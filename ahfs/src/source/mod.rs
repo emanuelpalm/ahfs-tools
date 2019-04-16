@@ -4,6 +4,7 @@ mod excerpt;
 mod line;
 mod lines;
 mod line_iter;
+mod range;
 mod region;
 mod text;
 
@@ -11,15 +12,12 @@ pub use self::excerpt::Excerpt;
 pub use self::line::Line;
 pub use self::lines::Lines;
 pub use self::line_iter::LineIter;
+pub use self::range::Range;
 pub use self::region::Region;
 pub use self::text::Text;
 
 use std::io;
-use std::ops;
 use std::path::PathBuf;
-
-/// Refers to a range of bytes within some arbitrary `str`.
-pub type Range = ops::Range<usize>;
 
 /// A collection of source code [`Text`s](struct.Text.html).
 pub struct Source {
@@ -109,35 +107,35 @@ mod tests {
                 .unwrap())
         };
         {
-            assert_eq!(get(1, 0..1).as_str(), concat!(
+            assert_eq!(get(1, Range::new(0, 1)).as_str(), concat!(
                 "      : ", str_color!(blue: "beta.ahs"), "\n",
                 "      |\n",
                 "    1 | ", str_color!(none: "X"), "\n",
                 "      | ", str_color!( red: "^"), "\n"));
         }
         {
-            assert_eq!(get(0, 0..1).as_str(), concat!(
+            assert_eq!(get(0, Range::new(0, 1)).as_str(), concat!(
                 "      : ", str_color!(blue: "alpha.ahs"), "\n",
                 "      |\n",
                 "    1 | ", str_color!(none: "A type System;"), "\n",
                 "      | ", str_color!( red: "^"), "\n"));
         }
         {
-            assert_eq!(get(0, 17..25).as_str(), concat!(
+            assert_eq!(get(0, Range::new(17, 25)).as_str(), concat!(
                 "      : ", str_color!(blue: "alpha.ahs"), "\n",
                 "      |\n",
                 "    2 | ", str_color!(none: "A consumes B;"), "\n",
                 "      | ", str_color!( red: "  ^^^^^^^^"), "\n"));
         }
         {
-            assert_eq!(get(0, 30..42).as_str(), concat!(
+            assert_eq!(get(0, Range::new(30, 42)).as_str(), concat!(
                 "      : ", str_color!(blue: "alpha.ahs"), "\n",
                 "      |\n",
                 "    3 | ", str_color!(none: "A produces C;"), "\n",
                 "      | ", str_color!( red: "^^^^^^^^^^^^"), "\n"));
         }
         {
-            assert_eq!(get(0, 17..40).as_str(), concat!(
+            assert_eq!(get(0, Range::new(17, 40)).as_str(), concat!(
                 "      : ", str_color!(blue: "alpha.ahs"), "\n",
                 "      |\n",
                 "    2 | ", str_color!(none: "A consumes B;"), "\n",
@@ -146,7 +144,7 @@ mod tests {
                 "      | ", str_color!( red: "^^^^^^^^^^"), "\n"));
         }
         {
-            assert_eq!(get(0, 7..40).as_str(), concat!(
+            assert_eq!(get(0, Range::new(7, 40)).as_str(), concat!(
                 "      : ", str_color!(blue: "alpha.ahs"), "\n",
                 "      |\n",
                 "    1 | ", str_color!(none: "A type System;"), "\n",
@@ -156,7 +154,7 @@ mod tests {
                 "     ...\n"));
         }
         {
-            assert_eq!(get(0, 42..42).as_str(), concat!(
+            assert_eq!(get(0, Range::new(42, 42)).as_str(), concat!(
                 "      : ", str_color!(blue: "alpha.ahs"), "\n",
                 "      |\n",
                 "    3 | ", str_color!(none: "A produces C;"), "\n",

@@ -1,7 +1,7 @@
 //! Lexical analysis utilities.
 
-use super::{Name, Scanner, Token};
-use ::source::{Source, Text};
+use parser::{Name, Scanner, Token};
+use source::{Source, Text};
 
 /// Creates a slice of `Tokens` from given `source`.
 pub fn analyze(source: &Source) -> Box<[Token]> {
@@ -49,45 +49,57 @@ fn analyze_text<'a>(text: &'a Text, out: &mut Vec<Token<'a>>) -> Option<()> {
 
         out.push(scanner.collect(name));
     }
+}
 
-    fn scan_radix_number(scanner: &mut Scanner) -> Option<Name> {
-        let mut ch = scanner.next()?;
+#[inline]
+fn scan_radix_number(scanner: &mut Scanner) -> Option<Name> {
+    let mut ch = scanner.next()?;
+    match ch {
+        'b' => loop {
+            ch = scanner.next()?;
+            match ch {
+                '0'...'1' => continue,
+                _ => break,
+            }
+        }
+        'c' => loop {
+            ch = scanner.next()?;
+            match ch {
+                '0'...'7' => continue,
+                _ => break,
+            }
+        },
+        'x' => loop {
+            ch = scanner.next()?;
+            match ch {
+                '0'...'9' | 'A'...'F' | 'a'...'f' => continue,
+                _ => break,
+            }
+        },
+        '0'...'9' => {
+            return scan_number(scanner);
+        }
+        _ => {}
+    };
+    scanner.unwind();
+    Some(Name::Integer)
+}
+
+fn scan_number(scanner: &mut Scanner) -> Option<Name> {
+    let mut is_float = false;
+    let mut ch;
+
+    // Integral.
+    loop {
+        ch = scanner.next()?;
         match ch {
-            'b' => loop {
-                ch = scanner.next()?;
-                match ch {
-                    '0'...'1' => continue,
-                    _ => break,
-                }
-            }
-            'c' => loop {
-                ch = scanner.next()?;
-                match ch {
-                    '0'...'7' => continue,
-                    _ => break,
-                }
-            },
-            'x' => loop {
-                ch = scanner.next()?;
-                match ch {
-                    '0'...'9' | 'A'...'F' | 'a'...'f' => continue,
-                    _ => break,
-                }
-            },
-            '0'...'9' => {
-                return scan_number(scanner);
-            }
-            _ => {}
-        };
-        scanner.unwind();
-        Some(Name::Integer)
+            '0'...'9' => continue,
+            _ => break,
+        }
     }
 
-    fn scan_number(scanner: &mut Scanner) -> Option<Name> {
-        let mut is_float = false;
-        let mut ch;
-
-        // Integral.
+    // Fraction.
+    if ch == '.' {
         loop {
             ch = scanner.next()?;
             match ch {
@@ -95,167 +107,159 @@ fn analyze_text<'a>(text: &'a Text, out: &mut Vec<Token<'a>>) -> Option<()> {
                 _ => break,
             }
         }
+        is_float = true;
+    }
 
-        // Fraction.
-        if ch == '.' {
-            loop {
-                ch = scanner.next()?;
-                match ch {
-                    '0'...'9' => continue,
-                    _ => break,
-                }
-            }
-            is_float = true;
-        }
-
-        // Exponent.
-        if ch == 'E' || ch == 'e' {
+    // Exponent.
+    if ch == 'E' || ch == 'e' {
+        ch = scanner.next()?;
+        if ch == '+' || ch == '-' {
             ch = scanner.next()?;
-            if ch == '+' || ch == '-' {
-                ch = scanner.next()?;
-            }
-            loop {
-                match ch {
-                    '0'...'9' => {
-                        ch = scanner.next()?;
-                        continue;
-                    },
-                    _ => break,
-                }
-            }
-            is_float = true;
-        }
-
-        scanner.unwind();
-
-        Some(if is_float { Name::Float } else { Name::Integer })
-    }
-
-    fn scan_number_or_symbol(mut scanner: &mut Scanner) -> Option<Name> {
-        let ch = scanner.next()?;
-        if ch >= '0' && ch <= '9' {
-            scan_number(&mut scanner)
-        } else if ch.is_whitespace() {
-            scanner.unwind();
-            Some(Name::Error)
-        } else {
-            scan_symbol(&mut scanner, ch)
-        }
-    }
-
-    fn scan_string(scanner: &mut Scanner) -> Option<Name> {
-        let mut ch;
-        'outer: loop {
-            ch = scanner.next()?;
-            match ch {
-                '"' => break Some(Name::String),
-                '\\' => {
-                    ch = scanner.next()?;
-                    match ch {
-                        'u' => {
-                            ch = scanner.next()?;
-                            for _ in 0..4 {
-                                match ch {
-                                    '0'...'9' |
-                                    'A'...'F' |
-                                    'a'...'f' => continue,
-                                    _ => break 'outer Some(Name::Error),
-                                }
-                            }
-                        }
-                        _ => {}
-                    }
-                }
-                c if !c.is_control() => {}
-                _ => break Some(Name::Error),
-            }
-        }
-    }
-
-    fn scan_comment(scanner: &mut Scanner) -> Option<Name> {
-        let mut ch = scanner.next()?;
-        match ch {
-            '/' => {
-                ch = scanner.next()?;
-                let keep = ch == '/';
-                loop {
-                    if ch == '\r' || ch == '\n' {
-                        scanner.unwind();
-                        break;
-                    }
-                    ch = scanner.next()?;
-                }
-                if keep {
-                    Some(Name::Comment)
-                } else {
-                    scanner.discard();
-                    return None;
-                }
-            }
-            '*' => {
-                ch = scanner.next()?;
-                let keep = ch == '*';
-                loop {
-                    if ch == '*' {
-                        ch = scanner.next()?;
-                        if ch == '/' {
-                            break;
-                        }
-                    }
-                    ch = scanner.next()?;
-                }
-                if keep {
-                    Some(Name::Comment)
-                } else {
-                    scanner.discard();
-                    return None;
-                }
-            }
-            _ => {
-                scanner.unwind();
-                Some(Name::Error)
-            },
-        }
-    }
-
-    fn scan_symbol(scanner: &mut Scanner, mut ch: char) -> Option<Name> {
-        if !ch.is_alphabetic() && ch != '_' {
-            return Some(Name::Error);
         }
         loop {
-            ch = scanner.next()?;
-            if !(ch.is_alphanumeric() || ch == '_') {
-                scanner.unwind();
-                break;
+            match ch {
+                '0'...'9' => {
+                    ch = scanner.next()?;
+                    continue;
+                },
+                _ => break,
             }
         }
-        Some(match scanner.review() {
-            // Keywords.
-            "consumes" => Name::Consumes,
-            "implement" => Name::Implement,
-            "import" => Name::Import,
-            "interface" => Name::Interface,
-            "method" => Name::Method,
-            "produces" => Name::Produces,
-            "property" => Name::Property,
-            "record" => Name::Record,
-            "service" => Name::Service,
-            "system" => Name::System,
-            "using" => Name::Using,
-
-            // Booleans.
-            "true" | "false" => Name::Boolean,
-
-            // Floats.
-            "inf" | "+inf" | "-inf" | "NaN" => Name::Float,
-
-            // Errors.
-            "+" | "-" => Name::Error,
-
-            // Identifier.
-            _ => Name::Identifier,
-        })
+        is_float = true;
     }
+
+    scanner.unwind();
+
+    Some(if is_float { Name::Float } else { Name::Integer })
+}
+
+#[inline]
+fn scan_number_or_symbol(mut scanner: &mut Scanner) -> Option<Name> {
+    let ch = scanner.next()?;
+    if ch >= '0' && ch <= '9' {
+        scan_number(&mut scanner)
+    } else if ch.is_whitespace() {
+        scanner.unwind();
+        Some(Name::Error)
+    } else {
+        scan_symbol(&mut scanner, ch)
+    }
+}
+
+#[inline]
+fn scan_string(scanner: &mut Scanner) -> Option<Name> {
+    let mut ch;
+    'outer: loop {
+        ch = scanner.next()?;
+        match ch {
+            '"' => break Some(Name::String),
+            '\\' => {
+                ch = scanner.next()?;
+                match ch {
+                    'u' => {
+                        ch = scanner.next()?;
+                        for _ in 0..4 {
+                            match ch {
+                                '0'...'9' |
+                                'A'...'F' |
+                                'a'...'f' => continue,
+                                _ => break 'outer Some(Name::Error),
+                            }
+                        }
+                    }
+                    _ => {}
+                }
+            }
+            c if !c.is_control() => {}
+            _ => break Some(Name::Error),
+        }
+    }
+}
+
+#[inline]
+fn scan_comment(scanner: &mut Scanner) -> Option<Name> {
+    let mut ch = scanner.next()?;
+    match ch {
+        '/' => {
+            ch = scanner.next()?;
+            let keep = ch == '/';
+            loop {
+                if ch == '\r' || ch == '\n' {
+                    scanner.unwind();
+                    break;
+                }
+                ch = scanner.next()?;
+            }
+            if keep {
+                Some(Name::Comment)
+            } else {
+                scanner.discard();
+                return None;
+            }
+        }
+        '*' => {
+            ch = scanner.next()?;
+            let keep = ch == '*';
+            loop {
+                if ch == '*' {
+                    ch = scanner.next()?;
+                    if ch == '/' {
+                        break;
+                    }
+                }
+                ch = scanner.next()?;
+            }
+            if keep {
+                Some(Name::Comment)
+            } else {
+                scanner.discard();
+                return None;
+            }
+        }
+        _ => {
+            scanner.unwind();
+            Some(Name::Error)
+        },
+    }
+}
+
+fn scan_symbol(scanner: &mut Scanner, mut ch: char) -> Option<Name> {
+    if !ch.is_alphabetic() && ch != '_' {
+        return Some(Name::Error);
+    }
+    loop {
+        ch = scanner.next()?;
+        if !(ch.is_alphanumeric() || ch == '_') {
+            scanner.unwind();
+            break;
+        }
+    }
+    Some(match scanner.review() {
+        // Keywords.
+        "consumes" => Name::Consumes,
+        "implement" => Name::Implement,
+        "import" => Name::Import,
+        "interface" => Name::Interface,
+        "method" => Name::Method,
+        "produces" => Name::Produces,
+        "property" => Name::Property,
+        "record" => Name::Record,
+        "service" => Name::Service,
+        "system" => Name::System,
+        "using" => Name::Using,
+
+        // Booleans.
+        "true" | "false" => Name::Boolean,
+
+        // Floats.
+        "inf" | "+inf" | "-inf" | "NaN" => Name::Float,
+
+        // Errors.
+        "+" | "-" => Name::Error,
+
+        // Identifier.
+        _ => Name::Identifier,
+    })
 }
 
 #[cfg(test)]

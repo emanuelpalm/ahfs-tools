@@ -1,9 +1,9 @@
+use error::Result;
+use meta;
+use project::Version;
 use std::fs;
 use std::io::Write;
 use std::path::{Path, PathBuf};
-use super::Version;
-use ::error::Result;
-use ::meta;
 
 /// AHFS Project settings.
 pub struct Settings {

@@ -1,5 +1,5 @@
+use source::{Line, Range};
 use std::cmp::Ord;
-use super::{Line, Range};
 
 /// An iterator over a set of source code [`Line`s][lin] containing a
 /// significant range of characters.
@@ -74,14 +74,16 @@ impl<'a> Iterator for LineIter<'a> {
 
         let text = &self.text[..text_len];
         let number = self.line_number;
-        let range = self.range.start..self.range.end.min(text.len());
+        let range = Range::new(self.range.start, self.range.end.min(text.len()));
 
         text_len += text_skip;
 
         self.text = &self.text[text_len..];
         self.line_number += 1;
-        self.range = (self.range.start.saturating_sub(text_len))
-            ..(self.range.end.saturating_sub(text_len));
+        self.range = Range::new(
+            self.range.start.saturating_sub(text_len),
+            self.range.end.saturating_sub(text_len)
+        );
 
         Some(unsafe { Line::new(text, number, range) })
     }

@@ -1,5 +1,5 @@
+use source::{LineIter, Lines, Range, Text};
 use std::fmt;
-use super::{LineIter, Lines, Range, Text};
 
 /// Represents a significant region within a borrowed source code text.
 #[derive(Clone)]
@@ -22,7 +22,7 @@ impl<'a> Region<'a> {
     #[inline]
     pub fn as_str(&self) -> &'a str {
         unsafe {
-            self.text.body().get_unchecked(self.range.clone())
+            self.text.body().get_unchecked(self.range.as_ops_range())
         }
     }
 
@@ -41,7 +41,7 @@ impl<'a> Region<'a> {
     /// Creates new `Region` representing only end of this `Region`.
     #[inline]
     pub fn end(&self) -> Region<'a> {
-        Region { text: self.text, range: self.range.end..self.range.end }
+        Region { text: self.text, range: Range::new(self.range.end, self.range.end) }
     }
 }
 
@@ -56,7 +56,7 @@ impl<'a> fmt::Debug for Region<'a> {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         write!(
             f, "Region {{ text: `{}` ({}), range: {:?} }}",
-            &self.text.body()[self.range.clone()],
+            &self.text.body()[self.range.as_ops_range()],
             self.text.name(),
             self.range.clone()
         )
@@ -94,7 +94,7 @@ impl<'a> Lines for Region<'a> {
             .bytes()
             .filter(|b| *b == b'\n')
             .count() + 1;
-        let range = (self.range.start - start)..(self.range.end - start);
+        let range = Range::new(self.range.start - start, self.range.end - start);
 
         unsafe { LineIter::new(text, line_number, range) }
     }

@@ -1,5 +1,5 @@
+use cliargs::{Result, Rule, Error};
 use std::fmt;
-use super::{Result, Rule, Error};
 
 /// A description of how command line arguments are to be parsed.
 pub struct Parser<'a> {

@@ -1,5 +1,5 @@
 use std::process;
-use ::log;
+use log;
 
 /// Executes `f`, and then exits application after it returns.
 ///

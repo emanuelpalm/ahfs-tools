@@ -1,5 +1,5 @@
-use super::{Name, Token};
-use ::source::{Region, Text};
+use parser::{Name, Token};
+use source::{Range, Region, Text};
 use std::char;
 
 /// A utility for creating [`Token`s](struct.Token.html) from source texts.
@@ -83,7 +83,7 @@ impl<'a> Scanner<'a> {
     #[inline]
     pub fn collect(&mut self, name: Name) -> Token<'a> {
         let token = Token::new(name, unsafe {
-            Region::new(self.text, self.start..self.end)
+            Region::new(self.text, Range::new(self.start, self.end))
         });
         self.discard();
         token

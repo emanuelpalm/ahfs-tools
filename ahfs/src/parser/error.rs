@@ -1,7 +1,7 @@
+use parser::Name;
+use source::Excerpt;
 use std::error;
 use std::fmt;
-use super::Name;
-use ::source::Excerpt;
 
 /// A parser error.
 #[derive(Debug)]

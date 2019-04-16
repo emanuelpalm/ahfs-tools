@@ -1,6 +1,6 @@
+use cliargs::{Error, Flag, Result};
 use std::fmt;
 use std::result;
-use super::{Error, Flag, Result};
 
 /// A command line argument rule.
 pub struct Rule<'a> {

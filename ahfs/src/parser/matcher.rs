@@ -1,4 +1,4 @@
-use super::{Error, Name, Result, Token};
+use parser::{Error, Name, Result, Token};
 
 /// A utility for reading well-defined [`Token`s][tok] sequences from an array.
 ///

@@ -1,6 +1,6 @@
+use source::Excerpt;
 use std::error;
 use std::fmt;
-use ::source::Excerpt;
 
 /// A project-related error.
 #[derive(Debug)]

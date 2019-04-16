@@ -1,5 +1,5 @@
+use source::{LineIter, Lines, Range, Region, Text};
 use std::fmt;
-use super::{LineIter, Lines, Range, Region, Text};
 
 /// Owned part of some original [`Text`][txt] containing a significant range of
 /// characters.
