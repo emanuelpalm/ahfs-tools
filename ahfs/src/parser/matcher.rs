@@ -84,12 +84,32 @@ impl<'a, 'b: 'a> Matcher<'a, 'b> {
         Ok(token)
     }
 
+    pub fn one(&mut self, name: Name) -> Result<Token<'b>> {
+        match self.tokens.get(self.offset) {
+            Some(token) if name == *token.name() => {
+                self.offset += 1;
+                Ok(token.clone())
+            }
+            Some(token) => Err(Error::UnexpectedToken {
+                name: *token.name(),
+                excerpt: token.region().into(),
+                expected: vec![name].into(),
+            }),
+            _ => Err(self.tokens.last()
+                .map(|token| Error::UnexpectedSourceEnd {
+                    excerpt: token.region().end().into(),
+                    expected: vec![name].into(),
+                })
+                .unwrap_or(Error::NoSource)),
+        }
+    }
+
     pub fn try_one(&mut self, name: Name) -> Option<Token<'b>> {
         match self.tokens.get(self.offset) {
             Some(token) if name == *token.name() => {
                 self.offset += 1;
                 Some(token.clone())
-            },
+            }
             _ => None
         }
     }
