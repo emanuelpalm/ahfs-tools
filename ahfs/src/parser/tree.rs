@@ -21,6 +21,7 @@ impl<'a> Tree<'a> {
 #[derive(Debug)]
 pub struct Import<'a> {
     pub name: Region<'a>,
+    pub comment: Option<Region<'a>>,
 }
 
 #[derive(Debug)]

@@ -105,7 +105,8 @@ impl<'a, 'b: 'a> Matcher<'a, 'b> {
     }
 
     pub fn try_one(&mut self, name: Name) -> Option<Token<'b>> {
-        match self.tokens.get(self.offset) {
+        let token = self.tokens.get(self.offset);
+        match token {
             Some(token) if name == *token.name() => {
                 self.offset += 1;
                 Some(token.clone())

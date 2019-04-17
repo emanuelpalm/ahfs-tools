@@ -11,7 +11,7 @@ mod token;
 mod tree;
 
 pub use self::error::Error;
-pub use self::tree::Tree;
+pub use self::tree::{Service, ServiceMethod, ServiceInterface, ServiceRef, System, Tree};
 
 use self::matcher::Matcher;
 use self::name::Name;
@@ -24,122 +24,148 @@ use std::result;
 pub type Result<T> = result::Result<T, Error>;
 
 type M<'a, 'b> = Matcher<'a, 'b>;
+type R = Result<()>;
+type C<'a> = Option<Region<'a>>;
 
 /// Parses given source code texts.
 pub fn parse(source: &Source) -> Result<Tree> {
     let tokens = lexer::analyze(source);
+
     let mut m = M::new(&tokens);
     let mut tree = Tree::new();
 
-    while !m.at_end() {
-        let comment = m.try_one(Name::Comment).map(|c| c.into_region());
+    inflate(&mut m, &mut tree, None)?;
+
+    return Ok(tree);
+
+    fn inflate<'a, 'b>(m: &mut M<'a, 'b>, t: &mut Tree<'b>, c: C<'b>) -> R {
         let token = m.any(&[
+            Name::Comment,
             Name::Import,
             Name::Service,
             Name::System,
         ])?;
         match *token.name() {
-            Name::Import => tree.imports.push(import(&mut m)?),
-            Name::Service => tree.services.push(service(&mut m, comment)?),
-            Name::System => tree.systems.push(system(&mut m, comment)?),
+            Name::Comment => inflate(m, t, Some(token.into_region()))?,
+            Name::Import => import(m, t, c)?,
+            Name::Service => service(m, t, c)?,
+            Name::System => system(m, t, c)?,
             _ => unreachable!(),
         }
+        if m.at_end() {
+            return Ok(());
+        }
+        inflate(m, t, None)
     }
-
-    Ok(tree)
 }
 
-fn import<'a, 'b>(m: &mut M<'a, 'b>) -> Result<tree::Import<'b>> {
+fn import<'a, 'b>(m: &mut M<'a, 'b>, t: &mut Tree<'b>, c: C<'b>) -> R {
     let head = m.all(&[Name::String, Name::Semicolon])?;
     let name = head[0].region();
-    Ok(tree::Import { name: name.clone() })
+    t.imports.push(tree::Import { name: name.clone(), comment: c });
+    Ok(())
 }
 
-fn system<'a, 'b>(m: &mut M<'a, 'b>, comment: Option<Region<'b>>) -> Result<tree::System<'b>> {
+fn system<'a, 'b>(m: &mut M<'a, 'b>, t: &mut Tree<'b>, c: C<'b>) -> R {
     let head = m.all(&[Name::Identifier, Name::BraceLeft])?;
-    let mut system = tree::System::new(head[0].region().clone(), comment);
+    let mut system = System::new(head[0].region().clone(), c);
 
-    loop {
-        let comment = m.try_one(Name::Comment).map(|c| c.into_region());
+    inflate(m, &mut system, None)?;
+    t.systems.push(system);
+
+    return Ok(());
+
+    fn inflate<'a, 'b>(m: &mut M<'a, 'b>, t: &mut System<'b>, c: C<'b>) -> R {
         let token = m.any(&[
+            Name::Comment,
             Name::Consumes,
             Name::Produces,
             Name::BraceRight,
         ])?;
         match *token.name() {
-            Name::Consumes => system.consumes.push(service_ref(m, comment)?),
-            Name::Produces => system.produces.push(service_ref(m, comment)?),
-            Name::BraceRight => { break; }
+            Name::Comment => { return inflate(m, t, Some(token.into_region())); }
+            Name::Consumes => service_ref(m, &mut t.consumes, c)?,
+            Name::Produces => service_ref(m, &mut t.produces, c)?,
+            Name::BraceRight => { return Ok(()); }
             _ => unreachable!(),
         }
+        inflate(m, t, None)
     }
-
-    Ok(system)
 }
 
-fn service<'a, 'b>(m: &mut M<'a, 'b>, comment: Option<Region<'b>>) -> Result<tree::Service<'b>> {
+fn service<'a, 'b>(m: &mut M<'a, 'b>, t: &mut Tree<'b>, c: C<'b>) -> R {
     let head = m.all(&[Name::Identifier, Name::BraceLeft])?;
-    let mut service = tree::Service::new(head[0].region().clone(), comment);
+    let mut service = Service::new(head[0].region().clone(), c);
 
-    loop {
-        let comment = m.try_one(Name::Comment).map(|c| c.into_region());
+    inflate(m, &mut service, None)?;
+    t.services.push(service);
+
+    return Ok(());
+
+    fn inflate<'a, 'b>(m: &mut M<'a, 'b>, t: &mut Service<'b>, c: C<'b>) -> R {
         let token = m.any(&[
+            Name::Comment,
             Name::Interface,
             Name::BraceRight,
         ])?;
         match *token.name() {
-            Name::Interface => service.interfaces.push(service_interface(m, comment)?),
-            Name::BraceRight => { break; }
+            Name::Comment => inflate(m, t, Some(token.into_region()))?,
+            Name::Interface => service_interface(m, t, c)?,
+            Name::BraceRight => { return Ok(()); }
             _ => unreachable!(),
         }
+        inflate(m, t, None)
     }
-
-    Ok(service)
 }
 
-fn service_interface<'a, 'b>(m: &mut M<'a, 'b>, comment: Option<Region<'b>>) -> Result<tree::ServiceInterface<'b>> {
-    let head = m.all(&[Name::Identifier, Name::Semicolon])?;
-    let mut interface = tree::ServiceInterface::new(head[0].region().clone(), comment);
+fn service_interface<'a, 'b>(m: &mut M<'a, 'b>, t: &mut Service<'b>, c: C<'b>) -> R {
+    let head = m.all(&[Name::Identifier, Name::BraceLeft])?;
+    let mut interface = ServiceInterface::new(head[0].region().clone(), c);
 
-    loop {
-        let comment = m.try_one(Name::Comment).map(|c| c.into_region());
+    inflate(m, &mut interface, None);
+    t.interfaces.push(interface);
+
+    return Ok(());
+
+    fn inflate<'a, 'b>(m: &mut M<'a, 'b>, s: &mut ServiceInterface<'b>, c: C<'b>) -> R {
         let token = m.any(&[
+            Name::Comment,
             Name::Method,
             Name::BraceRight,
         ])?;
         match *token.name() {
-            Name::Method => interface.methods.push(service_method(m, comment)?),
-            Name::BraceRight => { break; }
+            Name::Comment => inflate(m, s, Some(token.into_region()))?,
+            Name::Method => service_method(m, &mut s.methods, c)?,
+            Name::BraceRight => { return Ok(()); }
             _ => unreachable!(),
         }
+        inflate(m, s, None)
     }
-
-    Ok(interface)
 }
 
-fn service_method<'a, 'b>(m: &mut M<'a, 'b>, comment: Option<Region<'b>>) -> Result<tree::ServiceMethod<'b>> {
+fn service_method<'a, 'b>(m: &mut M<'a, 'b>, t: &mut Vec<ServiceMethod<'b>>, c: C<'b>) -> R {
     let head = m.all(&[Name::Identifier, Name::ParenLeft])?;
-    let mut method = tree::ServiceMethod::new(head[0].region().clone(), comment);
+    let mut method = tree::ServiceMethod::new(head[0].region().clone(), c);
 
     method.input = try_type_ref(m, None);
-
     m.one(Name::ParenRight)?;
-
-    if let Some(_) = m.try_one(Name::Comma) {
+    if let Some(_) = m.try_one(Name::Colon) {
         method.output = try_type_ref(m, None);
     }
-
     m.one(Name::Semicolon)?;
 
-    Ok(method)
+    t.push(method);
+
+    Ok(())
 }
 
-fn service_ref<'a, 'b>(m: &mut M<'a, 'b>, comment: Option<Region<'b>>) -> Result<tree::ServiceRef<'b>> {
+fn service_ref<'a, 'b>(m: &mut M<'a, 'b>, s: &mut Vec<ServiceRef<'b>>, c: C<'b>) -> R {
     let head = m.all(&[Name::Identifier, Name::Semicolon])?;
-    Ok(tree::ServiceRef {
+    s.push(ServiceRef {
         name: head[0].region().clone(),
-        comment,
-    })
+        comment: c,
+    });
+    Ok(())
 }
 
 fn try_type_ref<'a, 'b>(m: &mut M<'a, 'b>, comment: Option<Region<'b>>) -> Option<tree::TypeRef<'b>> {
@@ -197,7 +223,7 @@ mod tests {
                 "\n",
                 "service TestServiceX {\n",
                 "    interface X1 {\n",
-                "        method FireMissiles();\n",
+                "        method FireMissiles(Set<Plan>);\n",
                 "        method SetTarget(String);\n",
                 "        method GetTarget(): String;\n",
                 "    }\n",

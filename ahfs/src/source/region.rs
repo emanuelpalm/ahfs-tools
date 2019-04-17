@@ -1,4 +1,5 @@
 use source::{LineIter, Lines, Range, Text};
+use std::cmp;
 use std::fmt;
 
 /// Represents a significant region within a borrowed source code text.
@@ -40,8 +41,21 @@ impl<'a> Region<'a> {
 
     /// Creates new `Region` representing only end of this `Region`.
     #[inline]
-    pub fn end(&self) -> Region<'a> {
+    pub fn end(&self) -> Self {
         Region { text: self.text, range: Range::new(self.range.end, self.range.end) }
+    }
+
+    /// Connects this and given `other` `Region`, creating a new `Region` that
+    /// contains both regions and all text between them.
+    #[inline]
+    pub fn connect(&self, other: Region<'a>) -> Self {
+        Region {
+            text: self.text,
+            range: Range::new(
+                cmp::min(self.range.start, other.range.start),
+                cmp::max(self.range.end, other.range.end),
+            ),
+        }
     }
 }
 
