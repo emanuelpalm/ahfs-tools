@@ -4,19 +4,19 @@ use std::fmt;
 
 /// Represents a significant region within a borrowed source code text.
 #[derive(Clone)]
-pub struct Region<'a> {
+pub struct Span<'a> {
     text: &'a Text,
     range: Range,
 }
 
-impl<'a> Region<'a> {
+impl<'a> Span<'a> {
     /// It is the responsibility of the caller to ensure given
     /// [`range`](type.Range.html) is within valid UTF-8 bounds of given
     /// [`text`](struct.Text.html).
     #[doc(hidden)]
     #[inline]
     pub unsafe fn new(text: &'a Text, range: Range) -> Self {
-        Region { text, range }
+        Span { text, range }
     }
 
     /// Gets string representing only significant range within this `Region`.
@@ -42,14 +42,14 @@ impl<'a> Region<'a> {
     /// Creates new `Region` representing only end of this `Region`.
     #[inline]
     pub fn end(&self) -> Self {
-        Region { text: self.text, range: Range::new(self.range.end, self.range.end) }
+        Span { text: self.text, range: Range::new(self.range.end, self.range.end) }
     }
 
     /// Connects this and given `other` `Region`, creating a new `Region` that
     /// contains both regions and all text between them.
     #[inline]
-    pub fn connect(&self, other: Region<'a>) -> Self {
-        Region {
+    pub fn connect(&self, other: Span<'a>) -> Self {
+        Span {
             text: self.text,
             range: Range::new(
                 cmp::min(self.range.start, other.range.start),
@@ -59,14 +59,14 @@ impl<'a> Region<'a> {
     }
 }
 
-impl<'a> AsRef<str> for Region<'a> {
+impl<'a> AsRef<str> for Span<'a> {
     #[inline]
     fn as_ref(&self) -> &str {
         self.as_str()
     }
 }
 
-impl<'a> fmt::Debug for Region<'a> {
+impl<'a> fmt::Debug for Span<'a> {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         write!(
             f, "Region {{ text: `{}` ({}), range: {:?} }}",
@@ -77,13 +77,13 @@ impl<'a> fmt::Debug for Region<'a> {
     }
 }
 
-impl<'a> fmt::Display for Region<'a> {
+impl<'a> fmt::Display for Span<'a> {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         Lines::fmt(self, f, self.text.name())
     }
 }
 
-impl<'a> Lines for Region<'a> {
+impl<'a> Lines for Span<'a> {
     fn lines(&self) -> LineIter {
         let body = self.text.body();
 
@@ -114,16 +114,16 @@ impl<'a> Lines for Region<'a> {
     }
 }
 
-impl<'a, 'b> PartialEq<&'a str> for Region<'b> {
+impl<'a, 'b> PartialEq<&'a str> for Span<'b> {
     #[inline]
     fn eq(&self, other: &&'a str) -> bool {
         &self.as_str() == other
     }
 }
 
-impl<'a, 'b> PartialEq<Region<'a>> for &'b str {
+impl<'a, 'b> PartialEq<Span<'a>> for &'b str {
     #[inline]
-    fn eq(&self, other: &Region<'a>) -> bool {
+    fn eq(&self, other: &Span<'a>) -> bool {
         other == self
     }
 }

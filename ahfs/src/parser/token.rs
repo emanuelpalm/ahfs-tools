@@ -1,5 +1,5 @@
 use parser::Name;
-use source::{Range, Region};
+use source::{Range, Span};
 
 /// Identifies a typed [`Region`][reg] of some [`Source`][src] [`Text`][txt].
 ///
@@ -9,14 +9,14 @@ use source::{Range, Region};
 #[derive(Clone, Debug)]
 pub struct Token<'a> {
     name: Name,
-    region: Region<'a>,
+    span: Span<'a>,
 }
 
 impl<'a> Token<'a> {
     /// Creates new `Token` from given `name` and `region`.
     #[inline]
-    pub fn new(name: Name, region: Region<'a>) -> Self {
-        Token { name, region }
+    pub fn new(name: Name, region: Span<'a>) -> Self {
+        Token { name, span: region }
     }
 
     /// `Token` name.
@@ -27,27 +27,27 @@ impl<'a> Token<'a> {
 
     /// `Token` region.
     #[inline]
-    pub fn region(&self) -> &Region<'a> {
-        &self.region
+    pub fn span(&self) -> &Span<'a> {
+        &self.span
     }
 
     /// `Token` region.
     #[inline]
-    pub fn into_region(self) -> Region<'a> {
-        self.region
+    pub fn into_span(self) -> Span<'a> {
+        self.span
     }
 }
 
 impl<'a> From<Token<'a>> for Range {
     #[inline]
     fn from(token: Token<'a>) -> Self {
-        *token.region.range()
+        *token.span.range()
     }
 }
 
 impl<'a> From<&'a Token<'a>> for Range {
     #[inline]
     fn from(token: &'a Token<'a>) -> Self {
-        token.region.range().clone()
+        token.span.range().clone()
     }
 }

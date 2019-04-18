@@ -1,4 +1,4 @@
-use source::{LineIter, Lines, Range, Region, Text};
+use source::{LineIter, Lines, Range, Span, Text};
 use std::fmt;
 
 /// Owned part of some original [`Text`][txt] containing a significant range of
@@ -42,15 +42,15 @@ impl fmt::Display for Excerpt {
     }
 }
 
-impl<'a> From<Region<'a>> for Excerpt {
+impl<'a> From<Span<'a>> for Excerpt {
     #[inline]
-    fn from(region: Region<'a>) -> Self {
+    fn from(region: Span<'a>) -> Self {
         Self::from(&region)
     }
 }
 
-impl<'a, 'b> From<&'a Region<'b>> for Excerpt {
-    fn from(region: &'a Region<'b>) -> Self {
+impl<'a, 'b> From<&'a Span<'b>> for Excerpt {
+    fn from(region: &'a Span<'b>) -> Self {
         let lines = region.lines();
 
         let text = Text::new(region.text().name(), lines.text());

@@ -33,20 +33,18 @@ impl<'a, 'b: 'a> Matcher<'a, 'b> {
                 None => {
                     return Err(self.tokens.last()
                         .map(|token| Error::UnexpectedSourceEnd {
-                            excerpt: token.region().end().into(),
+                            excerpt: token.span().end().into(),
                             expected: vec![*name].into(),
                         })
                         .unwrap_or(Error::NoSource));
                 }
             };
             if name != token.name() {
-                return Err(self.tokens.last()
-                    .map(|token| Error::UnexpectedToken {
-                        name: *token.name(),
-                        excerpt: token.region().into(),
-                        expected: vec![*name].into(),
-                    })
-                    .unwrap_or(Error::NoSource));
+                return Err(Error::UnexpectedToken {
+                    name: *token.name(),
+                    excerpt: token.span().into(),
+                    expected: vec![*name].into(),
+                });
             }
             buffer.push(token);
             offset += 1;
@@ -67,7 +65,7 @@ impl<'a, 'b: 'a> Matcher<'a, 'b> {
             None => {
                 return Err(self.tokens.last()
                     .map(|token| Error::UnexpectedSourceEnd {
-                        excerpt: token.region().end().into(),
+                        excerpt: token.span().end().into(),
                         expected: alternatives.into(),
                     })
                     .unwrap_or(Error::NoSource));
@@ -76,7 +74,7 @@ impl<'a, 'b: 'a> Matcher<'a, 'b> {
         if !alternatives.contains(token.name()) {
             return Err(Error::UnexpectedToken {
                 name: *token.name(),
-                excerpt: token.region().into(),
+                excerpt: token.span().into(),
                 expected: alternatives.into(),
             });
         }
@@ -92,16 +90,28 @@ impl<'a, 'b: 'a> Matcher<'a, 'b> {
             }
             Some(token) => Err(Error::UnexpectedToken {
                 name: *token.name(),
-                excerpt: token.region().into(),
+                excerpt: token.span().into(),
                 expected: vec![name].into(),
             }),
             _ => Err(self.tokens.last()
                 .map(|token| Error::UnexpectedSourceEnd {
-                    excerpt: token.region().end().into(),
+                    excerpt: token.span().end().into(),
                     expected: vec![name].into(),
                 })
                 .unwrap_or(Error::NoSource)),
         }
+    }
+
+    pub fn try_any(&mut self, names: &'static [Name]) -> Option<Box<[Token<'b>]>> {
+        let token = match self.tokens.get(self.offset) {
+            Some(token) => token.clone(),
+            None => { return None; }
+        };
+        if !alternatives.contains(token.name()) {
+            return None;
+        }
+        self.offset += 1;
+        Ok(token)
     }
 
     pub fn try_one(&mut self, name: Name) -> Option<Token<'b>> {

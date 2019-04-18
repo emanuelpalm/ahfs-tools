@@ -1,4 +1,4 @@
-use source::{Range, Region};
+use source::{Range, Span};
 use std::fs;
 use std::io;
 use std::io::Read;
@@ -69,13 +69,13 @@ impl Text {
     /// this `Text`.
     ///
     /// Returns `None` if `range` is out of bounds.
-    pub fn get<R>(&self, range: R) -> Option<Region>
+    pub fn get<R>(&self, range: R) -> Option<Span>
         where R: Into<Range>
     {
         let range = range.into();
         if range.start > self.body.len() || range.end > self.body.len() {
             return None;
         }
-        Some(unsafe { Region::new(self, range) })
+        Some(unsafe { Span::new(self, range) })
     }
 }

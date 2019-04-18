@@ -78,7 +78,7 @@ impl fmt::Display for Name {
 
             Name::Identifier => "Identifier",
             Name::Comment => "Comment",
-            Name::Error => "Error"
+            Name::Error => "Error",
         })
     }
 }

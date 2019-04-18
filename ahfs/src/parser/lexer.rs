@@ -310,7 +310,7 @@ mod tests {
                  "/// This is a doc comment.",
                  "/** This too! */",
             ],
-            tokens.iter().map(|item| item.region().as_str()).collect::<Vec<_>>()
+            tokens.iter().map(|item| item.span().as_str()).collect::<Vec<_>>()
         );
 
         // Check token kinds.

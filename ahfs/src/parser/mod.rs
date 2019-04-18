@@ -11,13 +11,13 @@ mod token;
 mod tree;
 
 pub use self::error::Error;
-pub use self::tree::{Service, ServiceMethod, ServiceInterface, ServiceRef, System, Tree};
+pub use self::tree::{Service, ServiceMethod, ServiceInterface, ServiceRef, System, Tree, TypeRef};
 
 use self::matcher::Matcher;
 use self::name::Name;
 use self::scanner::Scanner;
 use self::token::Token;
-use source::{Region, Source};
+use source::{Span, Source};
 use std::result;
 
 /// The `Result` of parsing.
@@ -25,7 +25,7 @@ pub type Result<T> = result::Result<T, Error>;
 
 type M<'a, 'b> = Matcher<'a, 'b>;
 type R = Result<()>;
-type C<'a> = Option<Region<'a>>;
+type C<'a> = Option<Span<'a>>;
 
 /// Parses given source code texts.
 pub fn parse(source: &Source) -> Result<Tree> {
@@ -34,11 +34,11 @@ pub fn parse(source: &Source) -> Result<Tree> {
     let mut m = M::new(&tokens);
     let mut tree = Tree::new();
 
-    inflate(&mut m, &mut tree, None)?;
+    entry(&mut m, &mut tree, None)?;
 
     return Ok(tree);
 
-    fn inflate<'a, 'b>(m: &mut M<'a, 'b>, t: &mut Tree<'b>, c: C<'b>) -> R {
+    fn entry<'a, 'b>(m: &mut M<'a, 'b>, t: &mut Tree<'b>, c: C<'b>) -> R {
         let token = m.any(&[
             Name::Comment,
             Name::Import,
@@ -46,7 +46,7 @@ pub fn parse(source: &Source) -> Result<Tree> {
             Name::System,
         ])?;
         match *token.name() {
-            Name::Comment => inflate(m, t, Some(token.into_region()))?,
+            Name::Comment => entry(m, t, Some(token.into_span()))?,
             Name::Import => import(m, t, c)?,
             Name::Service => service(m, t, c)?,
             Name::System => system(m, t, c)?,
@@ -55,27 +55,27 @@ pub fn parse(source: &Source) -> Result<Tree> {
         if m.at_end() {
             return Ok(());
         }
-        inflate(m, t, None)
+        entry(m, t, None)
     }
 }
 
 fn import<'a, 'b>(m: &mut M<'a, 'b>, t: &mut Tree<'b>, c: C<'b>) -> R {
     let head = m.all(&[Name::String, Name::Semicolon])?;
-    let name = head[0].region();
+    let name = head[0].span();
     t.imports.push(tree::Import { name: name.clone(), comment: c });
     Ok(())
 }
 
 fn system<'a, 'b>(m: &mut M<'a, 'b>, t: &mut Tree<'b>, c: C<'b>) -> R {
     let head = m.all(&[Name::Identifier, Name::BraceLeft])?;
-    let mut system = System::new(head[0].region().clone(), c);
+    let mut system = System::new(head[0].span().clone(), c);
 
-    inflate(m, &mut system, None)?;
+    entry(m, &mut system, None)?;
     t.systems.push(system);
 
     return Ok(());
 
-    fn inflate<'a, 'b>(m: &mut M<'a, 'b>, t: &mut System<'b>, c: C<'b>) -> R {
+    fn entry<'a, 'b>(m: &mut M<'a, 'b>, t: &mut System<'b>, c: C<'b>) -> R {
         let token = m.any(&[
             Name::Comment,
             Name::Consumes,
@@ -83,74 +83,74 @@ fn system<'a, 'b>(m: &mut M<'a, 'b>, t: &mut Tree<'b>, c: C<'b>) -> R {
             Name::BraceRight,
         ])?;
         match *token.name() {
-            Name::Comment => { return inflate(m, t, Some(token.into_region())); }
+            Name::Comment => { return entry(m, t, Some(token.into_span())); }
             Name::Consumes => service_ref(m, &mut t.consumes, c)?,
             Name::Produces => service_ref(m, &mut t.produces, c)?,
             Name::BraceRight => { return Ok(()); }
             _ => unreachable!(),
         }
-        inflate(m, t, None)
+        entry(m, t, None)
     }
 }
 
 fn service<'a, 'b>(m: &mut M<'a, 'b>, t: &mut Tree<'b>, c: C<'b>) -> R {
     let head = m.all(&[Name::Identifier, Name::BraceLeft])?;
-    let mut service = Service::new(head[0].region().clone(), c);
+    let mut service = Service::new(head[0].span().clone(), c);
 
-    inflate(m, &mut service, None)?;
+    entry(m, &mut service, None)?;
     t.services.push(service);
 
     return Ok(());
 
-    fn inflate<'a, 'b>(m: &mut M<'a, 'b>, t: &mut Service<'b>, c: C<'b>) -> R {
+    fn entry<'a, 'b>(m: &mut M<'a, 'b>, t: &mut Service<'b>, c: C<'b>) -> R {
         let token = m.any(&[
             Name::Comment,
             Name::Interface,
             Name::BraceRight,
         ])?;
         match *token.name() {
-            Name::Comment => inflate(m, t, Some(token.into_region()))?,
+            Name::Comment => entry(m, t, Some(token.into_span()))?,
             Name::Interface => service_interface(m, t, c)?,
             Name::BraceRight => { return Ok(()); }
             _ => unreachable!(),
         }
-        inflate(m, t, None)
+        entry(m, t, None)
     }
 }
 
 fn service_interface<'a, 'b>(m: &mut M<'a, 'b>, t: &mut Service<'b>, c: C<'b>) -> R {
     let head = m.all(&[Name::Identifier, Name::BraceLeft])?;
-    let mut interface = ServiceInterface::new(head[0].region().clone(), c);
+    let mut interface = ServiceInterface::new(head[0].span().clone(), c);
 
-    inflate(m, &mut interface, None);
+    entry(m, &mut interface, None);
     t.interfaces.push(interface);
 
     return Ok(());
 
-    fn inflate<'a, 'b>(m: &mut M<'a, 'b>, s: &mut ServiceInterface<'b>, c: C<'b>) -> R {
+    fn entry<'a, 'b>(m: &mut M<'a, 'b>, s: &mut ServiceInterface<'b>, c: C<'b>) -> R {
         let token = m.any(&[
             Name::Comment,
             Name::Method,
             Name::BraceRight,
         ])?;
         match *token.name() {
-            Name::Comment => inflate(m, s, Some(token.into_region()))?,
+            Name::Comment => entry(m, s, Some(token.into_span()))?,
             Name::Method => service_method(m, &mut s.methods, c)?,
             Name::BraceRight => { return Ok(()); }
             _ => unreachable!(),
         }
-        inflate(m, s, None)
+        entry(m, s, None)
     }
 }
 
 fn service_method<'a, 'b>(m: &mut M<'a, 'b>, t: &mut Vec<ServiceMethod<'b>>, c: C<'b>) -> R {
     let head = m.all(&[Name::Identifier, Name::ParenLeft])?;
-    let mut method = tree::ServiceMethod::new(head[0].region().clone(), c);
+    let mut method = ServiceMethod::new(head[0].span().clone(), c);
 
-    method.input = try_type_ref(m, None);
+    type_ref(m, &mut method.input, None)?;
     m.one(Name::ParenRight)?;
     if let Some(_) = m.try_one(Name::Colon) {
-        method.output = try_type_ref(m, None);
+        type_ref(m, &mut method.output, None)?;
     }
     m.one(Name::Semicolon)?;
 
@@ -162,36 +162,37 @@ fn service_method<'a, 'b>(m: &mut M<'a, 'b>, t: &mut Vec<ServiceMethod<'b>>, c: 
 fn service_ref<'a, 'b>(m: &mut M<'a, 'b>, s: &mut Vec<ServiceRef<'b>>, c: C<'b>) -> R {
     let head = m.all(&[Name::Identifier, Name::Semicolon])?;
     s.push(ServiceRef {
-        name: head[0].region().clone(),
+        name: head[0].span().clone(),
         comment: c,
     });
     Ok(())
 }
 
-fn try_type_ref<'a, 'b>(m: &mut M<'a, 'b>, comment: Option<Region<'b>>) -> Option<tree::TypeRef<'b>> {
-    let head = m.try_one(Name::Identifier)?;
-    let mut type_ref = tree::TypeRef::new(head.region().clone());
+fn type_ref<'a, 'b>(m: &mut M<'a, 'b>, t: &mut Option<TypeRef<'b>>, c: C<'b>) -> R {
+    let name = match m.try_one(Name::Identifier) {
+        Some(token) => token,
+        None => { return Ok(()); },
+    };
+    let mut type_ref = TypeRef::new(name.span().clone());
 
-    if let Some(_) = m.try_one(Name::AngleLeft) {
-        let mut has_more = true;
-        loop {
-            match try_type_ref(m, None) {
-                Some(t) => type_ref.params.push(t),
-                None => break,
-            }
-            if !has_more {
-                break;
-            }
-            if let None = m.try_one(Name::Comma) {
-                has_more = false;
-            }
-            if let Some(_) = m.try_one(Name::AngleRight) {
-                break;
+    params(m, &mut type_ref.params)?;
+    *t = Some(type_ref);
+
+    return Ok(());
+
+    fn params<'a, 'b>(m: &mut M<'a, 'b>, t: &mut Vec<TypeRef<'b>>) -> R {
+        if let None = m.try_one(Name::AngleLeft) {
+            return Ok(());
+        }
+
+        match m.one(Name::AngleRight) {
+            Ok(_) => Ok(()),
+            Err(mut error) => {
+                error.push_expected(&[Name::Identifier, Name::Comma]);
+                Err(error)
             }
         }
     }
-
-    Some(type_ref)
 }
 
 #[cfg(test)]

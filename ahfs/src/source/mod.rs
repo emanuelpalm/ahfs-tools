@@ -5,7 +5,7 @@ mod line;
 mod lines;
 mod line_iter;
 mod range;
-mod region;
+mod span;
 mod text;
 
 pub use self::excerpt::Excerpt;
@@ -13,7 +13,7 @@ pub use self::line::Line;
 pub use self::lines::Lines;
 pub use self::line_iter::LineIter;
 pub use self::range::Range;
-pub use self::region::Region;
+pub use self::span::Span;
 pub use self::text::Text;
 
 use std::io;

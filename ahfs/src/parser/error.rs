@@ -12,15 +12,29 @@ pub enum Error {
     /// A parsed source [`Text`](../source/struct.Text.html) ended unexpectedly.
     UnexpectedSourceEnd {
         excerpt: Excerpt,
-        expected: Box<[Name]>,
+        expected: Vec<Name>,
     },
 
     /// An unexpected [`Token`](struct.Token.html) was read while parsing.
     UnexpectedToken {
         name: Name,
         excerpt: Excerpt,
-        expected: Box<[Name]>,
+        expected: Vec<Name>,
     },
+}
+
+impl Error {
+    pub fn push_expected(&mut self, names: &[Name]) {
+        match *self {
+            Error::NoSource => {},
+            Error::UnexpectedSourceEnd { ref mut expected, .. } |
+            Error::UnexpectedToken { ref mut expected, .. } => {
+                for name in names {
+                    expected.push(*name);
+                }
+            }
+        };
+    }
 }
 
 impl fmt::Display for Error {
