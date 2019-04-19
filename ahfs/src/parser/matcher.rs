@@ -3,6 +3,7 @@ use parser::{Error, Name, Result, Token};
 /// A utility for reading well-defined [`Token`s][tok] sequences from an array.
 ///
 /// [tok]: ../lexer/struct.Token.html
+#[cfg_attr(debug_assertions, derive(Debug))]
 pub struct Matcher<'a> {
     tokens: Box<[Token<'a>]>,
     offset: usize,
@@ -18,8 +19,8 @@ impl<'a> Matcher<'a> {
     }
 
     /// Whether or not all internal [`Token`s][lex] have been consumed.
-        ///
-        /// [lex]: ../lexer/struct.Token.html
+    ///
+    /// [lex]: ../lexer/struct.Token.html
     #[inline]
     pub fn at_end(&self) -> bool {
         self.offset >= self.tokens.len()
@@ -102,7 +103,7 @@ impl<'a> Matcher<'a> {
         }
     }
 
-    pub fn opt_one(&mut self, name: Name) -> Option<Token<'a>> {
+    pub fn one_optional(&mut self, name: Name) -> Option<Token<'a>> {
         let token = self.tokens.get(self.offset);
         match token {
             Some(token) if name == *token.name() => {

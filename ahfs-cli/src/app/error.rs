@@ -11,7 +11,7 @@ pub enum Error {
     StatusArgCountNot0,
 }
 
-impl ahfs::ErrorCode for Error {
+impl ahfs::Error for Error {
     fn error_code(&self) -> &'static str {
         match *self {
             Error::NewArgCountNot1 => "R101",

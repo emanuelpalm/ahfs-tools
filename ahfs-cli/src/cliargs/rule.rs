@@ -17,7 +17,7 @@ pub struct Rule<'a> {
     pub flags: &'a [Flag],
 
     /// Function called if rule is invoked.
-    pub callback: &'a Fn(&[&str]) -> result::Result<(), Box<::ahfs::ErrorCode>>,
+    pub callback: &'a Fn(&[&str]) -> result::Result<(), Box<::ahfs::Error>>,
 }
 
 impl<'a> Rule<'a> {

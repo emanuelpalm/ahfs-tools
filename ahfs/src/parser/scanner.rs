@@ -12,7 +12,7 @@ use std::char;
 /// discarded when it includes some set of significant characters. If collected,
 /// the candidate is returned. If either collected or discarded, a new
 /// zero-length candidate is created at the end position of the old one.
-#[derive(Debug)]
+#[cfg_attr(debug_assertions, derive(Debug))]
 pub struct Scanner<'a> {
     text: &'a Source,
     bytes: &'a [u8],

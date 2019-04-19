@@ -27,7 +27,7 @@ impl error::Error for Error {
     }
 }
 
-impl ::ErrorCode for Error {
+impl ::Error for Error {
     fn error_code(&self) -> &'static str {
         match *self {
             Error::AhfsVersionIncompatible { .. } => "R001",

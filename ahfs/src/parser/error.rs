@@ -4,7 +4,7 @@ use std::error;
 use std::fmt;
 
 /// A parser error.
-#[derive(Debug)]
+#[cfg_attr(debug_assertions, derive(Debug))]
 pub enum Error {
     /// There is nothing to parse.
     NoSource,
@@ -89,7 +89,7 @@ impl error::Error for Error {
     }
 }
 
-impl ::ErrorCode for Error {
+impl ::Error for Error {
     fn error_code(&self) -> &'static str {
         match *self {
             Error::NoSource => "P001",

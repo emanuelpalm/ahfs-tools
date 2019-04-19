@@ -236,7 +236,6 @@ fn scan_symbol(scanner: &mut Scanner, mut ch: char) -> Option<Name> {
         // Keywords.
         "consumes" => Name::Consumes,
         "implement" => Name::Implement,
-        "import" => Name::Import,
         "interface" => Name::Interface,
         "method" => Name::Method,
         "produces" => Name::Produces,
@@ -265,7 +264,7 @@ mod tests {
     use super::*;
 
     #[test]
-    fn analyze() {
+    fn all() {
         let source = Source::new("alpha.ahfs", concat!(
             "consumes implement import interface method\n",
             "produces property record service system using\n",
@@ -289,19 +288,20 @@ mod tests {
 
         // Check token strings.
         assert_eq!(
-            vec!["consumes", "implement", "import", "interface",
-                 "method", "produces", "property", "record",
-                 "service", "system", "using",
-                 "<", ">", "{", "}", ":", ",", "(", ")", "/", "[", "]", ";",
-                 "true", "false",
-                 "0", "1", "202", "-30", "+40",
-                 "50.0", "6.1234", "7.e+20", "8e-10", "1e9",
-                 "inf", "+inf", "-inf", "NaN",
-                 "\"Hello, World!\"",
-                 "IdentifierName", "smallCaps", "_underscore",
-                 "+", "-", "*", "#", "!", "^", "~", ".", ".",
-                 "/// This is a doc comment.",
-                 "/** This too! */",
+            vec![
+                "consumes", "implement", "interface", "method",
+                "produces", "property", "record", "service",
+                "system", "using",
+                "<", ">", "{", "}", ":", ",", "(", ")", "/", "[", "]", ";",
+                "true", "false",
+                "0", "1", "202", "-30", "+40",
+                "50.0", "6.1234", "7.e+20", "8e-10", "1e9",
+                "inf", "+inf", "-inf", "NaN",
+                "\"Hello, World!\"",
+                "IdentifierName", "smallCaps", "_underscore",
+                "+", "-", "*", "#", "!", "^", "~", ".", ".",
+                "/// This is a doc comment.",
+                "/** This too! */",
             ],
             tokens.iter().map(|item| item.span().as_str()).collect::<Vec<_>>()
         );
@@ -309,9 +309,9 @@ mod tests {
         // Check token kinds.
         assert_eq!(
             vec![
-                Name::Consumes, Name::Implement, Name::Import, Name::Interface,
-                Name::Method, Name::Produces, Name::Property, Name::Record,
-                Name::Service, Name::System, Name::Using,
+                Name::Consumes, Name::Implement, Name::Interface, Name::Method,
+                Name::Produces, Name::Property, Name::Record, Name::Service,
+                Name::System, Name::Using,
                 Name::AngleLeft, Name::AngleRight,
                 Name::BraceLeft, Name::BraceRight,
                 Name::Colon, Name::Comma,
@@ -331,6 +331,53 @@ mod tests {
                 Name::Error, Name::Error, Name::Error, Name::Error,
                 Name::Error,
                 Name::Comment, Name::Comment,
+            ],
+            tokens.iter().map(|item| *item.name()).collect::<Vec<_>>(),
+        );
+    }
+
+    #[test]
+    fn example1() {
+        let source = Source::new("example1.ahfs", concat!(
+            "/// Comment A.\n",
+            "service MyService {\n",
+            "    /// Comment B.\n",
+            "    interface MyInterface {\n",
+            "        /// Comment C.\n",
+            "        method MyMethod(Argument): Result;\n",
+            "    }\n",
+            "}\n",
+        ));
+        let tokens = super::analyze(&source);
+
+        // Check token strings.
+        assert_eq!(
+            vec![
+                "/// Comment A.",
+                "service", "MyService", "{",
+                "/// Comment B.",
+                "interface", "MyInterface", "{",
+                "/// Comment C.",
+                "method", "MyMethod", "(", "Argument", ")", ":", "Result", ";",
+                "}",
+                "}",
+            ],
+            tokens.iter().map(|item| item.span().as_str()).collect::<Vec<_>>()
+        );
+
+        // Check token kinds.
+        assert_eq!(
+            vec![
+                Name::Comment,
+                Name::Service, Name::Identifier, Name::BraceLeft,
+                Name::Comment,
+                Name::Interface, Name::Identifier, Name::BraceLeft,
+                Name::Comment,
+                Name::Method, Name::Identifier, Name::ParenLeft,
+                Name::Identifier, Name::ParenRight, Name::Colon,
+                Name::Identifier, Name::Semicolon,
+                Name::BraceRight,
+                Name::BraceRight,
             ],
             tokens.iter().map(|item| *item.name()).collect::<Vec<_>>(),
         );

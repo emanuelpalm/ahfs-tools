@@ -3,7 +3,7 @@ extern crate ahfs;
 mod app;
 mod cliargs;
 
-use ahfs::ErrorCode;
+use ahfs::Error;
 use ahfs::log;
 use std::env;
 use std::process;
@@ -61,16 +61,16 @@ fn main() {
     if args.len() <= 1 {
         log::anomaly(&"No command specified.");
     }
-    if let Err(err) = cli.parse(&args[1..]) {
-        failure(&err);
+    if let Err(error) = cli.parse(&args[1..]) {
+        failure(&error);
     }
     if help.take_or(false) {
         log::completion(&cli);
     }
 }
 
-fn failure(message: &ErrorCode) -> ! {
-    log::failure(message);
+fn failure(error: &Error) -> ! {
+    log::failure(error);
     log::suggestion(&"Run `ahfs help` to see a list of available commands.");
     process::exit(1)
 }

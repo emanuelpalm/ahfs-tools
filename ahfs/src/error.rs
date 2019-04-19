@@ -4,10 +4,10 @@ use std::io;
 use std::result;
 
 /// A generic AHFS result.
-pub type Result<T = ()> = result::Result<T, Box<ErrorCode>>;
+pub type Result<T = ()> = result::Result<T, Box<Error>>;
 
 /// Error trait implemented by all AHFS error types.
-pub trait ErrorCode: error::Error {
+pub trait Error: error::Error {
     /// Machine-readable error code.
     ///
     /// Error codes exist to assist machine reading of error messages. Each kind
@@ -20,14 +20,14 @@ pub trait ErrorCode: error::Error {
     }
 }
 
-impl ErrorCode for fmt::Error {
+impl Error for fmt::Error {
     #[inline]
     fn error_code(&self) -> &'static str {
         "FMT1"
     }
 }
 
-impl ErrorCode for io::Error {
+impl Error for io::Error {
     fn error_code(&self) -> &'static str {
         match self.kind() {
             io::ErrorKind::NotFound => "F001",
@@ -56,21 +56,9 @@ impl ErrorCode for io::Error {
     }
 }
 
-impl<E: ErrorCode + 'static> From<E> for Box<ErrorCode> {
+impl<E: Error + 'static> From<E> for Box<Error> {
     #[inline]
     fn from(err: E) -> Self {
-        Box::new(err) as Box<ErrorCode>
+        Box::new(err) as Box<Error>
     }
-}
-
-/// Formats given [`ErrorCode`](trait.ErrorCode.html) error.
-pub fn format_error(err: &ErrorCode) -> Result<String> {
-    use std::fmt::Write;
-
-    let mut f = String::new();
-    write!(f, concat!(
-            str_color!( red: "error[{}]"),
-            str_color!(none: ": {}")),
-           err.error_code(), err)?;
-    Ok(f)
 }

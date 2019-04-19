@@ -11,7 +11,7 @@ pub fn completion(message: &fmt::Display) {
 }
 
 /// Logs message about intended action that failed to complete.
-pub fn failure(message: &::ErrorCode) {
+pub fn failure(message: &::Error) {
     println!(concat!(str_color!(red: "> [Error {}]"), " {}"), message.error_code(), message);
 }
 

@@ -6,7 +6,7 @@ use log;
 /// If `f` returns an error, the error is printed to console and 1 is used as
 /// exit code.
 pub fn exit_after<F>(f: F) -> !
-    where F: FnOnce() -> Result<(), Box<::ErrorCode>>,
+    where F: FnOnce() -> Result<(), Box<::Error>>,
 {
     process::exit(match f() {
         Ok(()) => 0,

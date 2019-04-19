@@ -1,5 +1,3 @@
-import "common.ahfs";
-
 system Authorization {
     produces AuthorizationControl;
     produces TokenGeneration;

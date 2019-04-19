@@ -6,7 +6,8 @@ use source::{Range, Span};
 /// [reg]: ../source/struct.Region.html
 /// [src]: ../source/struct.Source.html
 /// [txt]: ../source/struct.Text.html
-#[derive(Clone, Debug)]
+#[derive(Clone)]
+#[cfg_attr(debug_assertions, derive(Debug))]
 pub struct Token<'a> {
     name: Name,
     span: Span<'a>,

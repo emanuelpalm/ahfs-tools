@@ -4,7 +4,8 @@ use std::fmt;
 ///
 /// [region]: ../source/struct.Region.html
 /// [token]: struct.Token.html
-#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+#[derive(Clone, Copy, Eq, PartialEq)]
+#[cfg_attr(debug_assertions, derive(Debug))]
 pub enum Name {
     // Delimiters.
     AngleLeft,
@@ -29,7 +30,6 @@ pub enum Name {
     // Keywords.
     Consumes,
     Implement,
-    Import,
     Interface,
     Method,
     Produces,
@@ -68,7 +68,6 @@ impl fmt::Display for Name {
 
             Name::Consumes => "consumes",
             Name::Implement => "implement",
-            Name::Import => "import",
             Name::Interface => "interface",
             Name::Method => "method",
             Name::Produces => "produces",

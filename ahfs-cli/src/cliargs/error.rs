@@ -17,7 +17,7 @@ pub enum Error {
     },
 
     /// A command line rule failed to complete.
-    RuleFailed(Box<::ahfs::ErrorCode>),
+    RuleFailed(Box<::ahfs::Error>),
 }
 
 impl error::Error for Error {
@@ -31,7 +31,7 @@ impl error::Error for Error {
     }
 }
 
-impl ::ahfs::ErrorCode for Error {
+impl ::ahfs::Error for Error {
     fn error_code(&self) -> &'static str {
         match *self {
             Error::ArgUnknown(_) => "C001",

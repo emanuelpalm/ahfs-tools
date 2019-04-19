@@ -9,7 +9,7 @@ use ahfs::source::Source;
 use std::io;
 
 /// Creates new project at first path in `args` and exits.
-pub fn new(args: &[&str], ignore_if_exists: bool) -> Result<(), Box<::ahfs::ErrorCode>> {
+pub fn new(args: &[&str], ignore_if_exists: bool) -> Result<(), Box<::ahfs::Error>> {
     if args.len() != 1 {
         return Err(Error::NewArgCountNot1.into());
     }
@@ -30,7 +30,7 @@ pub fn new(args: &[&str], ignore_if_exists: bool) -> Result<(), Box<::ahfs::Erro
 }
 
 /// Prints list of all project source files and exits.
-pub fn list(args: &[&str]) -> Result<(), Box<::ahfs::ErrorCode>> {
+pub fn list(args: &[&str]) -> Result<(), Box<::ahfs::Error>> {
     if args.len() != 0 {
         return Err(Error::ListArgCountNot0.into());
     }
@@ -44,7 +44,7 @@ pub fn list(args: &[&str]) -> Result<(), Box<::ahfs::ErrorCode>> {
 }
 
 /// Prints various project status information and exits.
-pub fn status(args: &[&str]) -> Result<(), Box<::ahfs::ErrorCode>> {
+pub fn status(args: &[&str]) -> Result<(), Box<::ahfs::Error>> {
     if args.len() != 0 {
         return Err(Error::StatusArgCountNot0.into());
     }

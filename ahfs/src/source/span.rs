@@ -69,7 +69,7 @@ impl<'a> AsRef<str> for Span<'a> {
 impl<'a> fmt::Debug for Span<'a> {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         write!(
-            f, "Region {{ text: `{}` ({}), range: {:?} }}",
+            f, "Span {{ text: `{}` ({}), range: {:?} }}",
             &self.source.body()[self.range.as_ops_range()],
             self.source.name(),
             self.range.clone()
