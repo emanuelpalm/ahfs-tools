@@ -6,7 +6,6 @@ pub mod log;
 pub mod parser;
 pub mod project;
 pub mod source;
-pub mod util;
 
 mod error;
 

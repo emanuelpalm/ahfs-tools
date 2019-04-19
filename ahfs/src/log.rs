@@ -12,7 +12,7 @@ pub fn completion(message: &fmt::Display) {
 
 /// Logs message about intended action that failed to complete.
 pub fn failure(message: &::Error) {
-    println!(concat!(str_color!(red: "> [Error {}]"), " {}"), message.error_code(), message);
+    println!(concat!(str_color!(red: "> [Error {}]"), " {}"), message.code(), message);
 }
 
 /// Logs suggestion to application user.

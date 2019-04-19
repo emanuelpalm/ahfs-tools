@@ -18,14 +18,19 @@ impl<'a> Matcher<'a> {
         Matcher { tokens: tokens.into(), offset: 0 }
     }
 
-    /// Whether or not all internal [`Token`s][lex] have been consumed.
+    /// Whether or not all internal [`Token`s][tok] have been consumed.
     ///
-    /// [lex]: ../lexer/struct.Token.html
+    /// [tok]: ../token/struct.Token.html
     #[inline]
     pub fn at_end(&self) -> bool {
         self.offset >= self.tokens.len()
     }
 
+    /// Returns `names.len()` [`Token`s][tok] from the current offset, only if
+    /// those [`Token`s][tok] have [`Name`s][nam] matching those in `names`.
+    ///
+    /// [tok]: ../token/struct.Token.html
+    /// [nam]: ../name/enum.Name.html
     pub fn all(&mut self, names: &'static [Name]) -> Result<&[Token<'a>]> {
         let mut offset = self.offset;
         for name in names {
@@ -55,10 +60,10 @@ impl<'a> Matcher<'a> {
         Ok(matches)
     }
 
-    /// Returns next [Token][lex] only if its [`Name`][nam] matches one out of
+    /// Returns next [Token][tok] only if its [`Name`][nam] matches one out of
     /// given `alternatives`.
     ///
-    /// [lex]: ../lexer/struct.Token.html
+    /// [tok]: ../token/struct.Token.html
     /// [nam]: ../name/enum.Name.html
     pub fn any(&mut self, alternatives: &'static [Name]) -> Result<Token<'a>> {
         let token = match self.tokens.get(self.offset) {
@@ -83,6 +88,10 @@ impl<'a> Matcher<'a> {
         Ok(token)
     }
 
+    /// Returns next [Token][tok] only if its [`Name`][nam] matches `name`.
+    ///
+    /// [tok]: ../token/struct.Token.html
+    /// [nam]: ../name/enum.Name.html
     pub fn one(&mut self, name: Name) -> Result<Token<'a>> {
         match self.tokens.get(self.offset) {
             Some(token) if name == *token.name() => {
@@ -103,6 +112,11 @@ impl<'a> Matcher<'a> {
         }
     }
 
+    /// Returns next [Token][tok] only if its [`Name`][nam] matches `name`. If
+    /// the operation fails, `None` is returned instead of an error.
+    ///
+    /// [tok]: ../token/struct.Token.html
+    /// [nam]: ../name/enum.Name.html
     pub fn one_optional(&mut self, name: Name) -> Option<Token<'a>> {
         let token = self.tokens.get(self.offset);
         match token {

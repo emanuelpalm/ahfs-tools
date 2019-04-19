@@ -1,9 +1,9 @@
 use std::fmt;
 
-/// Classifies the [`Region`][region] identified by a [`Token`][token].
+/// Classifies the [`Span`][span] identified by a [`Token`][token].
 ///
-/// [region]: ../source/struct.Region.html
-/// [token]: struct.Token.html
+/// [span]: ../../source/struct.Span.html
+/// [token]: ../token/struct.Token.html
 #[derive(Clone, Copy, Eq, PartialEq)]
 #[cfg_attr(debug_assertions, derive(Debug))]
 pub enum Name {

@@ -12,7 +12,7 @@ pub enum Error {
 }
 
 impl ahfs::Error for Error {
-    fn error_code(&self) -> &'static str {
+    fn code(&self) -> &'static str {
         match *self {
             Error::NewArgCountNot1 => "R101",
             Error::GraphArgCountNot0 => "R102",

@@ -110,8 +110,8 @@ mod tests {
 
     #[test]
     fn collect() {
-        let text = Source::new("", "aabbccc");
-        let mut reader = Scanner::new(&text);
+        let source = Source::new("", "aabbccc");
+        let mut reader = Scanner::new(&source);
 
         // Skip As.
         assert_eq!(Some('a'), reader.next());
@@ -122,7 +122,7 @@ mod tests {
         assert_eq!(Some('b'), reader.next());
         assert_eq!(Some('b'), reader.next());
         let token = reader.collect(Name::Identifier);
-        assert_eq!("bb", text.get(token).unwrap());
+        assert_eq!("bb", source.get(token.span()).unwrap());
 
         // Take Cs.
         assert_eq!(Some('c'), reader.next());

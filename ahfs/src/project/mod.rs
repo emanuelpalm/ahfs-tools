@@ -17,6 +17,7 @@ use std::io;
 use std::path::{Path, PathBuf};
 
 /// Represents an AHFS project.
+#[cfg_attr(debug_assertions, derive(Debug))]
 pub struct Project {
     root: Box<Path>,
     settings: Box<Settings>,
@@ -112,14 +113,17 @@ mod tests {
             meta::VERSION_MAJOR,
             meta::VERSION_MINOR,
             meta::VERSION_PATCH);
-        {
+        let version_create = {
             let project = Project::create(path.clone()).unwrap();
-            assert_eq!(project.settings().ahfs_version(), &version);
-        }
-        {
+            *project.settings().ahfs_version()
+        };
+        let version_locate = {
             let project = Project::locate(path.clone()).unwrap();
-            assert_eq!(project.settings().ahfs_version(), &version);
-        }
+            *project.settings().ahfs_version()
+        };
         fs::remove_dir_all(path).unwrap();
+
+        assert_eq!(version, version_create);
+        assert_eq!(version, version_locate);
     }
 }

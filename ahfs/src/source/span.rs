@@ -66,6 +66,7 @@ impl<'a> AsRef<str> for Span<'a> {
     }
 }
 
+#[cfg(debug_assertions)]
 impl<'a> fmt::Debug for Span<'a> {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         write!(

@@ -90,7 +90,7 @@ impl error::Error for Error {
 }
 
 impl ::Error for Error {
-    fn error_code(&self) -> &'static str {
+    fn code(&self) -> &'static str {
         match *self {
             Error::NoSource => "P001",
             Error::UnexpectedSourceEnd { .. } => "P002",

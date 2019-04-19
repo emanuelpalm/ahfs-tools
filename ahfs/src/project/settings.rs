@@ -1,11 +1,13 @@
 use error::Result;
 use meta;
-use project::Version;
+use project::{Error, Version};
+use std::collections::HashMap;
 use std::fs;
 use std::io::Write;
 use std::path::{Path, PathBuf};
 
 /// AHFS Project settings.
+#[cfg_attr(debug_assertions, derive(Debug))]
 pub struct Settings {
     path: Box<Path>,
     ahfs_version: Version,
@@ -22,49 +24,57 @@ impl Settings {
             meta::VERSION_MAJOR,
             meta::VERSION_MINOR,
             meta::VERSION_PATCH);
-        let file = format!("Project ahfs.version {};\n", meta::VERSION_STR);
+        let file = format!("ahfs_version: {}\n", meta::VERSION_STR);
+
         fs::OpenOptions::new()
             .write(true)
             .create_new(true)
             .open(&path)?
             .write_all(file.as_ref())?;
+
         Ok(Settings { path: path.into(), ahfs_version })
     }
 
     /// Attempts to read `Settings` from file at given `path`.
-    pub fn read<P>(_path: P) -> Result<Settings>
+    pub fn read<P>(path: P) -> Result<Settings>
         where P: Into<PathBuf>,
     {
-        /*
         let path = path.into();
-        let source = Source::read_file(path.clone())?;
-        let triples = ::parser::parse(&source)?;
+        let file = fs::read_to_string(path.clone())?;
 
-        let ahfs_version_obj = triples.query()
-            .subject("Project")
-            .predicate("ahfs.version")
-            .next()
-            .ok_or(Error::AhfsVersionMissing)?
-            .object();
-        let ahfs_version_opt = Version::parse(ahfs_version_obj.as_str());
-        let ahfs_version = match ahfs_version_opt {
-            Some(v) => v,
-            None => {
-                return Err(Box::new(Error::AhfsVersionInvalid {
-                    excerpt: ahfs_version_obj.into()
-                }));
-            }
-        };
-        if ahfs_version.major() != ::meta::VERSION_MAJOR ||
-            ahfs_version.minor() > ::meta::VERSION_MINOR {
+        let entries = file.split("\n")
+            .map(|line| {
+                let pair: Vec<&str> = line.splitn(2, ":").collect();
+                (
+                    pair.get(0).map(|key| key.trim()).unwrap_or(""),
+                    pair.get(1).map(|value| value.trim()).unwrap_or("")
+                )
+            })
+            .fold(HashMap::new(), |mut map, (key, value)| {
+                if key.len() > 0 {
+                    map.insert(key, value);
+                }
+                map
+            });
+
+        let version_raw = entries
+            .get("ahfs_version")
+            .ok_or(Error::AhfsVersionMissing)?;
+
+        let version = Version::parse(version_raw)
+            .ok_or_else(|| Error::AhfsVersionInvalid {
+                version: version_raw.to_string(),
+            })?;
+
+        if version.major() != meta::VERSION_MAJOR || version.minor() > meta::VERSION_MINOR {
             return Err(Box::new(Error::AhfsVersionIncompatible {
-                excerpt: ahfs_version_obj.into(),
+                version: version_raw.to_string(),
             }));
         }
-*/
+
         Ok(Settings {
             path: Path::new(".").into(),
-            ahfs_version: Version::parse("0.0.0").unwrap().into(),
+            ahfs_version: version,
         })
     }
 

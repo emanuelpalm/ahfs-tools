@@ -1,3 +1,4 @@
+use source::Span;
 use std::fmt;
 use std::ops;
 
@@ -19,8 +20,16 @@ impl Range {
     }
 }
 
+#[cfg(debug_assertions)]
 impl fmt::Debug for Range {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         write!(f, "{}..{}", self.start, self.end)
+    }
+}
+
+impl<'a> From<&Span<'a>> for Range {
+    #[inline]
+    fn from(span: &Span<'a>) -> Self {
+        span.range().clone()
     }
 }

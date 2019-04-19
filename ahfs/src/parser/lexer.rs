@@ -266,7 +266,7 @@ mod tests {
     #[test]
     fn all() {
         let source = Source::new("alpha.ahfs", concat!(
-            "consumes implement import interface method\n",
+            "consumes implement interface method\n",
             "produces property record service system using\n",
             "\n",
             "<>{}:,()/[];\n",

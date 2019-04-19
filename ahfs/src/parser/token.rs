@@ -1,11 +1,10 @@
 use parser::Name;
 use source::{Range, Span};
 
-/// Identifies a typed [`Region`][reg] of some [`Source`][src] [`Text`][txt].
+/// Identifies a typed [`Span`][spa] of some [`Source`][src].
 ///
-/// [reg]: ../source/struct.Region.html
-/// [src]: ../source/struct.Source.html
-/// [txt]: ../source/struct.Text.html
+/// [spa]: ../../source/struct.Span.html
+/// [src]: ../../source/struct.Source.html
 #[derive(Clone)]
 #[cfg_attr(debug_assertions, derive(Debug))]
 pub struct Token<'a> {
@@ -36,19 +35,5 @@ impl<'a> Token<'a> {
     #[inline]
     pub fn into_span(self) -> Span<'a> {
         self.span
-    }
-}
-
-impl<'a> From<Token<'a>> for Range {
-    #[inline]
-    fn from(token: Token<'a>) -> Self {
-        *token.span.range()
-    }
-}
-
-impl<'a> From<&'a Token<'a>> for Range {
-    #[inline]
-    fn from(token: &'a Token<'a>) -> Self {
-        token.span.range().clone()
     }
 }

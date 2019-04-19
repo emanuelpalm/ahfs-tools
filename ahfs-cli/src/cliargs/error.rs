@@ -32,12 +32,12 @@ impl error::Error for Error {
 }
 
 impl ::ahfs::Error for Error {
-    fn error_code(&self) -> &'static str {
+    fn code(&self) -> &'static str {
         match *self {
             Error::ArgUnknown(_) => "C001",
             Error::FlagUnknown(_) => "C002",
             Error::FlagValueInvalid { .. } => "C003",
-            Error::RuleFailed(ref err) => err.error_code(),
+            Error::RuleFailed(ref err) => err.code(),
         }
     }
 }

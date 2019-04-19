@@ -12,7 +12,7 @@ pub trait Error: error::Error {
     ///
     /// Error codes exist to assist machine reading of error messages. Each kind
     /// of error should, if possible, provide its own unique code.
-    fn error_code(&self) -> &'static str;
+    fn code(&self) -> &'static str;
 
     /// Tries to cast error into an I/O `Error`.
     fn as_io_error(&self) -> Option<&io::Error> {
@@ -22,13 +22,13 @@ pub trait Error: error::Error {
 
 impl Error for fmt::Error {
     #[inline]
-    fn error_code(&self) -> &'static str {
+    fn code(&self) -> &'static str {
         "FMT1"
     }
 }
 
 impl Error for io::Error {
-    fn error_code(&self) -> &'static str {
+    fn code(&self) -> &'static str {
         match self.kind() {
             io::ErrorKind::NotFound => "F001",
             io::ErrorKind::PermissionDenied => "F002",

@@ -20,7 +20,8 @@ use std::io::Read;
 use std::path::PathBuf;
 
 /// A named source code text.
-#[derive(Debug, Eq, PartialEq)]
+#[derive(Eq, PartialEq)]
+#[cfg_attr(debug_assertions, derive(Debug))]
 pub struct Source {
     name: Box<str>,
     body: Box<str>,

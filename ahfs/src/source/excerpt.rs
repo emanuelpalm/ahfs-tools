@@ -5,7 +5,7 @@ use std::fmt;
 /// characters.
 ///
 /// [txt]: struct.Text.html
-#[derive(Debug)]
+#[cfg_attr(debug_assertions, derive(Debug))]
 pub struct Excerpt {
     line_number: usize,
     source: Source,
