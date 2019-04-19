@@ -34,7 +34,7 @@ impl Project {
         let mut path = path.into();
         path.push(".ahfs");
         fs::create_dir_all(&path)?;
-        let settings = Settings::create(path.join("Settings.ahfs"))?;
+        let settings = Settings::create(path.join("config"))?;
         path.pop();
         Ok(Project { root: path.into(), settings: settings.into() })
     }
@@ -58,7 +58,7 @@ impl Project {
             }
         }
         let settings = Settings::read(&path.join(".ahfs")
-            .join("Settings.ahfs"))?;
+            .join("config"))?;
         Ok(Project { root: path.into(), settings: settings.into() })
     }
 
