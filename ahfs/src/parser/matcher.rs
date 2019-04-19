@@ -3,16 +3,18 @@ use parser::{Error, Name, Result, Token};
 /// A utility for reading well-defined [`Token`s][tok] sequences from an array.
 ///
 /// [tok]: ../lexer/struct.Token.html
-pub struct Matcher<'a, 'b: 'a> {
-    tokens: &'a [Token<'b>],
+pub struct Matcher<'a> {
+    tokens: Box<[Token<'a>]>,
     offset: usize,
 }
 
-impl<'a, 'b: 'a> Matcher<'a, 'b> {
+impl<'a> Matcher<'a> {
     /// Creates new `State` instance from given `tokens` pointer.
     #[inline]
-    pub fn new(tokens: &'a [Token<'b>]) -> Self {
-        Matcher { tokens, offset: 0 }
+    pub fn new<T>(tokens: T) -> Self
+        where T: Into<Box<[Token<'a>]>>,
+    {
+        Matcher { tokens: tokens.into(), offset: 0 }
     }
 
     /// Whether or not all internal [`Token`s][lex] have been consumed.
@@ -23,9 +25,7 @@ impl<'a, 'b: 'a> Matcher<'a, 'b> {
         self.offset >= self.tokens.len()
     }
 
-    pub fn all(&mut self, names: &'static [Name]) -> Result<Box<[Token<'b>]>> {
-        let mut buffer = Vec::with_capacity(names.len());
-
+    pub fn all(&mut self, names: &'static [Name]) -> Result<&[Token<'a>]> {
         let mut offset = self.offset;
         for name in names {
             let token = match self.tokens.get(offset) {
@@ -46,12 +46,12 @@ impl<'a, 'b: 'a> Matcher<'a, 'b> {
                     expected: vec![*name].into(),
                 });
             }
-            buffer.push(token);
             offset += 1;
         }
+        let matches = unsafe { self.tokens.get_unchecked(self.offset..offset) };
         self.offset = offset;
 
-        Ok(buffer.into())
+        Ok(matches)
     }
 
     /// Returns next [Token][lex] only if its [`Name`][nam] matches one out of
@@ -59,7 +59,7 @@ impl<'a, 'b: 'a> Matcher<'a, 'b> {
     ///
     /// [lex]: ../lexer/struct.Token.html
     /// [nam]: ../name/enum.Name.html
-    pub fn any(&mut self, alternatives: &'static [Name]) -> Result<Token<'b>> {
+    pub fn any(&mut self, alternatives: &'static [Name]) -> Result<Token<'a>> {
         let token = match self.tokens.get(self.offset) {
             Some(token) => token.clone(),
             None => {
@@ -82,7 +82,7 @@ impl<'a, 'b: 'a> Matcher<'a, 'b> {
         Ok(token)
     }
 
-    pub fn one(&mut self, name: Name) -> Result<Token<'b>> {
+    pub fn one(&mut self, name: Name) -> Result<Token<'a>> {
         match self.tokens.get(self.offset) {
             Some(token) if name == *token.name() => {
                 self.offset += 1;
@@ -102,19 +102,7 @@ impl<'a, 'b: 'a> Matcher<'a, 'b> {
         }
     }
 
-    pub fn try_any(&mut self, names: &'static [Name]) -> Option<Box<[Token<'b>]>> {
-        let token = match self.tokens.get(self.offset) {
-            Some(token) => token.clone(),
-            None => { return None; }
-        };
-        if !alternatives.contains(token.name()) {
-            return None;
-        }
-        self.offset += 1;
-        Ok(token)
-    }
-
-    pub fn try_one(&mut self, name: Name) -> Option<Token<'b>> {
+    pub fn opt_one(&mut self, name: Name) -> Option<Token<'a>> {
         let token = self.tokens.get(self.offset);
         match token {
             Some(token) if name == *token.name() => {

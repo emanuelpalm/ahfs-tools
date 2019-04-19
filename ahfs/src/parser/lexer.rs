@@ -1,20 +1,18 @@
 //! Lexical analysis utilities.
 
 use parser::{Name, Scanner, Token};
-use source::{Source, Text};
+use source::Source;
 
 /// Creates a slice of `Tokens` from given `source`.
-pub fn analyze(source: &Source) -> Box<[Token]> {
+pub fn analyze(source: &Source) -> Vec<Token> {
     let mut tokens = Vec::new();
-    for text in source.texts() {
-        analyze_text(text, &mut tokens);
-    }
-    tokens.into_boxed_slice()
+    scan(source, &mut tokens);
+    tokens
 }
 
 #[inline]
-fn analyze_text<'a>(text: &'a Text, out: &mut Vec<Token<'a>>) -> Option<()> {
-    let mut scanner = Scanner::new(text);
+fn scan<'a>(source: &'a Source, out: &mut Vec<Token<'a>>) -> Option<()> {
+    let mut scanner = Scanner::new(source);
     let mut ch;
     loop {
         ch = scanner.next()?;
@@ -121,7 +119,7 @@ fn scan_number(scanner: &mut Scanner) -> Option<Name> {
                 '0'...'9' => {
                     ch = scanner.next()?;
                     continue;
-                },
+                }
                 _ => break,
             }
         }
@@ -218,8 +216,8 @@ fn scan_comment(scanner: &mut Scanner) -> Option<Name> {
         }
         _ => {
             scanner.unwind();
-            Some(Name::Error)
-        },
+            Some(Name::Slash)
+        }
     }
 }
 
@@ -268,30 +266,25 @@ mod tests {
 
     #[test]
     fn analyze() {
-        let texts = vec![
-            Text::new("alpha.ahfs", concat!(
-                "consumes implement import interface method\n",
-                "produces property record service system using\n",
-                "\n",
-                "<>{}:,()[];\n",
-                "\n",
-                "true false\n",
-                "0 1 202 -30 +40\n",
-                "50.0 6.1234 7.e+20 8e-10 1e9\n",
-                "inf +inf -inf NaN\n",
-                "\"Hello, World!\"\n",
-                "\n",
-                "IdentifierName smallCaps _underscore\n",
-                "+ - * / # ! ^ ~ ..\n",
-            )),
-            Text::new("beta.ahfs", concat!(
-                "/// This is a doc comment.\n",
-                "/** This too! */\n",
-                "// This is an ignored comment.\n",
-                "/* This too! */\n",
-            )),
-        ];
-        let source = Source::new(texts);
+        let source = Source::new("alpha.ahfs", concat!(
+            "consumes implement import interface method\n",
+            "produces property record service system using\n",
+            "\n",
+            "<>{}:,()/[];\n",
+            "\n",
+            "true false\n",
+            "0 1 202 -30 +40\n",
+            "50.0 6.1234 7.e+20 8e-10 1e9\n",
+            "inf +inf -inf NaN\n",
+            "\"Hello, World!\"\n",
+            "\n",
+            "IdentifierName smallCaps _underscore\n",
+            "+ - * # ! ^ ~ ..\n",
+            "/// This is a doc comment.\n",
+            "/** This too! */\n",
+            "// This is an ignored comment.\n",
+            "/* This too! */\n",
+        ));
         let tokens = super::analyze(&source);
 
         // Check token strings.
@@ -299,14 +292,14 @@ mod tests {
             vec!["consumes", "implement", "import", "interface",
                  "method", "produces", "property", "record",
                  "service", "system", "using",
-                 "<", ">", "{", "}", ":", ",", "(", ")", "[", "]", ";",
+                 "<", ">", "{", "}", ":", ",", "(", ")", "/", "[", "]", ";",
                  "true", "false",
                  "0", "1", "202", "-30", "+40",
                  "50.0", "6.1234", "7.e+20", "8e-10", "1e9",
                  "inf", "+inf", "-inf", "NaN",
                  "\"Hello, World!\"",
                  "IdentifierName", "smallCaps", "_underscore",
-                 "+", "-", "*", "/", "#", "!", "^", "~", ".", ".",
+                 "+", "-", "*", "#", "!", "^", "~", ".", ".",
                  "/// This is a doc comment.",
                  "/** This too! */",
             ],
@@ -315,29 +308,31 @@ mod tests {
 
         // Check token kinds.
         assert_eq!(
-            vec![Name::Consumes, Name::Implement, Name::Import, Name::Interface,
-                 Name::Method, Name::Produces, Name::Property, Name::Record,
-                 Name::Service, Name::System, Name::Using,
-                 Name::AngleLeft, Name::AngleRight,
-                 Name::BraceLeft, Name::BraceRight,
-                 Name::Colon, Name::Comma,
-                 Name::ParenLeft, Name::ParenRight,
-                 Name::SquareLeft, Name::SquareRight,
-                 Name::Semicolon,
-                 Name::Boolean, Name::Boolean,
-                 Name::Integer, Name::Integer, Name::Integer,
-                 Name::Integer, Name::Integer,
-                 Name::Float, Name::Float, Name::Float,
-                 Name::Float, Name::Float,
-                 Name::Float, Name::Float, Name::Float, Name::Float,
-                 Name::String,
-                 Name::Identifier, Name::Identifier, Name::Identifier,
-                 Name::Error, Name::Error, Name::Error, Name::Error,
-                 Name::Error, Name::Error, Name::Error, Name::Error,
-                 Name::Error, Name::Error,
-                 Name::Comment, Name::Comment,
+            vec![
+                Name::Consumes, Name::Implement, Name::Import, Name::Interface,
+                Name::Method, Name::Produces, Name::Property, Name::Record,
+                Name::Service, Name::System, Name::Using,
+                Name::AngleLeft, Name::AngleRight,
+                Name::BraceLeft, Name::BraceRight,
+                Name::Colon, Name::Comma,
+                Name::ParenLeft, Name::ParenRight,
+                Name::Slash,
+                Name::SquareLeft, Name::SquareRight,
+                Name::Semicolon,
+                Name::Boolean, Name::Boolean,
+                Name::Integer, Name::Integer, Name::Integer,
+                Name::Integer, Name::Integer,
+                Name::Float, Name::Float, Name::Float,
+                Name::Float, Name::Float,
+                Name::Float, Name::Float, Name::Float, Name::Float,
+                Name::String,
+                Name::Identifier, Name::Identifier, Name::Identifier,
+                Name::Error, Name::Error, Name::Error, Name::Error,
+                Name::Error, Name::Error, Name::Error, Name::Error,
+                Name::Error,
+                Name::Comment, Name::Comment,
             ],
-            tokens.iter().map(|item| *item.name()).collect::<Vec<_>>()
+            tokens.iter().map(|item| *item.name()).collect::<Vec<_>>(),
         );
     }
 }

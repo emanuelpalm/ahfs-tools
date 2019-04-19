@@ -1,4 +1,4 @@
-use source::{LineIter, Lines, Range, Span, Text};
+use source::{LineIter, Lines, Range, Span, Source};
 use std::fmt;
 
 /// Owned part of some original [`Text`][txt] containing a significant range of
@@ -7,8 +7,8 @@ use std::fmt;
 /// [txt]: struct.Text.html
 #[derive(Debug)]
 pub struct Excerpt {
-    text: Text,
     line_number: usize,
+    source: Source,
     range: Range,
 }
 
@@ -21,7 +21,7 @@ impl Excerpt {
         self.line_number
     }
 
-    /// Significant [`Range`][ran] of bytes within `Excerpt` text.
+    /// Significant [`Range`][ran] of bytes within `Excerpt` source.
     ///
     /// [ran]: type.Range.html
     #[inline]
@@ -29,16 +29,16 @@ impl Excerpt {
         &self.range
     }
 
-    /// `Excerpt` text.
+    /// `Excerpt` source text.
     #[inline]
-    pub fn text(&self) -> &Text {
-        &self.text
+    pub fn source(&self) -> &Source {
+        &self.source
     }
 }
 
 impl fmt::Display for Excerpt {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        Lines::fmt(self, f, self.text.name())
+        Lines::fmt(self, f, self.source.name())
     }
 }
 
@@ -50,20 +50,20 @@ impl<'a> From<Span<'a>> for Excerpt {
 }
 
 impl<'a, 'b> From<&'a Span<'b>> for Excerpt {
-    fn from(region: &'a Span<'b>) -> Self {
-        let lines = region.lines();
+    fn from(span: &'a Span<'b>) -> Self {
+        let lines = span.lines();
 
-        let text = Text::new(region.text().name(), lines.text());
+        let source = Source::new(span.source().name(), lines.text());
         let line_number = lines.line_number();
         let range = lines.range().clone();
 
-        Excerpt { text, line_number, range }
+        Excerpt { source, line_number, range }
     }
 }
 
 impl Lines for Excerpt {
     fn lines(&self) -> LineIter {
-        let text = self.text().body();
+        let text = self.source().body();
         let line_number = self.line_number();
         let range = self.range().clone();
         unsafe { LineIter::new(text, line_number, range) }

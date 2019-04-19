@@ -1,11 +1,11 @@
-use source::{LineIter, Lines, Range, Text};
+use source::{LineIter, Lines, Range, Source};
 use std::cmp;
 use std::fmt;
 
 /// Represents a significant region within a borrowed source code text.
 #[derive(Clone)]
 pub struct Span<'a> {
-    text: &'a Text,
+    source: &'a Source,
     range: Range,
 }
 
@@ -15,15 +15,15 @@ impl<'a> Span<'a> {
     /// [`text`](struct.Text.html).
     #[doc(hidden)]
     #[inline]
-    pub unsafe fn new(text: &'a Text, range: Range) -> Self {
-        Span { text, range }
+    pub unsafe fn new(text: &'a Source, range: Range) -> Self {
+        Span { source: text, range }
     }
 
     /// Gets string representing only significant range within this `Region`.
     #[inline]
     pub fn as_str(&self) -> &'a str {
         unsafe {
-            self.text.body().get_unchecked(self.range.as_ops_range())
+            self.source.body().get_unchecked(self.range.as_ops_range())
         }
     }
 
@@ -33,16 +33,16 @@ impl<'a> Span<'a> {
         &self.range
     }
 
-    /// [`Text`](struct.Text.html) in which `Region` is located.
+    /// [`Source`](struct.Source.html) in which `Region` is located.
     #[inline]
-    pub fn text(&self) -> &'a Text {
-        self.text
+    pub fn source(&self) -> &'a Source {
+        self.source
     }
 
     /// Creates new `Region` representing only end of this `Region`.
     #[inline]
     pub fn end(&self) -> Self {
-        Span { text: self.text, range: Range::new(self.range.end, self.range.end) }
+        Span { source: self.source, range: Range::new(self.range.end, self.range.end) }
     }
 
     /// Connects this and given `other` `Region`, creating a new `Region` that
@@ -50,7 +50,7 @@ impl<'a> Span<'a> {
     #[inline]
     pub fn connect(&self, other: Span<'a>) -> Self {
         Span {
-            text: self.text,
+            source: self.source,
             range: Range::new(
                 cmp::min(self.range.start, other.range.start),
                 cmp::max(self.range.end, other.range.end),
@@ -70,8 +70,8 @@ impl<'a> fmt::Debug for Span<'a> {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         write!(
             f, "Region {{ text: `{}` ({}), range: {:?} }}",
-            &self.text.body()[self.range.as_ops_range()],
-            self.text.name(),
+            &self.source.body()[self.range.as_ops_range()],
+            self.source.name(),
             self.range.clone()
         )
     }
@@ -79,13 +79,13 @@ impl<'a> fmt::Debug for Span<'a> {
 
 impl<'a> fmt::Display for Span<'a> {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        Lines::fmt(self, f, self.text.name())
+        Lines::fmt(self, f, self.source.name())
     }
 }
 
 impl<'a> Lines for Span<'a> {
     fn lines(&self) -> LineIter {
-        let body = self.text.body();
+        let body = self.source.body();
 
         let start = body[..self.range.start]
             .rfind('\n')

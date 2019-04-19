@@ -1,5 +1,5 @@
 use parser::{Name, Token};
-use source::{Range, Span, Text};
+use source::{Range, Span, Source};
 use std::char;
 
 /// A utility for creating [`Token`s](struct.Token.html) from source texts.
@@ -14,7 +14,7 @@ use std::char;
 /// zero-length candidate is created at the end position of the old one.
 #[derive(Debug)]
 pub struct Scanner<'a> {
-    text: &'a Text,
+    text: &'a Source,
     bytes: &'a [u8],
     start: usize,
     end: usize,
@@ -23,7 +23,7 @@ pub struct Scanner<'a> {
 impl<'a> Scanner<'a> {
     /// Creates new `Scanner` from given source code `text`.
     #[inline]
-    pub fn new(text: &'a Text) -> Self {
+    pub fn new(text: &'a Source) -> Self {
         Scanner {
             text,
             bytes: text.body().as_bytes(),
@@ -110,7 +110,7 @@ mod tests {
 
     #[test]
     fn collect() {
-        let text = Text::new("", "aabbccc");
+        let text = Source::new("", "aabbccc");
         let mut reader = Scanner::new(&text);
 
         // Skip As.

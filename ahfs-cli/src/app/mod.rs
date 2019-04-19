@@ -29,22 +29,6 @@ pub fn new(args: &[&str], ignore_if_exists: bool) -> Result<(), Box<::ahfs::Erro
     }
 }
 
-/// Generates graph files from all project source files and exits.
-pub fn graph(args: &[&str]) -> Result<(), Box<::ahfs::ErrorCode>> {
-    if args.len() != 0 {
-        return Err(Error::GraphArgCountNot0.into());
-    }
-    let project = Project::locate(".")?;
-    let files = project.files()?;
-    let source = Source::read_files(files.iter())?;
-    let _tree = parser::parse(&source)?;
-
-    // TODO: Actually generate graph files.
-
-
-    Ok(())
-}
-
 /// Prints list of all project source files and exits.
 pub fn list(args: &[&str]) -> Result<(), Box<::ahfs::ErrorCode>> {
     if args.len() != 0 {

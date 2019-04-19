@@ -2,6 +2,7 @@ use source::Span;
 
 #[derive(Debug)]
 pub struct Tree<'a> {
+    pub implements: Vec<Implement<'a>>,
     pub imports: Vec<Import<'a>>,
     pub services: Vec<Service<'a>>,
     pub systems: Vec<System<'a>>,
@@ -11,6 +12,7 @@ impl<'a> Tree<'a> {
     #[inline]
     pub fn new() -> Self {
         Tree {
+            implements: Vec::new(),
             imports: Vec::new(),
             services: Vec::new(),
             systems: Vec::new(),
@@ -19,8 +21,102 @@ impl<'a> Tree<'a> {
 }
 
 #[derive(Debug)]
+pub struct Implement<'a> {
+    pub name: Span<'a>,
+    pub protocol: Span<'a>,
+    pub encoding: Span<'a>,
+    pub properties: Vec<Property<'a>>,
+    pub interfaces: Vec<ImplementInterface<'a>>,
+    pub comment: Option<Span<'a>>,
+}
+
+impl<'a> Implement<'a> {
+    #[inline]
+    pub fn new(name: Span<'a>, protocol: Span<'a>, encoding: Span<'a>, comment: Option<Span<'a>>) -> Self {
+        Implement {
+            name,
+            protocol,
+            encoding,
+            properties: Vec::new(),
+            interfaces: Vec::new(),
+            comment,
+        }
+    }
+}
+
+#[derive(Debug)]
+pub struct ImplementInterface<'a> {
+    pub name: Span<'a>,
+    pub methods: Vec<ImplementMethod<'a>>,
+    pub properties: Vec<Property<'a>>,
+    pub comment: Option<Span<'a>>,
+}
+
+impl<'a> ImplementInterface<'a> {
+    #[inline]
+    pub fn new(name: Span<'a>, comment: Option<Span<'a>>) -> Self {
+        ImplementInterface {
+            name,
+            methods: Vec::new(),
+            properties: Vec::new(),
+            comment,
+        }
+    }
+}
+
+#[derive(Debug)]
+pub struct ImplementMethod<'a> {
+    pub name: Span<'a>,
+    pub data: Vec<(Span<'a>, Value<'a>)>,
+    pub comment: Option<Span<'a>>,
+}
+
+impl<'a> ImplementMethod<'a> {
+    #[inline]
+    pub fn new(name: Span<'a>, comment: Option<Span<'a>>) -> Self {
+        ImplementMethod {
+            name,
+            data: Vec::new(),
+            comment,
+        }
+    }
+}
+
+#[derive(Debug)]
 pub struct Import<'a> {
     pub name: Span<'a>,
+    pub comment: Option<Span<'a>>,
+}
+
+#[derive(Debug)]
+pub struct Property<'a> {
+    pub name: Span<'a>,
+    pub value: Value<'a>,
+    pub comment: Option<Span<'a>>,
+}
+
+#[derive(Debug)]
+pub struct Record<'a> {
+    pub name: Span<'a>,
+    pub entries: Vec<RecordEntry<'a>>,
+    pub comment: Option<Span<'a>>,
+}
+
+impl<'a> Record<'a> {
+    #[inline]
+    pub fn new(name: Span<'a>, comment: Option<Span<'a>>) -> Self {
+        Record {
+            name,
+            entries: Vec::new(),
+            comment,
+        }
+    }
+}
+
+#[derive(Debug)]
+pub struct RecordEntry<'a> {
+    pub name: Span<'a>,
+    pub type_: TypeRef<'a>,
     pub comment: Option<Span<'a>>,
 }
 
@@ -120,4 +216,15 @@ impl<'a> TypeRef<'a> {
             params: Vec::new(),
         }
     }
+}
+
+#[derive(Debug)]
+pub enum Value<'a> {
+    Null,
+    Boolean(Span<'a>),
+    Integer(Span<'a>),
+    Float(Span<'a>),
+    String(Span<'a>),
+    List(Box<[Value<'a>]>),
+    Map(Box<[(Span<'a>, Value<'a>)]>),
 }
