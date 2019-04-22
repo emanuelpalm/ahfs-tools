@@ -1,11 +1,11 @@
-use source::{LineIter, Lines, Range, Span, Source};
+use crate::source::{LineIter, Lines, Range, Span, Source};
 use std::fmt;
 
 /// Owned part of some original [`Text`][txt] containing a significant range of
 /// characters.
 ///
 /// [txt]: struct.Text.html
-#[cfg_attr(debug_assertions, derive(Debug))]
+#[derive(Debug)]
 pub struct Excerpt {
     line_number: usize,
     source: Source,
@@ -33,6 +33,16 @@ impl Excerpt {
     #[inline]
     pub fn source(&self) -> &Source {
         &self.source
+    }
+}
+
+impl Default for Excerpt {
+    fn default() -> Self {
+        Excerpt {
+            line_number: 1,
+            source: Source::new("", ""),
+            range: Range::new(0, 0),
+        }
     }
 }
 

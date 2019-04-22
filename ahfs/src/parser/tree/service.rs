@@ -1,7 +1,7 @@
-use parser::TypeRef;
-use source::Span;
+use crate::parser::TypeRef;
+use crate::source::Span;
 
-#[cfg_attr(debug_assertions, derive(Debug))]
+#[derive(Debug)]
 pub struct Service<'a> {
     pub name: Span<'a>,
     pub interfaces: Vec<ServiceInterface<'a>>,
@@ -19,7 +19,7 @@ impl<'a> Service<'a> {
     }
 }
 
-#[cfg_attr(debug_assertions, derive(Debug))]
+#[derive(Debug)]
 pub struct ServiceInterface<'a> {
     pub name: Span<'a>,
     pub methods: Vec<ServiceMethod<'a>>,
@@ -37,7 +37,7 @@ impl<'a> ServiceInterface<'a> {
     }
 }
 
-#[cfg_attr(debug_assertions, derive(Debug))]
+#[derive(Debug)]
 pub struct ServiceMethod<'a> {
     pub name: Span<'a>,
     pub input: Option<TypeRef<'a>>,
@@ -57,7 +57,7 @@ impl<'a> ServiceMethod<'a> {
     }
 }
 
-#[cfg_attr(debug_assertions, derive(Debug))]
+#[derive(Debug)]
 pub struct ServiceRef<'a> {
     pub name: Span<'a>,
     pub comment: Option<Span<'a>>,

@@ -1,9 +1,9 @@
-use parser::{Error, Name, Result, Token};
+use crate::parser::{Error, Name, Result, Token};
 
 /// A utility for reading well-defined [`Token`s][tok] sequences from an array.
 ///
 /// [tok]: ../lexer/struct.Token.html
-#[cfg_attr(debug_assertions, derive(Debug))]
+#[derive(Debug)]
 pub struct Matcher<'a> {
     tokens: Box<[Token<'a>]>,
     offset: usize,
@@ -37,20 +37,11 @@ impl<'a> Matcher<'a> {
             let token = match self.tokens.get(offset) {
                 Some(token) => token.clone(),
                 None => {
-                    return Err(self.tokens.last()
-                        .map(|token| Error::UnexpectedSourceEnd {
-                            excerpt: token.span().end().into(),
-                            expected: vec![*name].into(),
-                        })
-                        .unwrap_or(Error::NoSource));
+                    return Err(Error::unexpected_source_end(&self.tokens, vec![*name]));
                 }
             };
             if name != token.name() {
-                return Err(Error::UnexpectedToken {
-                    name: *token.name(),
-                    excerpt: token.span().into(),
-                    expected: vec![*name].into(),
-                });
+                return Err(Error::unexpected_token(&token, vec![*name]));
             }
             offset += 1;
         }
@@ -67,25 +58,16 @@ impl<'a> Matcher<'a> {
     /// [nam]: ../name/enum.Name.html
     pub fn any(&mut self, alternatives: &'static [Name]) -> Result<Token<'a>> {
         let token = match self.tokens.get(self.offset) {
-            Some(token) => token.clone(),
+            Some(token) => token,
             None => {
-                return Err(self.tokens.last()
-                    .map(|token| Error::UnexpectedSourceEnd {
-                        excerpt: token.span().end().into(),
-                        expected: alternatives.into(),
-                    })
-                    .unwrap_or(Error::NoSource));
+                return Err(Error::unexpected_source_end(&self.tokens, alternatives));
             }
         };
         if !alternatives.contains(token.name()) {
-            return Err(Error::UnexpectedToken {
-                name: *token.name(),
-                excerpt: token.span().into(),
-                expected: alternatives.into(),
-            });
+            return Err(Error::unexpected_token(token, alternatives));
         }
         self.offset += 1;
-        Ok(token)
+        Ok(token.clone())
     }
 
     /// Returns next [Token][tok] only if its [`Name`][nam] matches `name`.
@@ -98,17 +80,8 @@ impl<'a> Matcher<'a> {
                 self.offset += 1;
                 Ok(token.clone())
             }
-            Some(token) => Err(Error::UnexpectedToken {
-                name: *token.name(),
-                excerpt: token.span().into(),
-                expected: vec![name].into(),
-            }),
-            _ => Err(self.tokens.last()
-                .map(|token| Error::UnexpectedSourceEnd {
-                    excerpt: token.span().end().into(),
-                    expected: vec![name].into(),
-                })
-                .unwrap_or(Error::NoSource)),
+            Some(token) => Err(Error::unexpected_token(token, vec![name])),
+            _ => Err(Error::unexpected_source_end(&self.tokens, vec![name])),
         }
     }
 

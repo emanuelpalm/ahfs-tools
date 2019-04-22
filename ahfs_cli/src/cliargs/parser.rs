@@ -1,4 +1,4 @@
-use cliargs::{Result, Rule, Error};
+use crate::cliargs::{Result, Rule, Error};
 use std::fmt;
 
 /// A description of how command line arguments are to be parsed.

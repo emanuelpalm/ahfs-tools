@@ -1,7 +1,7 @@
-use parser::TypeRef;
-use source::Span;
+use crate::parser::TypeRef;
+use crate::source::Span;
 
-#[cfg_attr(debug_assertions, derive(Debug))]
+#[derive(Debug)]
 pub struct Record<'a> {
     pub name: Span<'a>,
     pub entries: Vec<RecordEntry<'a>>,
@@ -19,7 +19,7 @@ impl<'a> Record<'a> {
     }
 }
 
-#[cfg_attr(debug_assertions, derive(Debug))]
+#[derive(Debug)]
 pub struct RecordEntry<'a> {
     pub name: Span<'a>,
     pub type_ref: TypeRef<'a>,

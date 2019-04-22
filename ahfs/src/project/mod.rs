@@ -11,13 +11,13 @@ pub use self::error::Error;
 pub use self::settings::Settings;
 pub use self::version::Version;
 
-use error::Result;
+use crate::error::Result;
 use std::fs;
 use std::io;
 use std::path::{Path, PathBuf};
 
 /// Represents an AHFS project.
-#[cfg_attr(debug_assertions, derive(Debug))]
+#[derive(Debug)]
 pub struct Project {
     root: Box<Path>,
     settings: Box<Settings>,
@@ -104,7 +104,7 @@ impl Project {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use ::meta;
+    use crate::meta;
 
     #[test]
     fn create_and_locate() {

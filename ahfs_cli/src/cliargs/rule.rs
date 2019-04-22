@@ -1,4 +1,4 @@
-use cliargs::{Error, Flag, Result};
+use crate::cliargs::{Error, Flag, Result};
 use std::fmt;
 use std::result;
 
@@ -17,7 +17,7 @@ pub struct Rule<'a> {
     pub flags: &'a [Flag],
 
     /// Function called if rule is invoked.
-    pub callback: &'a Fn(&[&str]) -> result::Result<(), Box<::ahfs::Error>>,
+    pub callback: &'a Fn(&[&str]) -> result::Result<(), Box<ahfs::Error>>,
 }
 
 impl<'a> Rule<'a> {
@@ -63,13 +63,13 @@ fn parse_flags(flags: &[Flag], args: &[&str]) -> Result {
 impl<'a> fmt::Display for Rule<'a> {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         write!(
-            f, "{} {}\n    {}\n",
+            f, concat!(ahfs_macro::color!(g: ">"), "{} {}\n  {}\n"),
             self.name, self.name_details, self.description
         )?;
         if self.flags.len() > 0 {
             write!(f, "\n")?;
             for flag in self.flags {
-                write!(f, "    {}\n", flag)?;
+                write!(f, "  {}\n", flag)?;
             }
         }
         Ok(())

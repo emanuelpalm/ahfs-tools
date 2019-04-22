@@ -1,7 +1,7 @@
-use parser::Value;
-use source::Span;
+use crate::parser::Value;
+use crate::source::Span;
 
-#[cfg_attr(debug_assertions, derive(Debug))]
+#[derive(Debug)]
 pub struct Property<'a> {
     pub name: Span<'a>,
     pub value: Value<'a>,

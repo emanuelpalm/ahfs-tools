@@ -1,4 +1,3 @@
-use std::error;
 use std::fmt;
 use std::io;
 use std::result;
@@ -7,11 +6,8 @@ use std::result;
 pub type Result<T = ()> = result::Result<T, Box<Error>>;
 
 /// Error trait implemented by all AHFS error types.
-pub trait Error: error::Error {
+pub trait Error: fmt::Debug + fmt::Display {
     /// Machine-readable error code.
-    ///
-    /// Error codes exist to assist machine reading of error messages. Each kind
-    /// of error should, if possible, provide its own unique code.
     fn code(&self) -> &'static str;
 
     /// Tries to cast error into an I/O `Error`.

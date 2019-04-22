@@ -2,7 +2,7 @@ use std::fmt;
 
 /// A MAJOR.MINOR.PATCH version indicator.
 #[derive(Clone, Copy, Eq, PartialEq)]
-#[cfg_attr(debug_assertions, derive(Debug))]
+#[derive(Debug)]
 pub struct Version {
     major: usize,
     minor: usize,

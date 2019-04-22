@@ -5,7 +5,7 @@ use std::fmt;
 /// [span]: ../../source/struct.Span.html
 /// [token]: ../token/struct.Token.html
 #[derive(Clone, Copy, Eq, PartialEq)]
-#[cfg_attr(debug_assertions, derive(Debug))]
+#[derive(Debug)]
 pub enum Name {
     // Delimiters.
     AngleLeft,

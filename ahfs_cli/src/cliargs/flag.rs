@@ -1,4 +1,4 @@
-use cliargs::{Error, Result};
+use crate::cliargs::{Error, Result};
 use std::cell::Cell;
 use std::error;
 use std::fmt;
@@ -26,11 +26,11 @@ impl fmt::Display for Flag {
         if let Some(short) = self.short {
             write!(f, "-{:2} ", short)?;
         } else {
-            f.write_str("    ")?;
+            f.write_str("  ")?;
         }
         let mut len = self.long.len();
         write!(f, "--{}", self.long)?;
-        if let Some(value_name) = self.out.name {
+        if let Some(value_name) = self.out.name() {
             write!(f, "={}", value_name)?;
             len += 1 + value_name.len();
         }
@@ -85,21 +85,6 @@ impl FlagOut {
                     0 => true,
                     _ => s.parse().map_err(|err| Box::new(err))?,
                 }));
-                Ok(())
-            }),
-        }
-    }
-
-    /// Creates new flag cell, holding an arbitrary value described by `name`.
-    pub fn with_value<T, E>(name: &'static str, cell: &FlagCell<T>) -> Self
-        where T: FromStr<Err=E> + 'static,
-              E: error::Error + 'static,
-    {
-        let cell: Rc<_> = cell.0.clone();
-        FlagOut {
-            name: Some(name),
-            out: Box::new(move |s| {
-                cell.set(Some(T::from_str(s).map_err(|err| Box::new(err))?));
                 Ok(())
             }),
         }

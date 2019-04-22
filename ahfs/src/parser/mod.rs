@@ -20,11 +20,11 @@ pub use self::tree::{
     Value,
 };
 
+use crate::source::{Span, Source};
 use self::matcher::Matcher;
 use self::name::Name;
 use self::scanner::Scanner;
 use self::token::Token;
-use source::{Span, Source};
 use std::result;
 
 /// The `Result` of parsing.
@@ -148,7 +148,7 @@ fn list<'a>(m: &mut Matcher<'a>, t: &mut Vec<Value<'a>>) -> Result<()> {
     }
 
     t.push(value(m).map_err(|mut error| {
-        error.push_expected(&[Name::SquareRight]);
+        error.expected_mut().push(Name::SquareRight);
         error
     })?);
 
@@ -357,7 +357,7 @@ fn service_method<'a>(m: &mut Matcher<'a>, t: &mut Vec<ServiceMethod<'a>>, c: Op
 
             if let Err(mut error) = m.one(Name::ParenRight) {
                 if type_ref.params.len() == 0 {
-                    error.push_expected(&[Name::AngleLeft]);
+                    error.expected_mut().push(Name::AngleLeft);
                 }
                 return Err(error);
             }
@@ -378,7 +378,7 @@ fn service_method<'a>(m: &mut Matcher<'a>, t: &mut Vec<ServiceMethod<'a>>, c: Op
 
             if let Err(mut error) = m.one(Name::Semicolon) {
                 if type_ref.params.len() == 0 {
-                    error.push_expected(&[Name::AngleLeft]);
+                    error.expected_mut().push(Name::AngleLeft);
                 }
                 return Err(error);
             }

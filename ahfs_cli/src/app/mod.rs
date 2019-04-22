@@ -3,9 +3,7 @@ mod error;
 pub use self::error::Error;
 
 use ahfs::log;
-use ahfs::parser;
 use ahfs::project::Project;
-use ahfs::source::Source;
 use std::io;
 
 /// Creates new project at first path in `args` and exits.

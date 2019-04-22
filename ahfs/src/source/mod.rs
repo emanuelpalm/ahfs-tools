@@ -20,8 +20,7 @@ use std::io::Read;
 use std::path::PathBuf;
 
 /// A named source code text.
-#[derive(Eq, PartialEq)]
-#[cfg_attr(debug_assertions, derive(Debug))]
+#[derive(Debug, Eq, PartialEq)]
 pub struct Source {
     name: Box<str>,
     body: Box<str>,
@@ -113,44 +112,44 @@ mod tests {
         };
 
         assert_eq!(get(Range::new(0, 1)).as_str(), concat!(
-            "      : ", str_color!(blue: "alpha.ahs"), "\n",
+            "      : ", ahfs_macro::color!(b: "alpha.ahs"), "\n",
             "      |\n",
-            "    1 | ", str_color!(none: "A type System;"), "\n",
-            "      | ", str_color!( red: "^"), "\n"));
+            "    1 | ", ahfs_macro::color!(_: "A type System;"), "\n",
+            "      | ", ahfs_macro::color!(r: "^"), "\n"));
 
         assert_eq!(get(Range::new(17, 25)).as_str(), concat!(
-            "      : ", str_color!(blue: "alpha.ahs"), "\n",
+            "      : ", ahfs_macro::color!(b: "alpha.ahs"), "\n",
             "      |\n",
-            "    2 | ", str_color!(none: "A consumes B;"), "\n",
-            "      | ", str_color!( red: "  ^^^^^^^^"), "\n"));
+            "    2 | ", ahfs_macro::color!(_: "A consumes B;"), "\n",
+            "      | ", ahfs_macro::color!(r: "  ^^^^^^^^"), "\n"));
 
         assert_eq!(get(Range::new(30, 42)).as_str(), concat!(
-            "      : ", str_color!(blue: "alpha.ahs"), "\n",
+            "      : ", ahfs_macro::color!(b: "alpha.ahs"), "\n",
             "      |\n",
-            "    3 | ", str_color!(none: "A produces C;"), "\n",
-            "      | ", str_color!( red: "^^^^^^^^^^^^"), "\n"));
+            "    3 | ", ahfs_macro::color!(_: "A produces C;"), "\n",
+            "      | ", ahfs_macro::color!(r: "^^^^^^^^^^^^"), "\n"));
 
         assert_eq!(get(Range::new(17, 40)).as_str(), concat!(
-            "      : ", str_color!(blue: "alpha.ahs"), "\n",
+            "      : ", ahfs_macro::color!(b: "alpha.ahs"), "\n",
             "      |\n",
-            "    2 | ", str_color!(none: "A consumes B;"), "\n",
-            "      | ", str_color!( red: "  ^^^^^^^^^^^"), "\n",
-            "    3 | ", str_color!(none: "A produces C;"), "\n",
-            "      | ", str_color!( red: "^^^^^^^^^^"), "\n"));
+            "    2 | ", ahfs_macro::color!(_: "A consumes B;"), "\n",
+            "      | ", ahfs_macro::color!(r: "  ^^^^^^^^^^^"), "\n",
+            "    3 | ", ahfs_macro::color!(_: "A produces C;"), "\n",
+            "      | ", ahfs_macro::color!(r: "^^^^^^^^^^"), "\n"));
 
         assert_eq!(get(Range::new(7, 40)).as_str(), concat!(
-            "      : ", str_color!(blue: "alpha.ahs"), "\n",
+            "      : ", ahfs_macro::color!(b: "alpha.ahs"), "\n",
             "      |\n",
-            "    1 | ", str_color!(none: "A type System;"), "\n",
-            "      | ", str_color!( red: "       ^^^^^^^"), "\n",
-            "    2 | ", str_color!(none: "A consumes B;"), "\n",
-            "      | ", str_color!( red: "^^^^^^^^^^^^^"), "\n",
+            "    1 | ", ahfs_macro::color!(_: "A type System;"), "\n",
+            "      | ", ahfs_macro::color!(r: "       ^^^^^^^"), "\n",
+            "    2 | ", ahfs_macro::color!(_: "A consumes B;"), "\n",
+            "      | ", ahfs_macro::color!(r: "^^^^^^^^^^^^^"), "\n",
             "     ...\n"));
 
         assert_eq!(get(Range::new(42, 42)).as_str(), concat!(
-            "      : ", str_color!(blue: "alpha.ahs"), "\n",
+            "      : ", ahfs_macro::color!(b: "alpha.ahs"), "\n",
             "      |\n",
-            "    3 | ", str_color!(none: "A produces C;"), "\n",
-            "      | ", str_color!( red: "            ^"), "\n"));
+            "    3 | ", ahfs_macro::color!(_: "A produces C;"), "\n",
+            "      | ", ahfs_macro::color!(r: "            ^"), "\n"));
     }
 }

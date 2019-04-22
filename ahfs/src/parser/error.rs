@@ -1,100 +1,97 @@
-use parser::Name;
-use source::Excerpt;
-use std::error;
+use crate::parser::{Name, Token};
+use crate::source::Excerpt;
 use std::fmt;
 
 /// A parser error.
-#[cfg_attr(debug_assertions, derive(Debug))]
-pub enum Error {
-    /// There is nothing to parse.
-    NoSource,
-
-    /// A parsed source [`Text`](../source/struct.Text.html) ended unexpectedly.
-    UnexpectedSourceEnd {
-        excerpt: Excerpt,
-        expected: Vec<Name>,
-    },
-
-    /// An unexpected [`Token`](struct.Token.html) was read while parsing.
-    UnexpectedToken {
-        name: Name,
-        excerpt: Excerpt,
-        expected: Vec<Name>,
-    },
+#[derive(Debug)]
+pub struct Error {
+    cause: Option<Name>,
+    excerpt: Excerpt,
+    expected: Vec<Name>,
 }
 
 impl Error {
-    pub fn push_expected(&mut self, names: &[Name]) {
-        match *self {
-            Error::NoSource => {},
-            Error::UnexpectedSourceEnd { ref mut expected, .. } |
-            Error::UnexpectedToken { ref mut expected, .. } => {
-                for name in names {
-                    expected.push(*name);
-                }
-            }
-        };
+    /// A parsed [`Source`](../source/struct.Source.html) ended unexpectedly.
+    #[inline]
+    pub fn unexpected_source_end<E>(tokens: &[Token], expected: E) -> Self
+        where E: Into<Vec<Name>>,
+    {
+        Error {
+            cause: None,
+            excerpt: tokens.last()
+                .map_or_else(|| Excerpt::default(), |token| {
+                    token.span().end().into()
+                }),
+            expected: expected.into(),
+        }
+    }
+
+    /// An unexpected [`Token`](struct.Token.html) was read while parsing.
+    #[inline]
+    pub fn unexpected_token<E>(token: &Token, expected: E) -> Self
+        where E: Into<Vec<Name>>,
+    {
+        Error {
+            cause: Some(*token.name()),
+            excerpt: token.span().into(),
+            expected: expected.into(),
+        }
+    }
+
+    #[inline]
+    pub fn cause(&self) -> Option<Name> {
+        self.cause
+    }
+
+    #[inline]
+    pub fn excerpt(&self) -> &Excerpt {
+        &self.excerpt
+    }
+
+    #[inline]
+    pub fn expected(&self) -> &[Name] {
+        &self.expected
+    }
+
+    #[inline]
+    pub fn expected_mut(&mut self) -> &mut Vec<Name> {
+        &mut self.expected
     }
 }
+
 
 impl fmt::Display for Error {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        match *self {
-            Error::NoSource => write!(f, "No known sources"),
-            Error::UnexpectedSourceEnd { ref excerpt, ref expected } => {
-                write!(f, "Unexpected source end")?;
-                write_unexpected(f, &expected, excerpt)
-            }
-            Error::UnexpectedToken { name, ref excerpt, ref expected } => {
-                write!(f, "Unexpected `{}`", name)?;
-                write_unexpected(f, &expected, excerpt)
-            }
+        match self.cause {
+            None => write!(f, "Unexpected source end"),
+            Some(name) => write!(f, "Unexpected `{}`", name),
         }?;
-        Ok(())
-    }
-}
+        match self.expected.as_ref() as &[Name] {
+            &[] => {},
+            &[name] => write!(f, ", expected `{}`", name)?,
+            _ => {
+                write!(f, ", expected one of ")?;
 
-fn write_unexpected(
-    f: &mut fmt::Formatter,
-    expected: &[Name],
-    excerpt: &Excerpt,
-) -> fmt::Result
-{
-    match expected.len() {
-        0 => {},
-        1 => write!(f, ", expected `{}`", expected[0])?,
-        _ => {
-            write!(f, ", expected one of ")?;
+                let (first, rest) = self.expected.split_first().unwrap();
+                write!(f, "`{}`", first)?;
 
-            let (first, rest) = expected.split_first().unwrap();
-            write!(f, "`{}`", first)?;
-
-            let (last, rest) = rest.split_last().unwrap();
-            for item in rest {
-                write!(f, ", `{}`", item)?;
+                let (last, rest) = rest.split_last().unwrap();
+                for item in rest {
+                    write!(f, ", `{}`", item)?;
+                }
+                write!(f, " or `{}`", last)?
             }
-            write!(f, " or `{}`", last)?
-        }
-    };
-    write!(f, ".\n{}", excerpt)
-}
-
-impl error::Error for Error {
-    fn description(&self) -> &str {
-        match *self {
-            Error::NoSource => "No known sources",
-            Error::UnexpectedSourceEnd { .. } => "Unexpected source end",
-            Error::UnexpectedToken { .. } => "Unexpected token",
-        }
+        };
+        write!(f, ".\n{}", self.excerpt)
     }
 }
 
-impl ::Error for Error {
+impl crate::Error for Error {
+    #[inline]
     fn code(&self) -> &'static str {
-        match *self {
-            Error::NoSource => "P001",
-            Error::UnexpectedSourceEnd { .. } => "P002",
-            Error::UnexpectedToken { .. } => "P003",
+        match self.cause {
+            None => "P001",
+            Some(_) => "P002",
         }
     }
 }

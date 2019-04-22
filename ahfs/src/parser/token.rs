@@ -1,12 +1,12 @@
-use parser::Name;
-use source::{Range, Span};
+use crate::parser::Name;
+use crate::source::Span;
 
 /// Identifies a typed [`Span`][spa] of some [`Source`][src].
 ///
 /// [spa]: ../../source/struct.Span.html
 /// [src]: ../../source/struct.Source.html
 #[derive(Clone)]
-#[cfg_attr(debug_assertions, derive(Debug))]
+#[derive(Debug)]
 pub struct Token<'a> {
     name: Name,
     span: Span<'a>,

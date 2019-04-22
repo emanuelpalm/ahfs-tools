@@ -1,6 +1,6 @@
-use source::Span;
+use crate::source::Span;
 
-#[cfg_attr(debug_assertions, derive(Debug))]
+#[derive(Debug)]
 pub struct TypeRef<'a> {
     pub name: Span<'a>,
     pub params: Vec<TypeRef<'a>>,

@@ -1,4 +1,4 @@
-use source::{LineIter, Lines, Range, Source};
+use crate::source::{LineIter, Lines, Range, Source};
 use std::cmp;
 use std::fmt;
 
@@ -19,7 +19,7 @@ impl<'a> Span<'a> {
         Span { source: text, range }
     }
 
-    /// Gets string representing only significant range within this `Region`.
+    /// Gets string representing only significant range within this `Span`.
     #[inline]
     pub fn as_str(&self) -> &'a str {
         unsafe {
@@ -27,26 +27,26 @@ impl<'a> Span<'a> {
         }
     }
 
-    /// Byte range of this `Region` within its `text`.
+    /// Byte range of this `Span` within its `text`.
     #[inline]
     pub fn range(&self) -> &Range {
         &self.range
     }
 
-    /// [`Source`](struct.Source.html) in which `Region` is located.
+    /// [`Source`](struct.Source.html) in which `Span` is located.
     #[inline]
     pub fn source(&self) -> &'a Source {
         self.source
     }
 
-    /// Creates new `Region` representing only end of this `Region`.
+    /// Creates new `Span` representing only end of this `Span`.
     #[inline]
     pub fn end(&self) -> Self {
         Span { source: self.source, range: Range::new(self.range.end, self.range.end) }
     }
 
-    /// Connects this and given `other` `Region`, creating a new `Region` that
-    /// contains both regions and all text between them.
+    /// Connects this and given `other` `Span`, creating a new `Span` that
+    /// contains both spans and all text between them.
     #[inline]
     pub fn connect(&self, other: Span<'a>) -> Self {
         Span {
@@ -66,7 +66,6 @@ impl<'a> AsRef<str> for Span<'a> {
     }
 }
 
-#[cfg(debug_assertions)]
 impl<'a> fmt::Debug for Span<'a> {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         write!(

@@ -1,4 +1,4 @@
-use source::LineIter;
+use crate::source::LineIter;
 use std::fmt;
 
 /// Represents a type holding a set of lines that touches some significant
@@ -10,7 +10,7 @@ pub trait Lines {
     /// Writes lines, with given `header`, in human-readable form.
     fn fmt(&self, f: &mut fmt::Formatter, header: &str) -> fmt::Result {
         write!(f, concat!(
-            "      : ", str_color!(blue: "{}"), "\n",
+            "      : ", ahfs_macro::color!(b: "{}"), "\n",
             "      |\n"), header)?;
         for (i, line) in self.lines().enumerate() {
             if i < 2 {

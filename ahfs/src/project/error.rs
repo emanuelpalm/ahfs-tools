@@ -1,5 +1,3 @@
-use source::Excerpt;
-use std::error;
 use std::fmt;
 
 /// A project-related error.
@@ -17,8 +15,8 @@ pub enum Error {
     AhfsVersionMissing,
 }
 
-impl error::Error for Error {
-    fn description(&self) -> &str {
+impl Error {
+    pub fn description(&self) -> &str {
         match *self {
             Error::AhfsVersionIncompatible { .. } => "Incompatible AHFS version",
             Error::AhfsVersionInvalid { .. } => "Invalid AHFS version",
@@ -27,7 +25,7 @@ impl error::Error for Error {
     }
 }
 
-impl ::Error for Error {
+impl crate::Error for Error {
     fn code(&self) -> &'static str {
         match *self {
             Error::AhfsVersionIncompatible { .. } => "R001",
@@ -39,7 +37,7 @@ impl ::Error for Error {
 
 impl fmt::Display for Error {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(f, "{}", error::Error::description(self))?;
+        write!(f, "{}", self.description())?;
         match *self {
             Error::AhfsVersionIncompatible { ref version } |
             Error::AhfsVersionInvalid { ref version } => {

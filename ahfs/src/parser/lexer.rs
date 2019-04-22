@@ -1,7 +1,7 @@
 //! Lexical analysis utilities.
 
-use parser::{Name, Scanner, Token};
-use source::Source;
+use crate::parser::{Name, Scanner, Token};
+use crate::source::Source;
 
 /// Creates a slice of `Tokens` from given `source`.
 pub fn analyze(source: &Source) -> Vec<Token> {

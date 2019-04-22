@@ -1,5 +1,4 @@
-use source::Span;
-use std::fmt;
+use crate::source::Span;
 use std::ops;
 
 /// Refers to a range of bytes within some arbitrary `str`.
@@ -15,14 +14,19 @@ impl Range {
         Range { start, end }
     }
 
+    #[inline]
     pub fn as_ops_range(self) -> ops::Range<usize> {
         ops::Range { start: self.start, end: self.end }
     }
+
+    #[inline]
+    pub fn len(&self) -> usize {
+        self.end - self.start
+    }
 }
 
-#[cfg(debug_assertions)]
-impl fmt::Debug for Range {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+impl std::fmt::Debug for Range {
+    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
         write!(f, "{}..{}", self.start, self.end)
     }
 }

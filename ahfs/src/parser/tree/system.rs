@@ -1,7 +1,7 @@
-use parser::ServiceRef;
-use source::Span;
+use crate::parser::ServiceRef;
+use crate::source::Span;
 
-#[cfg_attr(debug_assertions, derive(Debug))]
+#[derive(Debug)]
 pub struct System<'a> {
     pub name: Span<'a>,
     pub consumes: Vec<ServiceRef<'a>>,

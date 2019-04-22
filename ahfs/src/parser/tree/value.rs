@@ -1,6 +1,6 @@
-use source::Span;
+use crate::source::Span;
 
-#[cfg_attr(debug_assertions, derive(Debug))]
+#[derive(Debug)]
 pub enum Value<'a> {
     Null,
     Boolean(Span<'a>),

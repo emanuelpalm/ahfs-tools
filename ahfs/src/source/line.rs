@@ -1,4 +1,4 @@
-use source::Range;
+use crate::source::Range;
 use std::fmt;
 
 /// A source code line touching some significant range of characters.
@@ -39,8 +39,8 @@ impl<'a> Line<'a> {
 impl<'a> fmt::Display for Line<'a> {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         write!(f, concat!(
-            "{:>5} | ", str_color!(none: "{}"), "\n",
-            "      | ", str_color!( red: "{:start$}{:^<len$}"), "\n"),
+            "{:>5} | ", ahfs_macro::color!(_: "{}"), "\n",
+            "      | ", ahfs_macro::color!(r: "{:start$}{:^<len$}"), "\n"),
                self.number, self.text, "", "",
                start = self.range.start,
                len = (self.range.end - self.range.start).max(1))

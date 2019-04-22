@@ -1,5 +1,3 @@
-extern crate ahfs;
-
 mod app;
 mod cliargs;
 
@@ -14,7 +12,7 @@ fn main() {
 
     let cli = cliargs::Parser {
         description: concat!(
-            "AHFS Project Tool"
+            "AHFS Commands:"
         ),
         rules: &[
             cliargs::Rule {

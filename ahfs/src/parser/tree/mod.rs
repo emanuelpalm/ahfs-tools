@@ -17,7 +17,7 @@ pub use self::value::Value;
 /// A parse tree, derived from a single [`Source`][src].
 ///
 /// [src]: ../../source/struct.Source.html
-#[cfg_attr(debug_assertions, derive(Debug))]
+#[derive(Debug)]
 pub struct Tree<'a> {
     pub implements: Vec<Implement<'a>>,
     pub records: Vec<Record<'a>>,

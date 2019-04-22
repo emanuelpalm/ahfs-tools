@@ -1,13 +1,13 @@
-use error::Result;
-use meta;
-use project::{Error, Version};
+use crate::error::Result;
+use crate::meta;
+use crate::project::{Error, Version};
 use std::collections::HashMap;
 use std::fs;
 use std::io::Write;
 use std::path::{Path, PathBuf};
 
 /// AHFS Project settings.
-#[cfg_attr(debug_assertions, derive(Debug))]
+#[derive(Debug)]
 pub struct Settings {
     path: Box<Path>,
     ahfs_version: Version,

@@ -17,21 +17,10 @@ pub enum Error {
     },
 
     /// A command line rule failed to complete.
-    RuleFailed(Box<::ahfs::Error>),
+    RuleFailed(Box<ahfs::Error>),
 }
 
-impl error::Error for Error {
-    fn description(&self) -> &str {
-        match *self {
-            Error::ArgUnknown(_) => "Unknown argument encountered",
-            Error::FlagUnknown(_) => "Unknown flag encountered",
-            Error::FlagValueInvalid { .. } => "Flag value invalid",
-            Error::RuleFailed(ref err) => err.description(),
-        }
-    }
-}
-
-impl ::ahfs::Error for Error {
+impl ahfs::Error for Error {
     fn code(&self) -> &'static str {
         match *self {
             Error::ArgUnknown(_) => "C001",

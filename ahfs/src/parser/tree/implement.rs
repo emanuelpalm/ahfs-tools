@@ -1,10 +1,10 @@
-use parser::{Property, Value};
-use source::Span;
+use crate::parser::{Property, Value};
+use crate::source::Span;
 
 /// Specifies how to implement a named [`Service`][srv].
 ///
 /// [srv]: ../service/struct.Service.html
-#[cfg_attr(debug_assertions, derive(Debug))]
+#[derive(Debug)]
 pub struct Implement<'a> {
     pub name: Span<'a>,
     pub protocol: Span<'a>,
@@ -34,7 +34,7 @@ impl<'a> Implement<'a> {
     }
 }
 
-#[cfg_attr(debug_assertions, derive(Debug))]
+#[derive(Debug)]
 pub struct ImplementInterface<'a> {
     pub name: Span<'a>,
     pub methods: Vec<ImplementMethod<'a>>,
@@ -54,7 +54,7 @@ impl<'a> ImplementInterface<'a> {
     }
 }
 
-#[cfg_attr(debug_assertions, derive(Debug))]
+#[derive(Debug)]
 pub struct ImplementMethod<'a> {
     pub name: Span<'a>,
     pub data: Vec<(Span<'a>, Value<'a>)>,

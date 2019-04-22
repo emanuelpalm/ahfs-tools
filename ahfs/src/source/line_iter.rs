@@ -1,4 +1,4 @@
-use source::{Line, Range};
+use crate::source::{Line, Range};
 use std::cmp::Ord;
 
 /// An iterator over a set of source code [`Line`s][lin] containing a
