@@ -33,7 +33,7 @@ pub type Result<T> = result::Result<T, Error>;
 /// Parses given source code texts.
 pub fn parse(source: &Source) -> Result<Tree> {
     let mut matcher = Matcher::new(lexer::analyze(source));
-    let mut tree = Tree::new();
+    let mut tree = Tree::default();
 
     entry(&mut matcher, &mut tree, None)?;
 
