@@ -435,6 +435,7 @@ fn type_params<'a>(m: &mut Matcher<'a>, t: &mut Vec<TypeRef<'a>>) -> Result<()> 
 
 fn value<'a>(m: &mut Matcher<'a>) -> Result<Value<'a>> {
     let token = m.any(&[
+        Name::Null,
         Name::Boolean,
         Name::Integer,
         Name::Float,
@@ -443,6 +444,7 @@ fn value<'a>(m: &mut Matcher<'a>) -> Result<Value<'a>> {
         Name::BraceLeft,
     ])?;
     Ok(match *token.name() {
+        Name::Null => Value::Null,
         Name::Boolean => Value::Boolean(token.into_span()),
         Name::Integer => Value::Integer(token.into_span()),
         Name::Float => Value::Float(token.into_span()),

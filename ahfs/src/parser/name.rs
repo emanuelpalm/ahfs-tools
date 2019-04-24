@@ -22,6 +22,7 @@ pub enum Name {
     Semicolon,
 
     // Literals.
+    Null,
     Boolean,
     Integer,
     Float,
@@ -61,6 +62,7 @@ impl fmt::Display for Name {
             Name::SquareRight => "]",
             Name::Semicolon => ";",
 
+            Name::Null => "Null",
             Name::Boolean => "Boolean",
             Name::Integer => "Integer",
             Name::Float => "Float",

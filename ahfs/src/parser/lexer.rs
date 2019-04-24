@@ -245,6 +245,9 @@ fn scan_symbol(scanner: &mut Scanner, mut ch: char) -> Option<Name> {
         "system" => Name::System,
         "using" => Name::Using,
 
+        // Null.
+        "null" => Name::Null,
+
         // Booleans.
         "true" | "false" => Name::Boolean,
 
@@ -271,6 +274,7 @@ mod tests {
             "\n",
             "<>{}:,()/[];\n",
             "\n",
+            "null\n",
             "true false\n",
             "0 1 202 -30 +40\n",
             "50.0 6.1234 7.e+20 8e-10 1e9\n",
@@ -293,6 +297,7 @@ mod tests {
                 "produces", "property", "record", "service",
                 "system", "using",
                 "<", ">", "{", "}", ":", ",", "(", ")", "/", "[", "]", ";",
+                "null",
                 "true", "false",
                 "0", "1", "202", "-30", "+40",
                 "50.0", "6.1234", "7.e+20", "8e-10", "1e9",
@@ -319,6 +324,7 @@ mod tests {
                 Name::Slash,
                 Name::SquareLeft, Name::SquareRight,
                 Name::Semicolon,
+                Name::Null,
                 Name::Boolean, Name::Boolean,
                 Name::Integer, Name::Integer, Name::Integer,
                 Name::Integer, Name::Integer,
