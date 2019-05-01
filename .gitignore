@@ -1,5 +1,6 @@
 /.idea/
 /target/
+/t0/.ahfs/target/
 
 **/*.rs.bk
 *.iml
