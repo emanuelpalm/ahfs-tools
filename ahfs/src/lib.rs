@@ -1,3 +1,4 @@
+pub mod gen;
 pub mod meta;
 pub mod model;
 pub mod log;

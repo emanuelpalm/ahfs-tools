@@ -21,6 +21,7 @@ use std::path::{Path, PathBuf};
 pub struct Project {
     root: Box<Path>,
     settings: Box<Settings>,
+    target: Box<Path>,
 }
 
 impl Project {
@@ -34,9 +35,19 @@ impl Project {
         let mut path = path.into();
         path.push(".ahfs");
         fs::create_dir_all(&path)?;
+
         let settings = Settings::create(path.join("config"))?;
+
+        let target = path.join("target");
+        fs::create_dir_all(&target)?;
+
         path.pop();
-        Ok(Project { root: path.into(), settings: settings.into() })
+
+        Ok(Project {
+            root: path.into(),
+            settings: settings.into(),
+            target: target.into(),
+        })
     }
 
     /// Attempts to locate AHFS project by looking inside `path` and all of its
@@ -57,9 +68,15 @@ impl Project {
                 return Err(err.into());
             }
         }
-        let settings = Settings::read(&path.join(".ahfs")
-            .join("config"))?;
-        Ok(Project { root: path.into(), settings: settings.into() })
+        let data = path.join(".ahfs");
+        let settings = Settings::read(&data.join("config"))?;
+        let target = data.join("target");
+
+        Ok(Project {
+            root: path.into(),
+            settings: settings.into(),
+            target: target.into(),
+        })
     }
 
     pub fn files(&self) -> Result<Box<[PathBuf]>> {
@@ -98,6 +115,11 @@ impl Project {
     #[inline]
     pub fn settings(&self) -> &Settings {
         &self.settings
+    }
+
+    #[inline]
+    pub fn target(&self) -> &Path {
+        &self.target
     }
 }
 

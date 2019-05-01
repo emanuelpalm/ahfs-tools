@@ -16,6 +16,30 @@ fn main() {
         ),
         rules: &[
             cliargs::Rule {
+                name: "doc",
+                name_details: "",
+                description: "Generate documentation from project source files.",
+                flags: &[],
+                callback: &|args| app::doc(args),
+            },
+            cliargs::Rule {
+                name: "help",
+                name_details: "",
+                description: "Display this help message.",
+                flags: &[],
+                callback: &|_args| {
+                    help.set(true);
+                    Ok(())
+                },
+            },
+            cliargs::Rule {
+                name: "list",
+                name_details: "",
+                description: "Lists all project source files.",
+                flags: &[],
+                callback: &|args| app::list(args),
+            },
+            cliargs::Rule {
                 name: "new",
                 name_details: "<path>",
                 description: "Create new AHFS project at <path>.",
@@ -30,28 +54,11 @@ fn main() {
                 callback: &|args| app::new(args, new_i.take_or(false)),
             },
             cliargs::Rule {
-                name: "list",
-                name_details: "",
-                description: "Lists all project source files.",
-                flags: &[],
-                callback: &|args| app::list(args),
-            },
-            cliargs::Rule {
                 name: "status",
                 name_details: "",
                 description: "Show project status.",
                 callback: &|args| app::status(args),
                 flags: &[],
-            },
-            cliargs::Rule {
-                name: "help",
-                name_details: "",
-                description: "Display this help message.",
-                flags: &[],
-                callback: &|_args| {
-                    help.set(true);
-                    Ok(())
-                },
             },
         ],
     };

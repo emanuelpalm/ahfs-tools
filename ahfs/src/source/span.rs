@@ -57,6 +57,27 @@ impl<'a> Span<'a> {
             ),
         }
     }
+
+    /// Extends `Span` to include all characters matching `ch` right after its
+    /// `end` position.
+    pub fn extend_while(&self, ch: char) -> Self {
+        let mut iter = self.source.body[self.range.end..].chars();
+        let mut offset = 0;
+        while let Some(next) = iter.next() {
+            if next != ch {
+                break;
+            }
+            offset += ch.len_utf8();
+        }
+
+        Span {
+            source: self.source,
+            range: Range::new(
+                self.range.start,
+                self.range.end + offset,
+            )
+        }
+    }
 }
 
 impl<'a> AsRef<str> for Span<'a> {
