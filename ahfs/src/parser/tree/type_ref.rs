@@ -1,4 +1,4 @@
-use crate::source::Span;
+use crate::source::{Span, Range};
 
 #[derive(Debug)]
 pub struct TypeRef<'a> {
@@ -16,10 +16,35 @@ impl<'a> TypeRef<'a> {
     }
 
     pub fn as_span(&self) -> Span<'a> {
-        match self.params.last() {
-            None => self.name.clone(),
-            Some(param) => self.name.connect(param.as_span())
-                .extend_while('>'),
+        if self.params.len() == 0 {
+            return self.name.clone();
+        }
+        let mut end = self.name.range().end;
+        let mut chars = self.name.source().body()[end..].chars();
+        let mut height = 0;
+        loop {
+            match chars.next() {
+                Some(ch) => {
+                    end += ch.len_utf8();
+                    match ch {
+                        '<' => height += 1,
+                        '>' => {
+                            height -= 1;
+                            if height <= 0 {
+                                break;
+                            }
+                        }
+                        _ => {}
+                    }
+                },
+                None => break,
+            }
+        }
+        unsafe {
+            Span::new(
+                self.name.source(),
+                Range::new(self.name.range().start, end)
+            )
         }
     }
 
@@ -40,8 +65,9 @@ mod tests {
             "Integer\n",
             "Option<Integer>\n",
             "Any<Integer, Option<Integer>>\n",
+            "Map<String, String>\n"
         ));
-        let (a, b, c) = unsafe {
+        let (a, b, c, d) = unsafe {
             let a = TypeRef {
                 name: Span::new(&source, Range::new(0, 7)),
                 params: Vec::new(),
@@ -73,11 +99,24 @@ mod tests {
                     }
                 ],
             };
-            (a, b, c)
+            let d = TypeRef {
+                name: Span::new(&source, Range::new(54, 57)),
+                params: vec![
+                    TypeRef {
+                        name: Span::new(&source, Range::new(66, 72)),
+                        params: Vec::new(),
+                    },
+                    TypeRef {
+                        name: Span::new(&source, Range::new(58, 64)),
+                        params: Vec::new(),
+                    }
+                ],
+            };
+            (a, b, c, d)
         };
-
         assert_eq!("Integer", a.as_str());
         assert_eq!("Option<Integer>", b.as_str());
         assert_eq!("Any<Integer, Option<Integer>>", c.as_str());
+        assert_eq!("Map<String, String>", d.as_str());
     }
 }

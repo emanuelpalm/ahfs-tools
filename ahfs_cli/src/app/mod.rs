@@ -9,7 +9,6 @@ use ahfs::project::Project;
 use ahfs::source::Source;
 use std::fs;
 use std::io;
-use std::path::PathBuf;
 
 /// Prints list of all project source files and exits.
 pub fn doc(args: &[&str]) -> Result<(), Box<ahfs::Error>> {
