@@ -1,6 +1,6 @@
 /.idea/
 /target/
-/t0/target/
+/core/target/
 
 **/*.rs.bk
 *.iml
