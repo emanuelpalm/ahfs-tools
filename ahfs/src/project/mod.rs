@@ -13,7 +13,10 @@ use std::io;
 use std::path::{Path, PathBuf};
 
 // Default project file name.
-const FILE_NAME: &'static str = "project.toml";
+const PROJECT_FILE: &'static str = "project.toml";
+
+// File extension of project source files.
+const SOURCE_EXTENSION: &'static str = "ahfs";
 
 /// Represents an AHFS project.
 #[derive(Debug)]
@@ -35,7 +38,7 @@ impl Project {
         fs::create_dir_all(&path)?;
 
         let options = Options::new(name.as_ref());
-        options.write_to(path.join(FILE_NAME))?;
+        options.write_to(path.join(PROJECT_FILE))?;
 
         Ok(Project {
             root: path.into(),
@@ -50,7 +53,7 @@ impl Project {
     {
         let mut path = path.into();
         loop {
-            path.push(FILE_NAME);
+            path.push(PROJECT_FILE);
             if path.is_file() {
                 break;
             }
@@ -70,6 +73,7 @@ impl Project {
         })
     }
 
+    /// Assembles list of all project source files.
     pub fn files(&self) -> Result<Box<[PathBuf]>> {
         let mut files = Vec::new();
         files_inner(self.root(), &mut files)?;
@@ -87,7 +91,7 @@ impl Project {
                     _ => { continue; }
                 }
                 let path = entry.path();
-                if path.extension().unwrap_or_default() != "ahfs" {
+                if path.extension().unwrap_or_default() != SOURCE_EXTENSION {
                     continue;
                 }
                 files.push(path);
