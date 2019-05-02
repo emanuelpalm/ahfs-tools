@@ -9,33 +9,32 @@ pub trait WriteSVG {
 impl<'a> WriteSVG for parser::Record<'a> {
     fn write_svg(&self, target: &mut String) {
         let (width, height) = self.size();
-        let mut offset = 79;
+        let mut offset = 78;
         target.push_str(&format!(
             concat!(
                 "<rect x=\"0\" y=\"0\" width=\"{width0}\" height=\"{height0}\"",
-                " rx=\"9\" ry=\"9\" fill=\"#dddddd\" />",
-                "<rect x=\"3\" y=\"3\" width=\"{width1}\" height=\"52\"",
-                " rx=\"7\" ry=\"7\" fill=\"#ffffff\" />",
+                " rx=\"9\" ry=\"9\" fill=\"#aaa\" />",
+                "<rect x=\"3\" y=\"3\" width=\"{width1}\" height=\"{height1}\"",
+                " rx=\"7\" ry=\"7\" fill=\"#fff\" />",
+                "<rect x=\"3\" y=\"53\" width=\"{width1}\" height=\"1\" fill=\"#ccc\" />",
                 "",
-                "<text x=\"50%\" y=\"24\" fill=\"#444444\"",
-                " font-family=\"arial\" font-size=\"15\"",
-                " text-anchor=\"middle\">",
-                "«record»",
-                "</text>",
+                "<g font-family=\"Liberation Mono, Lucida Console, Menlo\">",
                 "",
-                "<text x=\"50%\" y=\"43\" fill=\"#1c4675\"",
-                " font-family=\"arial\" font-size=\"18\"",
-                " font-weight=\"bold\" text-anchor=\"middle\">",
-                "{name}",
-                "</text>",
+                "<g text-anchor=\"middle\">",
+                "<text x=\"50%\" y=\"24\" fill=\"#444\" font-size=\"15\">«record»</text>",
+                "<text x=\"50%\" y=\"43\" fill=\"#3E7EFF\" font-size=\"18\" font-weight=\"bold\">{name}</text>",
+                "</g>",
                 "",
-                "<g font-family=\"arial\" font-size=\"16\">",
+                "<g fill=\"#333\" font-size=\"16\">",
                 "{entries}",
+                "</g>",
+                "",
                 "</g>",
             ),
             width0 = width,
             height0 = height,
             width1 = width - 6.0,
+            height1 = height - 6.0,
             name = self.name.as_str(),
             entries = self.entries.iter()
                 .fold(String::new(), |mut acc, entry| {
@@ -47,7 +46,7 @@ impl<'a> WriteSVG for parser::Record<'a> {
                         concat!(
                             "<text x=\"10\" y=\"{}\">",
                             "<tspan font-style=\"italic\">{}</tspan>: ",
-                            "<tspan font-weight=\"bold\">{}</tspan>",
+                            "<tspan fill=\"#170591\" font-weight=\"bold\">{}</tspan>",
                             "</text>",
                         ),
                         offset,
@@ -63,14 +62,14 @@ impl<'a> WriteSVG for parser::Record<'a> {
     fn size(&self) -> (f32, f32) {
         let width = {
             let width_entries = self.entries.iter()
-                .map(|entry| (entry.name.as_str().len() * 14 + entry.type_ref.as_str().len() * 15))
+                .map(|entry| (entry.name.as_str().len() + entry.type_ref.as_str().len() ) * 10)
                 .max()
-                .map(|len| len + 15)
+                .map(|len| len + 40)
                 .unwrap_or(0);
 
-            let width_name = self.name.as_str().len() * 16 + 20;
+            let width_name = (self.name.as_str().len() as f32 * 11.2 + 20.0) as usize;
 
-            width_name.max(width_entries).max(1)
+            width_name.max(width_entries).max(380)
         };
         let height = 71 + self.entries.len() * 21;
 
