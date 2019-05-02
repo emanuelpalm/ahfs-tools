@@ -15,7 +15,7 @@ impl<'a> WriteSVG for parser::Record<'a> {
                 "<rect x=\"0\" y=\"0\" width=\"{width0}\" height=\"{height0}\"",
                 " rx=\"9\" ry=\"9\" fill=\"#dddddd\" />",
                 "<rect x=\"3\" y=\"3\" width=\"{width1}\" height=\"52\"",
-                " rx=\"6\" ry=\"6\" fill=\"#ffffff\" />",
+                " rx=\"7\" ry=\"7\" fill=\"#ffffff\" />",
                 "",
                 "<text x=\"50%\" y=\"24\" fill=\"#444444\"",
                 " font-family=\"arial\" font-size=\"15\"",
@@ -63,14 +63,14 @@ impl<'a> WriteSVG for parser::Record<'a> {
     fn size(&self) -> (f32, f32) {
         let width = {
             let width_entries = self.entries.iter()
-                .map(|entry| entry.name.as_str().len() + entry.type_ref.as_str().len())
+                .map(|entry| (entry.name.as_str().len() * 14 + entry.type_ref.as_str().len() * 15))
                 .max()
-                .map(|len| len * 9 + 20)
+                .map(|len| len + 15)
                 .unwrap_or(0);
 
-            let width_name = self.name.as_str().len() * 11 + 30;
+            let width_name = self.name.as_str().len() * 16 + 20;
 
-            width_name.max(width_entries).max(320)
+            width_name.max(width_entries).max(1)
         };
         let height = 71 + self.entries.len() * 21;
 
