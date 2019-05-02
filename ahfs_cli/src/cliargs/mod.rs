@@ -36,7 +36,7 @@ mod tests {
                             short: Some("v"),
                             long: "verbose",
                             description: "",
-                            out: FlagOut::new(&verbose),
+                            out: FlagOut::new_bool(&verbose),
                         }
                     ],
                     callback: &|_args| Ok(()),

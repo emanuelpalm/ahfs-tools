@@ -44,7 +44,7 @@ impl<'a> fmt::Display for Parser<'a> {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         writeln!(f, "{}", self.description)?;
         for rule in self.rules {
-            write!(f, "\n{}", rule)?;
+            writeln!(f, "{}", rule)?;
         }
         Ok(())
     }

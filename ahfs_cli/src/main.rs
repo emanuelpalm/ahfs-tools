@@ -9,16 +9,17 @@ use std::process;
 fn main() {
     let help = cliargs::FlagCell::new();
     let new_i = cliargs::FlagCell::new();
+    let new_n = cliargs::FlagCell::new();
 
     let cli = cliargs::Parser {
         description: concat!(
-            "AHFS Commands:"
+            ahfs_macro::color!(g: "Available AHFS commands:")
         ),
         rules: &[
             cliargs::Rule {
                 name: "doc",
                 name_details: "",
-                description: "Generate documentation from project source files.",
+                description: "Generate project documentation files.",
                 flags: &[],
                 callback: &|args| app::doc(args),
             },
@@ -35,23 +36,35 @@ fn main() {
             cliargs::Rule {
                 name: "list",
                 name_details: "",
-                description: "Lists all project source files.",
+                description: "List all project source files.",
                 flags: &[],
                 callback: &|args| app::list(args),
             },
             cliargs::Rule {
                 name: "new",
                 name_details: "<path>",
-                description: "Create new AHFS project at <path>.",
+                description: concat!(
+                    "Create new AHFS project at ",
+                    ahfs_macro::color!(g: "<path>"),
+                    "."
+                ),
                 flags: &[
                     cliargs::Flag {
                         short: Some("i"),
                         long: "ignore-if-exists",
                         description: "Raise no error if project exists.",
-                        out: cliargs::FlagOut::new(&new_i),
-                    }
+                        out: cliargs::FlagOut::new_bool(&new_i),
+                    },
+                    cliargs::Flag {
+                        short: Some("n"),
+                        long: "name",
+                        description: "Set project name.",
+                        out: cliargs::FlagOut::new_string(&new_n),
+                    },
                 ],
-                callback: &|args| app::new(args, new_i.take_or(false)),
+                callback: &|args| {
+                    app::new(args, new_i.take_or(false), new_n.take())
+                },
             },
             cliargs::Rule {
                 name: "status",

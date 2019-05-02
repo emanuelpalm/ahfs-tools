@@ -62,14 +62,15 @@ fn parse_flags(flags: &[Flag], args: &[&str]) -> Result {
 
 impl<'a> fmt::Display for Rule<'a> {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        let width = 22usize.saturating_sub(self.name.len());
         write!(
-            f, concat!(ahfs_macro::color!(g: ">"), "{} {}\n  {}\n"),
-            self.name, self.name_details, self.description
+            f, concat!("- ", ahfs_macro::color!(g: "{} {:<width$}"), " {}"),
+            self.name, self.name_details, self.description,
+            width = width,
         )?;
         if self.flags.len() > 0 {
-            write!(f, "\n")?;
             for flag in self.flags {
-                write!(f, "  {}\n", flag)?;
+                write!(f, "\n  {}", flag)?;
             }
         }
         Ok(())

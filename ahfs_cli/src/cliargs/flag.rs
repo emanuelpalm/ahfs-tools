@@ -75,8 +75,8 @@ pub struct FlagOut {
 }
 
 impl FlagOut {
-    /// Creates new flag cell, holding a boolean value.
-    pub fn new(cell: &FlagCell<bool>) -> Self {
+    /// Creates new flag cell, holding a `bool` value.
+    pub fn new_bool(cell: &FlagCell<bool>) -> Self {
         let cell: Rc<_> = cell.0.clone();
         FlagOut {
             name: None,
@@ -85,6 +85,18 @@ impl FlagOut {
                     0 => true,
                     _ => s.parse().map_err(|err| Box::new(err))?,
                 }));
+                Ok(())
+            }),
+        }
+    }
+
+    /// Creates new flag cell, holding a `String` value.
+    pub fn new_string(cell: &FlagCell<String>) -> Self {
+        let cell: Rc<_> = cell.0.clone();
+        FlagOut {
+            name: None,
+            out: Box::new(move |s| {
+                cell.set(Some(s.into()));
                 Ok(())
             }),
         }

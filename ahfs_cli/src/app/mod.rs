@@ -9,6 +9,7 @@ use ahfs::project::Project;
 use ahfs::source::Source;
 use std::fs;
 use std::io;
+use std::path::PathBuf;
 
 /// Prints list of all project source files and exits.
 pub fn doc(args: &[&str]) -> ahfs::Result {
@@ -47,24 +48,32 @@ pub fn list(args: &[&str]) -> ahfs::Result {
     Ok(())
 }
 
-/// Creates new project at first path in `args` and exits.
-pub fn new(args: &[&str], ignore_if_exists: bool) -> ahfs::Result {
+/// Creates new project at path in `args` at index 0 and exits.
+pub fn new(args: &[&str], ignore_if_exists: bool, name: Option<String>) -> ahfs::Result {
     match args {
-        &[name, path] => match Project::create(name, path) {
-            Ok(_) => Ok(()),
-            Err(err) => {
-                if ignore_if_exists {
-                    let ignore = err.as_io_error().map_or(false, |err| {
-                        err.kind() == io::ErrorKind::AlreadyExists
-                    });
-                    if ignore {
-                        return Ok(());
+        &[path] => {
+            let path: PathBuf = path.into();
+            let name = name.unwrap_or(path
+                .file_name()
+                .map(|name| name.to_string_lossy().into())
+                .unwrap_or("Empty Project".into()));
+
+            match Project::create(name, path) {
+                Ok(_) => Ok(()),
+                Err(err) => {
+                    if ignore_if_exists {
+                        let ignore = err.as_io_error().map_or(false, |err| {
+                            err.kind() == io::ErrorKind::AlreadyExists
+                        });
+                        if ignore {
+                            return Ok(());
+                        }
                     }
+                    Err(err)
                 }
-                Err(err)
             }
         }
-        _ => Err(Error::NewArgCountNot2.into()),
+        _ => Err(Error::NewArgCountNot1.into()),
     }
 }
 
