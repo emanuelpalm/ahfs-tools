@@ -1,7 +1,6 @@
 use std::fmt;
 use std::io;
 use std::result;
-use std::path::StripPrefixError;
 
 /// A generic AHFS result.
 pub type Result<T = ()> = result::Result<T, Box<Error>>;
@@ -53,9 +52,15 @@ impl Error for io::Error {
     }
 }
 
-impl Error for StripPrefixError {
+impl Error for toml::de::Error {
     fn code(&self) -> &'static str {
-        "SF01"
+        "TDES"
+    }
+}
+
+impl Error for toml::ser::Error {
+    fn code(&self) -> &'static str {
+        "TSER"
     }
 }
 

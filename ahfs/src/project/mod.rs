@@ -3,45 +3,43 @@
 //! This module contains tools useful for managing a folder containing a
 //! specification project.
 
-mod error;
-mod settings;
-mod version;
+mod options;
 
-pub use self::error::Error;
-pub use self::settings::Settings;
-pub use self::version::Version;
+pub use self::options::Options;
 
 use crate::error::Result;
 use std::fs;
 use std::io;
 use std::path::{Path, PathBuf};
 
+// Default project file name.
+const FILE_NAME: &'static str = "project.toml";
+
 /// Represents an AHFS project.
 #[derive(Debug)]
 pub struct Project {
     root: Box<Path>,
-    settings: Box<Settings>,
-    target: Box<Path>,
+    options: Options,
 }
 
 impl Project {
-    /// Attempts to create new AHFS project at given `path`.
+    /// Attempts to create new AHFS project with `name` at given `path`.
     ///
-    /// Concretely, tries to create an `".ahfs"` folder inside `path` and fill
-    /// it with default project settings.
-    pub fn create<P>(path: P) -> Result<Project>
-        where P: Into<PathBuf>
+    /// Concretely, tries to create an `"project.toml"` folder inside `path`
+    /// and fill it with default options.
+    pub fn create<N, P>(name: N, path: P) -> Result<Project>
+        where N: AsRef<str>,
+              P: Into<PathBuf>,
     {
         let path = path.into();
         fs::create_dir_all(&path)?;
 
-        let settings = Settings::create(path.join(".ahfs"))?;
-        let target = path.join("target");
+        let options = Options::new(name.as_ref());
+        options.write_to(path.join(FILE_NAME))?;
 
         Ok(Project {
             root: path.into(),
-            settings: settings.into(),
-            target: target.into(),
+            options,
         })
     }
 
@@ -52,24 +50,23 @@ impl Project {
     {
         let mut path = path.into();
         loop {
-            path.push(".ahfs");
-            let is_file = path.is_file();
-            path.pop();
-            if is_file {
+            path.push(FILE_NAME);
+            if path.is_file() {
                 break;
             }
+            path.pop();
             if !path.pop() {
                 let err: io::Error = io::ErrorKind::NotFound.into();
                 return Err(err.into());
             }
         }
-        let settings = Settings::read(&path.join(".ahfs"))?;
-        let target = path.join("target");
+
+        let options = Options::read_at(&path)?;
+        path.pop();
 
         Ok(Project {
             root: path.into(),
-            settings: settings.into(),
-            target: target.into(),
+            options,
         })
     }
 
@@ -85,7 +82,7 @@ impl Project {
                     t @ _ if t.is_dir() => {
                         files_inner(&entry.path(), files)?;
                         continue;
-                    },
+                    }
                     t @ _ if t.is_file() => {}
                     _ => { continue; }
                 }
@@ -105,41 +102,20 @@ impl Project {
         &self.root
     }
 
-    /// Project settings.
+    /// Project options, as specified in `project.toml` file in project root.
     #[inline]
-    pub fn settings(&self) -> &Settings {
-        &self.settings
+    pub fn options(&self) -> &Options {
+        &self.options
     }
 
+    /// Target output folder.
     #[inline]
-    pub fn target(&self) -> &Path {
-        &self.target
-    }
-}
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-    use crate::meta;
-
-    #[test]
-    fn create_and_locate() {
-        let path: PathBuf = ".test-project-folder-0".into();
-        let version = Version::new(
-            meta::VERSION_MAJOR,
-            meta::VERSION_MINOR,
-            meta::VERSION_PATCH);
-        let version_create = {
-            let project = Project::create(path.clone()).unwrap();
-            *project.settings().ahfs_version()
-        };
-        let version_locate = {
-            let project = Project::locate(path.clone()).unwrap();
-            *project.settings().ahfs_version()
-        };
-        fs::remove_dir_all(path).unwrap();
-
-        assert_eq!(version, version_create);
-        assert_eq!(version, version_locate);
+    pub fn target(&self) -> PathBuf {
+        let mut buf: PathBuf = self.root().into();
+        buf.push(self.options()
+            .project()
+            .out_dir()
+            .unwrap_or_else(|| "target".as_ref()));
+        buf
     }
 }
