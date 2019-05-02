@@ -32,16 +32,11 @@ impl Project {
     pub fn create<P>(path: P) -> Result<Project>
         where P: Into<PathBuf>
     {
-        let mut path = path.into();
-        path.push(".ahfs");
+        let path = path.into();
         fs::create_dir_all(&path)?;
 
-        let settings = Settings::create(path.join("config"))?;
-
+        let settings = Settings::create(path.join(".ahfs"))?;
         let target = path.join("target");
-        fs::create_dir_all(&target)?;
-
-        path.pop();
 
         Ok(Project {
             root: path.into(),
@@ -58,9 +53,9 @@ impl Project {
         let mut path = path.into();
         loop {
             path.push(".ahfs");
-            let is_dir = path.is_dir();
+            let is_file = path.is_file();
             path.pop();
-            if is_dir {
+            if is_file {
                 break;
             }
             if !path.pop() {
@@ -68,9 +63,8 @@ impl Project {
                 return Err(err.into());
             }
         }
-        let data = path.join(".ahfs");
-        let settings = Settings::read(&data.join("config"))?;
-        let target = data.join("target");
+        let settings = Settings::read(&path.join(".ahfs"))?;
+        let target = path.join("target");
 
         Ok(Project {
             root: path.into(),
