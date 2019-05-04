@@ -1,0 +1,7 @@
+[package]
+name = "ahfs_render"
+version = "0.1.0"
+authors = ["Emanuel Palm <emanuel.palm@ltu.se>"]
+edition = "2018"
+license = "Apache-2.0"
+build = "build/build.rs"
