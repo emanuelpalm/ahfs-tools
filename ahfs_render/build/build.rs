@@ -1,7 +1,7 @@
 mod font;
 
 use crate::font::otf::*;
-use std::collections::BTreeSet;
+//use std::collections::BTreeSet;
 use std::fs;
 
 fn main() {
