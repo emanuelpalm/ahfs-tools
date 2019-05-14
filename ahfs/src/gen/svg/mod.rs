@@ -5,7 +5,6 @@ pub trait WriteSVG {
     fn size(&self) -> (f32, f32);
 }
 
-
 impl<'a> WriteSVG for parser::Record<'a> {
     fn write_svg(&self, target: &mut String) {
         let (width, height) = self.size();
@@ -18,7 +17,7 @@ impl<'a> WriteSVG for parser::Record<'a> {
                 " rx=\"7\" ry=\"7\" fill=\"#fff\" />",
                 "<rect x=\"3\" y=\"53\" width=\"{width1}\" height=\"1\" fill=\"#ccc\" />",
                 "",
-                "<g font-family=\"Liberation Mono, Lucida Console, Menlo\">",
+                "<g font-family=\"Cousine, Courier New, monospaced\">",
                 "",
                 "<g text-anchor=\"middle\">",
                 "<text x=\"50%\" y=\"24\" fill=\"#444\" font-size=\"15\">«record»</text>",
@@ -53,7 +52,7 @@ impl<'a> WriteSVG for parser::Record<'a> {
                         entry.name.as_str(),
                         x,
                     ));
-                    offset += 21;
+                    offset += 20;
                     acc
                 }),
         ));
@@ -62,16 +61,16 @@ impl<'a> WriteSVG for parser::Record<'a> {
     fn size(&self) -> (f32, f32) {
         let width = {
             let width_entries = self.entries.iter()
-                .map(|entry| (entry.name.as_str().len() + entry.type_ref.as_str().len() ) * 10)
+                .map(|entry| ((entry.name.as_str().len() + entry.type_ref.as_str().len() + 2) as f64 * (8.8203125 + 1.2)) as usize)
                 .max()
-                .map(|len| len + 40)
+                .map(|len| len + 20)
                 .unwrap_or(0);
 
-            let width_name = (self.name.as_str().len() as f32 * 11.2 + 20.0) as usize;
+            let width_name = (self.name.as_str().len() as f64 * (9.9228515625 + 1.2) + 20.0) as usize;
 
-            width_name.max(width_entries).max(380)
+            width_name.max(width_entries).max(20)
         };
-        let height = 71 + self.entries.len() * 21;
+        let height = 71 + self.entries.len() * 20;
 
         (width as f32, height as f32)
     }
