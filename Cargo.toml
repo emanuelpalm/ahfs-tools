@@ -1,2 +1,2 @@
 [workspace]
-members = ["ahfs", "ahfs_cli", "ahfs_macro"]
+members = ["ahfs", "ahfs_cli", "ahfs_doc", "ahfs_macro"]
