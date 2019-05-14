@@ -3,6 +3,7 @@ mod cliargs;
 
 use ahfs::Error;
 use ahfs::log;
+use ahfs_macro::color;
 use std::env;
 use std::process;
 
@@ -13,7 +14,7 @@ fn main() {
 
     let cli = cliargs::Parser {
         description: concat!(
-            ahfs_macro::color!(g: "Available AHFS commands:")
+            color!(g: "Available AHFS commands:")
         ),
         rules: &[
             cliargs::Rule {
@@ -45,7 +46,7 @@ fn main() {
                 name_details: "<path>",
                 description: concat!(
                     "Create new AHFS project at ",
-                    ahfs_macro::color!(g: "<path>"),
+                    color!(g: "<path>"),
                     "."
                 ),
                 flags: &[

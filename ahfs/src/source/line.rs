@@ -1,3 +1,4 @@
+use ahfs_macro::color;
 use crate::source::Range;
 use std::fmt;
 
@@ -39,8 +40,8 @@ impl<'a> Line<'a> {
 impl<'a> fmt::Display for Line<'a> {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         write!(f, concat!(
-            "{:>5} | ", ahfs_macro::color!(_: "{}"), "\n",
-            "      | ", ahfs_macro::color!(r: "{:start$}{:^<len$}"), "\n"),
+            "{:>5} | ", color!(_: "{}"), "\n",
+            "      | ", color!(r: "{:start$}{:^<len$}"), "\n"),
                self.number, self.text, "", "",
                start = self.range.start,
                len = (self.range.end - self.range.start).max(1))

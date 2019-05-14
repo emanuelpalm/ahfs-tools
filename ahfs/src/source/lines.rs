@@ -1,3 +1,4 @@
+use ahfs_macro::color;
 use crate::source::LineIter;
 use std::fmt;
 
@@ -10,7 +11,7 @@ pub trait Lines {
     /// Writes lines, with given `header`, in human-readable form.
     fn fmt(&self, f: &mut fmt::Formatter, header: &str) -> fmt::Result {
         write!(f, concat!(
-            "      : ", ahfs_macro::color!(b: "{}"), "\n",
+            "      : ", color!(b: "{}"), "\n",
             "      |\n"), header)?;
         for (i, line) in self.lines().enumerate() {
             if i < 2 {

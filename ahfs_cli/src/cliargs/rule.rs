@@ -1,3 +1,4 @@
+use ahfs_macro::color;
 use crate::cliargs::{Error, Flag, Result};
 use std::fmt;
 use std::result;
@@ -64,7 +65,7 @@ impl<'a> fmt::Display for Rule<'a> {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         let width = 22usize.saturating_sub(self.name.len());
         write!(
-            f, concat!("- ", ahfs_macro::color!(g: "{} {:<width$}"), " {}"),
+            f, concat!("- ", color!(g: "{} {:<width$}"), " {}"),
             self.name, self.name_details, self.description,
             width = width,
         )?;
