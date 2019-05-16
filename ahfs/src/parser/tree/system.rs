@@ -1,5 +1,5 @@
+use ahfs_parse::Span;
 use crate::parser::ServiceRef;
-use crate::source::Span;
 
 #[derive(Debug)]
 pub struct System<'a> {

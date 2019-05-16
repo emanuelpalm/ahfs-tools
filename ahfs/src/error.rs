@@ -1,3 +1,4 @@
+use crate::parser::TokenKind;
 use std::fmt;
 use std::io;
 use std::result;
@@ -13,6 +14,15 @@ pub trait Error: fmt::Debug + fmt::Display {
     /// Tries to cast error into an I/O `Error`.
     fn as_io_error(&self) -> Option<&io::Error> {
         None
+    }
+}
+
+impl Error for ahfs_parse::Error<TokenKind> {
+    fn code(&self) -> &'static str {
+        match self.cause {
+            None => "P001",
+            Some(_) => "P002",
+        }
     }
 }
 

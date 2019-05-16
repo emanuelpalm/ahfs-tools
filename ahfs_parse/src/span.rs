@@ -1,5 +1,5 @@
 use ahfs_macro::color;
-use crate::{Lines, Range, Source};
+use crate::{Excerpt, Lines, Range, Source};
 use std::fmt;
 use std::ops;
 
@@ -43,16 +43,34 @@ impl<'a> Span<'a> {
             .unwrap_or(self.range.end);
 
         let source = &body[start..end];
-        let line_number = body[..start]
+        let number = body[..start]
             .bytes()
             .filter(|b| *b == b'\n')
             .count() + 1;
-        let range = Range {
+        let range = Some(Range {
             start: self.range.start - start,
             end: self.range.end - start,
-        };
+        });
 
-        Lines { source, number: line_number, range: Some(range) }
+        Lines { source: source, number, range }
+    }
+
+    /// Creates an owned `Excerpt` from this `Span`.
+    pub fn to_excerpt(&self) -> Excerpt {
+        let lines = self.lines();
+        let offset = (self.source.body.as_ptr() as usize)
+            .saturating_sub(lines.source.as_ptr() as usize);
+        Excerpt {
+            source: Source {
+                name: self.source.name.clone(),
+                body: lines.source.into(),
+            },
+            line_number: lines.number,
+            range: Range {
+                start: self.range.start.saturating_sub(offset),
+                end: self.range.end.saturating_sub(offset),
+            },
+        }
     }
 }
 

@@ -1,4 +1,4 @@
-use crate::{Excerpt, Range, Token};
+use crate::{Excerpt, Token};
 use std::fmt;
 use std::result;
 
@@ -9,7 +9,7 @@ pub type Result<T, TokenKind> = result::Result<T, Error<TokenKind>>;
 #[derive(Debug)]
 pub struct Error<Kind: fmt::Debug> {
     pub cause: Option<Kind>,
-    pub excerpt: Excerpt,
+    pub excerpt: Option<Excerpt>,
     pub expected: Vec<Kind>,
 }
 
@@ -21,17 +21,7 @@ impl<Kind: Copy + fmt::Debug> Error<Kind> {
     {
         Error {
             cause: None,
-            excerpt: tokens.last()
-                .map_or_else(|| Excerpt::default(), |token| {
-                    let start = token.span.range.end.saturating_sub(1);
-                    let end = token.span.range.end;
-                    let lines = token.span.lines();
-                    Excerpt {
-                        source: token.span.source.clone(),
-                        line_number: lines.number,
-                        range: Range { start, end },
-                    }
-                }),
+            excerpt: tokens.last().map(|token| token.span.to_excerpt()),
             expected: expected.into(),
         }
     }
@@ -43,16 +33,11 @@ impl<Kind: Copy + fmt::Debug> Error<Kind> {
     {
         Error {
             cause: Some(token.kind),
-            excerpt: Excerpt {
-                source: token.span.source.clone(),
-                line_number: token.span.lines().number,
-                range: token.span.range,
-            },
+            excerpt: Some(token.span.to_excerpt()),
             expected: expected.into(),
         }
     }
 }
-
 
 impl<Kind: Copy + fmt::Debug + fmt::Display> fmt::Display for Error<Kind> {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
@@ -76,6 +61,10 @@ impl<Kind: Copy + fmt::Debug + fmt::Display> fmt::Display for Error<Kind> {
                 write!(f, " or `{}`", last)?
             }
         };
-        write!(f, ".\n{}", self.excerpt)
+        write!(f, ".")?;
+        if let Some(ref excerpt) = self.excerpt {
+            write!(f, "\n{}", excerpt)?;
+        }
+        Ok(())
     }
 }

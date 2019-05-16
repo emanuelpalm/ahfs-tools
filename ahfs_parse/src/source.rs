@@ -4,7 +4,7 @@ use std::io::Read;
 use std::path::PathBuf;
 
 /// A named source code text.
-#[derive(Clone, Debug, Eq, PartialEq)]
+#[derive(Debug)]
 pub struct Source {
     pub name: Box<str>,
     pub body: Box<str>,

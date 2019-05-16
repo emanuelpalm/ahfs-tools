@@ -1,5 +1,5 @@
+use ahfs_parse::Span;
 use crate::parser::{Property, Value};
-use crate::source::Span;
 
 /// Specifies how to implement a named [`Service`][srv].
 ///

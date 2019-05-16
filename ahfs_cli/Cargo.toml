@@ -7,3 +7,4 @@ edition = "2018"
 [dependencies]
 ahfs = { path = "../ahfs" }
 ahfs_macro = { path = "../ahfs_macro" }
+ahfs_parse = { path = "../ahfs_parse" }

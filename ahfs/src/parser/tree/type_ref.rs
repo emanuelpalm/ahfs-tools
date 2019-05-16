@@ -1,4 +1,4 @@
-use crate::source::{Span, Range};
+use ahfs_parse::{Span, Range};
 
 #[derive(Debug)]
 pub struct TypeRef<'a> {
@@ -19,8 +19,8 @@ impl<'a> TypeRef<'a> {
         if self.params.len() == 0 {
             return self.name.clone();
         }
-        let mut end = self.name.range().end;
-        let mut chars = self.name.source().body()[end..].chars();
+        let mut end = self.name.range.end;
+        let mut chars = self.name.source.body[end..].chars();
         let mut height = 0;
         loop {
             match chars.next() {
@@ -36,15 +36,13 @@ impl<'a> TypeRef<'a> {
                         }
                         _ => {}
                     }
-                },
+                }
                 None => break,
             }
         }
-        unsafe {
-            Span::new(
-                self.name.source(),
-                Range::new(self.name.range().start, end)
-            )
+        Span {
+            source: self.name.source,
+            range: Range { start: self.name.range.start, end },
         }
     }
 
@@ -56,43 +54,50 @@ impl<'a> TypeRef<'a> {
 
 #[cfg(test)]
 mod tests {
-    use crate::source::{Range, Source};
+    use ahfs_parse::Source;
     use super::*;
+    use std::ops;
 
     #[test]
     fn as_str() {
-        let source = Source::new("test", concat!(
-            "Integer\n",
-            "Option<Integer>\n",
-            "Any<Integer, Option<Integer>>\n",
-            "Map<String, String>\n"
-        ));
-        let (a, b, c, d) = unsafe {
+        let source = Source {
+            name: "test".into(),
+            body: concat!(
+                "Integer\n",
+                "Option<Integer>\n",
+                "Any<Integer, Option<Integer>>\n",
+                "Map<String, String>\n"
+            ).into()
+        };
+        let span = |range: ops::Range<usize>| {
+            Span { source: &source, range: range.into() }
+        };
+        let (a, b, c, d) = {
             let a = TypeRef {
-                name: Span::new(&source, Range::new(0, 7)),
+                name: span(0..7),
                 params: Vec::new(),
             };
             let b = TypeRef {
-                name: Span::new(&source, Range::new(8, 14)),
+                name: span(8..14),
                 params: vec![
                     TypeRef {
-                        name: Span::new(&source, Range::new(15, 22)),
+                        name: span(15..22),
                         params: Vec::new(),
                     }
                 ],
             };
             let c = TypeRef {
-                name: Span::new(&source, Range::new(24, 27)),
+                name: span(24..27),
                 params: vec![
                     TypeRef {
-                        name: Span::new(&source, Range::new(28, 35)),
+                        name: span(28..35),
                         params: Vec::new(),
                     },
                     TypeRef {
-                        name: Span::new(&source, Range::new(37, 43)),
+                        name: span(37..43),
                         params: vec![
                             TypeRef {
-                                name: Span::new(&source, Range::new(44, 51)),
+                                name: span(44..51),
                                 params: Vec::new(),
                             }
                         ],
@@ -100,14 +105,14 @@ mod tests {
                 ],
             };
             let d = TypeRef {
-                name: Span::new(&source, Range::new(54, 57)),
+                name: span(54..57),
                 params: vec![
                     TypeRef {
-                        name: Span::new(&source, Range::new(66, 72)),
+                        name: span(66..72),
                         params: Vec::new(),
                     },
                     TypeRef {
-                        name: Span::new(&source, Range::new(58, 64)),
+                        name: span(58..64),
                         params: Vec::new(),
                     }
                 ],

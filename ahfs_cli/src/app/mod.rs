@@ -6,7 +6,7 @@ use ahfs::gen::svg;
 use ahfs::log;
 use ahfs::parser;
 use ahfs::project::Project;
-use ahfs::source::Source;
+use ahfs_parse::Source;
 use std::fs;
 use std::io;
 use std::path::PathBuf;

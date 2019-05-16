@@ -1,4 +1,4 @@
-use crate::source::Span;
+use ahfs_parse::Span;
 
 #[derive(Debug)]
 pub enum Value<'a> {

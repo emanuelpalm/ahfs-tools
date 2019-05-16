@@ -6,5 +6,6 @@ edition = "2018"
 
 [dependencies]
 ahfs_macro = { path = "../ahfs_macro" }
+ahfs_parse = { path = "../ahfs_parse" }
 serde = { version = "1.0", features = ["serde_derive"] }
 toml = { version = "0.5" }

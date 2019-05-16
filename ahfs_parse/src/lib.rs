@@ -27,16 +27,16 @@ pub use self::token::Token;
 use std::fmt;
 
 /// Some text parser.
-pub trait Parser {
+pub trait Parser<'a> {
     /// Whatever type is produced by a successful parser execution.
-    type Output;
+    type Output: 'a;
 
     /// The type used to enumerate tokens identified in parsed source strings.
     type TokenKind: Copy + Eq + fmt::Debug + fmt::Display;
 
     /// Attempts to parse referenced [`source`](struct.Source.html) text.
     #[inline]
-    fn parse(source: &Source) -> Result<Self::Output, Self::TokenKind> {
+    fn parse(source: &'a Source) -> Result<Self::Output, Self::TokenKind> {
         let scanner = Scanner::new(source);
         let tokens = Self::scan_(scanner);
         let matcher = Matcher::new(tokens);
@@ -47,9 +47,9 @@ pub trait Parser {
     ///
     /// [tok]: struct.Token.html
     /// [sca]: struct.Scanner.html
-    fn scan_(scanner: Scanner) -> Vec<Token<Self::TokenKind>>;
+    fn scan_(scanner: Scanner<'a>) -> Vec<Token<'a, Self::TokenKind>>;
 
     /// Attempts to find valid token patterns using given
     /// [`matcher`](struct.Matcher.html).
-    fn match_(matcher: Matcher<Self::TokenKind>) -> Result<Self::Output, Self::TokenKind>;
+    fn match_(matcher: Matcher<'a, Self::TokenKind>) -> Result<Self::Output, Self::TokenKind>;
 }

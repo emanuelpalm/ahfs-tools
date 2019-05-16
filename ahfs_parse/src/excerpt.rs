@@ -27,16 +27,6 @@ impl Excerpt {
     }
 }
 
-impl Default for Excerpt {
-    fn default() -> Self {
-        Excerpt {
-            source: Source { name: "".into(), body: "".into() },
-            line_number: 0,
-            range: (0..0).into(),
-        }
-    }
-}
-
 impl fmt::Display for Excerpt {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         fmt::Display::fmt(&self.as_span(), f)
