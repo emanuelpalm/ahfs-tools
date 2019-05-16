@@ -4,7 +4,7 @@ pub use self::error::Error;
 
 use ahfs::gen::svg;
 use ahfs::log;
-use ahfs::parser;
+use ahfs::spec::parser;
 use ahfs::project::Project;
 use ahfs_parse::Text;
 use std::fs;

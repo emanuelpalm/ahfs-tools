@@ -1,8 +1,8 @@
 pub mod gen;
 pub mod meta;
 pub mod log;
-pub mod parser;
 pub mod project;
+pub mod spec;
 
 mod error;
 

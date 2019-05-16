@@ -1,11 +1,11 @@
-use crate::parser;
+use crate::spec;
 
 pub trait WriteSVG {
     fn write_svg(&self, target: &mut String);
     fn size(&self) -> (f32, f32);
 }
 
-impl<'a> WriteSVG for parser::Record<'a> {
+impl<'a> WriteSVG for spec::Record<'a> {
     fn write_svg(&self, target: &mut String) {
         let (width, height) = self.size();
         let mut offset = 78;

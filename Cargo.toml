@@ -1,2 +1,6 @@
 [workspace]
 members = ["ahfs", "ahfs_cli", "ahfs_doc", "ahfs_macro", "ahfs_parse"]
+
+[profile.release]
+lto = true
+panic = "abort"

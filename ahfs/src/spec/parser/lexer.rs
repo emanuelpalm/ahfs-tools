@@ -1,7 +1,7 @@
 //! Lexical analysis utilities.
 
 use ahfs_parse::{Scanner, Token};
-use crate::parser::Class;
+use super::Class;
 
 /// Creates a slice of `Tokens` from all characters accessible via given `scanner`.
 pub fn scan(mut scanner: Scanner) -> Vec<Token<Class>> {

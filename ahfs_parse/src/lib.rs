@@ -1,5 +1,3 @@
-//! # Parsing Utilities
-//!
 //! This crate contains various utilities useful when creating hand-written
 //! parsers. The most straightforward way to use the package is to implement
 //! the [`Parser`](trait.Parser.html) trait.

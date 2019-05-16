@@ -1,5 +1,5 @@
 use ahfs_parse::Span;
-use crate::parser::TypeRef;
+use crate::spec::TypeRef;
 
 #[derive(Debug)]
 pub struct Service<'a> {

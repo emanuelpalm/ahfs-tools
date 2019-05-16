@@ -1,4 +1,4 @@
-use crate::parser::Class;
+use crate::spec::parser::Class;
 use std::fmt;
 use std::io;
 use std::result;

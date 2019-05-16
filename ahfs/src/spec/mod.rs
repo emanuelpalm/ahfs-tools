@@ -1,3 +1,5 @@
+pub mod parser;
+
 mod implement;
 mod property;
 mod record;
@@ -14,12 +16,16 @@ pub use self::system::System;
 pub use self::type_ref::TypeRef;
 pub use self::value::Value;
 
-/// A parse tree, derived from a single [`Source`][src].
+use ahfs_parse::{Error, Text};
+use self::parser::Class;
+use std::path::Path;
+
+/// A parse spec, derived from a single [`Source`][src].
 ///
 /// [src]: ../../source/struct.Source.html
 #[derive(Debug, Default)]
-pub struct Tree<'a> {
-    pub implements: Vec<Implement<'a>>,
+pub struct Specification<'a> {
+    pub implementations: Vec<Implement<'a>>,
     pub records: Vec<Record<'a>>,
     pub services: Vec<Service<'a>>,
     pub systems: Vec<System<'a>>,

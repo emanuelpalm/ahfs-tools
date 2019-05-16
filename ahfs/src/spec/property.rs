@@ -1,5 +1,5 @@
 use ahfs_parse::Span;
-use crate::parser::Value;
+use crate::spec::Value;
 
 #[derive(Debug)]
 pub struct Property<'a> {

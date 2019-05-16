@@ -1,37 +1,22 @@
-//! Arrowhead specification parsing utilities.
-//!
-//! This module contains tools useful for parsing specification source texts.
-
 mod class;
 mod parser;
 mod lexer;
-mod tree;
 
 pub use self::class::Class;
-pub use self::tree::{
-    Implement, ImplementInterface, ImplementMethod,
-    Property,
-    Record, RecordEntry,
-    Service, ServiceMethod, ServiceInterface, ServiceRef,
-    System,
-    Tree, TypeRef,
-    Value,
-};
 
-use ahfs_parse::{Error, Matcher, Scanner, Text, Token};
+use ahfs_parse::{Error, Matcher, Parser, Scanner, Text, Token};
+use crate::spec::Specification;
 
 #[inline]
-pub fn parse(source: &Text) -> Result<Tree, Error<Class>> {
-    use ahfs_parse::Parser;
-
-    ParserAHFS::parse(source)
+pub fn parse(text: &Text) -> Result<Specification, Error<Class>> {
+    SpecParser::parse(text)
 }
 
-struct ParserAHFS;
+struct SpecParser;
 
-impl<'a> ahfs_parse::Parser<'a> for ParserAHFS {
+impl<'a> Parser<'a> for SpecParser {
     type Class = Class;
-    type Output = Tree<'a>;
+    type Output = Specification<'a>;
 
     #[inline]
     fn analyze(scanner: Scanner<'a>) -> Vec<Token<'a, Class>> {
@@ -39,7 +24,7 @@ impl<'a> ahfs_parse::Parser<'a> for ParserAHFS {
     }
 
     #[inline]
-    fn combine(mut matcher: Matcher<'a, Class>) -> Result<Tree<'a>, Error<Class>> {
+    fn combine(mut matcher: Matcher<'a, Class>) -> Result<Specification<'a>, Error<Class>> {
         parser::root(&mut matcher)
     }
 }
@@ -71,7 +56,7 @@ mod tests {
             }
         };
 
-        assert_eq!(tree.implements.len(), 0);
+        assert_eq!(tree.implementations.len(), 0);
         assert_eq!(tree.records.len(), 0);
         assert_eq!(tree.services.len(), 1);
         assert_eq!(tree.systems.len(), 0);

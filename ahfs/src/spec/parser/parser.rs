@@ -1,28 +1,28 @@
 use ahfs_parse::{Error, Matcher, Span};
-use crate::parser::class::Class;
-use crate::parser::tree::{
+use crate::spec::{
     Implement, ImplementInterface, ImplementMethod,
     Property,
     Record, RecordEntry,
     Service, ServiceMethod, ServiceInterface, ServiceRef,
+    Specification,
     System,
-    Tree, TypeRef,
+    TypeRef,
     Value,
 };
-
+use super::Class;
 
 type R<T> = Result<T, Error<Class>>;
 type M<'a> = Matcher<'a, Class>;
 
 /// Match all tokens in `m` that make up a valid AHF specification root.
-pub fn root<'a>(mut m: &mut M<'a>) -> R<Tree<'a>> {
-    let mut tree = Tree::default();
+pub fn root<'a>(mut m: &mut M<'a>) -> R<Specification<'a>> {
+    let mut spec = Specification::default();
 
-    entry(&mut m, &mut tree, None)?;
+    entry(&mut m, &mut spec, None)?;
 
-    return Ok(tree);
+    return Ok(spec);
 
-    fn entry<'a>(m: &mut M<'a>, t: &mut Tree<'a>, c: Option<Span<'a>>) -> R<()> {
+    fn entry<'a>(m: &mut M<'a>, t: &mut Specification<'a>, c: Option<Span<'a>>) -> R<()> {
         let token = m.any(&[
             Class::Comment,
             Class::Implement,
@@ -45,7 +45,7 @@ pub fn root<'a>(mut m: &mut M<'a>) -> R<Tree<'a>> {
     }
 }
 
-fn implement<'a>(m: &mut M<'a>, t: &mut Tree<'a>, c: Option<Span<'a>>) -> R<()> {
+fn implement<'a>(m: &mut M<'a>, t: &mut Specification<'a>, c: Option<Span<'a>>) -> R<()> {
     let mut implement = {
         let tokens = m.all(&[
             Class::Identifier,
@@ -64,7 +64,7 @@ fn implement<'a>(m: &mut M<'a>, t: &mut Tree<'a>, c: Option<Span<'a>>) -> R<()> 
     };
 
     entry(m, &mut implement, None)?;
-    t.implements.push(implement);
+    t.implementations.push(implement);
 
     return Ok(());
 
@@ -192,7 +192,7 @@ fn property<'a>(m: &mut M<'a>, t: &mut Vec<Property<'a>>, c: Option<Span<'a>>) -
     Ok(())
 }
 
-fn record<'a>(m: &mut M<'a>, t: &mut Tree<'a>, c: Option<Span<'a>>) -> R<()> {
+fn record<'a>(m: &mut M<'a>, t: &mut Specification<'a>, c: Option<Span<'a>>) -> R<()> {
     let name = m
         .all(&[Class::Identifier, Class::BraceLeft])
         .map(|tokens| tokens[0].span.clone())?;
@@ -243,7 +243,7 @@ fn record<'a>(m: &mut M<'a>, t: &mut Tree<'a>, c: Option<Span<'a>>) -> R<()> {
     }
 }
 
-fn system<'a>(m: &mut M<'a>, t: &mut Tree<'a>, c: Option<Span<'a>>) -> R<()> {
+fn system<'a>(m: &mut M<'a>, t: &mut Specification<'a>, c: Option<Span<'a>>) -> R<()> {
     let mut system = m
         .all(&[Class::Identifier, Class::BraceLeft])
         .map(|tokens| System::new(tokens[0].span.clone(), c))?;
@@ -271,7 +271,7 @@ fn system<'a>(m: &mut M<'a>, t: &mut Tree<'a>, c: Option<Span<'a>>) -> R<()> {
     }
 }
 
-fn service<'a>(m: &mut M<'a>, t: &mut Tree<'a>, c: Option<Span<'a>>) -> R<()> {
+fn service<'a>(m: &mut M<'a>, t: &mut Specification<'a>, c: Option<Span<'a>>) -> R<()> {
     let mut service = m
         .all(&[Class::Identifier, Class::BraceLeft])
         .map(|tokens| Service::new(tokens[0].span.clone(), c))?;

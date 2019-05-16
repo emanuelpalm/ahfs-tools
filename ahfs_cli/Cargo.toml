@@ -8,7 +8,3 @@ edition = "2018"
 ahfs = { path = "../ahfs" }
 ahfs_macro = { path = "../ahfs_macro" }
 ahfs_parse = { path = "../ahfs_parse" }
-
-[profile.release]
-lto = true
-panic = "abort"
