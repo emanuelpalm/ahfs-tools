@@ -2,15 +2,17 @@ use ahfs_macro::color;
 use crate::Range;
 use std::fmt;
 
-/// An iterator over zero or more lines of source text.
+/// An iterator over zero or more lines of some source [`text`][txt].
+///
+/// [txt]: struct.Text.html
 pub struct Lines<'a> {
     /// Source text iterated over.
     pub source: &'a str,
 
-    /// Line number at which source code text begins.
+    /// Line number at which `source` text begins.
     pub number: usize,
 
-    /// Any significant region of characters within source text.
+    /// Any significant region of characters within `source` text.
     pub range: Option<Range>,
 }
 
@@ -58,7 +60,10 @@ impl<'a> Iterator for Lines<'a> {
     }
 }
 
-/// A source code line that may include a significant range of characters.
+/// A source [`text`][txt] line that may contain a significant range of
+/// characters.
+///
+/// [txt]: struct.Text.html
 pub struct Line<'a> {
     /// Line of source text.
     pub source: &'a str,
@@ -66,7 +71,7 @@ pub struct Line<'a> {
     /// Line number.
     pub number: usize,
 
-    /// Any significant region of characters in source text.
+    /// Any significant region of characters in `source` text.
     pub range: Option<Range>,
 }
 

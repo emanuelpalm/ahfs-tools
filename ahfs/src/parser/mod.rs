@@ -18,10 +18,10 @@ pub use self::tree::{
     Value,
 };
 
-use ahfs_parse::{Error, Matcher, Scanner, Source, Token};
+use ahfs_parse::{Error, Matcher, Scanner, Text, Token};
 
 #[inline]
-pub fn parse(source: &Source) -> Result<Tree, Error<Class>> {
+pub fn parse(source: &Text) -> Result<Tree, Error<Class>> {
     use ahfs_parse::Parser;
 
     ParserAHFS::parse(source)
@@ -34,23 +34,23 @@ impl<'a> ahfs_parse::Parser<'a> for ParserAHFS {
     type Output = Tree<'a>;
 
     #[inline]
-    fn scan_(scanner: Scanner<'a>) -> Vec<Token<'a, Class>> {
+    fn analyze(scanner: Scanner<'a>) -> Vec<Token<'a, Class>> {
         lexer::scan(scanner)
     }
 
     #[inline]
-    fn match_(mut matcher: Matcher<'a, Class>) -> Result<Tree<'a>, Error<Class>> {
+    fn combine(mut matcher: Matcher<'a, Class>) -> Result<Tree<'a>, Error<Class>> {
         parser::root(&mut matcher)
     }
 }
 
 #[cfg(test)]
 mod tests {
-    use ahfs_parse::Source;
+    use ahfs_parse::Text;
 
     #[test]
     fn example1() {
-        let source = Source {
+        let source = Text {
             name: "alpha.ahfs".into(),
             body: concat!(
                 "/// Comment A.\n",
@@ -95,7 +95,7 @@ mod tests {
 
     #[test]
     fn example2() {
-        let source = Source {
+        let source = Text {
             name: "alpha.ahfs".into(),
             body: concat!(
                 "// This comment is ignored.\n",

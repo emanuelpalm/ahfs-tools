@@ -10,8 +10,8 @@ mod lines;
 mod matcher;
 mod range;
 mod scanner;
-mod source;
 mod span;
+mod text;
 mod token;
 
 pub use self::error::Error;
@@ -20,8 +20,8 @@ pub use self::lines::{Line, Lines};
 pub use self::matcher::Matcher;
 pub use self::range::Range;
 pub use self::scanner::Scanner;
-pub use self::source::Source;
 pub use self::span::Span;
+pub use self::text::Text;
 pub use self::token::Token;
 
 use std::fmt;
@@ -31,25 +31,33 @@ pub trait Parser<'a> {
     /// The type used to enumerate tokens identified in parsed source strings.
     type Class: Copy + Eq + fmt::Debug + fmt::Display;
 
-    /// Whatever type is produced by a successful parser execution.
+    /// Whatever type is produced by a successful [`parse()`][par] invocation.
+    ///
+    /// [par]: trait.Parser.html#method.parse
     type Output: 'a;
 
-    /// Attempts to parse referenced [`source`](struct.Source.html) text.
+    /// Attempts to parse referenced [`text`](struct.Text.html) text.
     #[inline]
-    fn parse(source: &'a Source) -> Result<Self::Output, Error<Self::Class>> {
-        let scanner = Scanner::new(source);
-        let tokens = Self::scan_(scanner);
+    fn parse(text: &'a Text) -> Result<Self::Output, Error<Self::Class>> {
+        let scanner = Scanner::new(text);
+        let tokens = Self::analyze(scanner);
         let matcher = Matcher::new(tokens);
-        Self::match_(matcher)
+        Self::combine(matcher)
     }
 
-    /// Scans for [`tokens`][tok] using given [`scanner`][sca].
+    /// Produces vector of [`tokens`][tok] from [`Text`][txt] referenced by
+    /// given [`scanner`][sca].
     ///
-    /// [tok]: struct.Token.html
     /// [sca]: struct.Scanner.html
-    fn scan_(scanner: Scanner<'a>) -> Vec<Token<'a, Self::Class>>;
+    /// [txt]: struct.Text.html
+    /// [tok]: struct.Token.html
+    fn analyze(scanner: Scanner<'a>) -> Vec<Token<'a, Self::Class>>;
 
-    /// Attempts to find valid token patterns using given
-    /// [`matcher`](struct.Matcher.html).
-    fn match_(matcher: Matcher<'a, Self::Class>) -> Result<Self::Output, Error<Self::Class>>;
+    /// Produces `Output` instance or [`Error][err] from [`Tokens`][tok] owned
+    /// by given [`matcher`](mtc).
+    ///
+    /// [err]: struct.Error.html
+    /// [mtc]: struct.Matcher.html
+    /// [tok]: struct.Token.html
+    fn combine(matcher: Matcher<'a, Self::Class>) -> Result<Self::Output, Error<Self::Class>>;
 }

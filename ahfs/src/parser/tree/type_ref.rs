@@ -54,13 +54,13 @@ impl<'a> TypeRef<'a> {
 
 #[cfg(test)]
 mod tests {
-    use ahfs_parse::Source;
+    use ahfs_parse::Text;
     use super::*;
     use std::ops;
 
     #[test]
     fn as_str() {
-        let source = Source {
+        let source = Text {
             name: "test".into(),
             body: concat!(
                 "Integer\n",

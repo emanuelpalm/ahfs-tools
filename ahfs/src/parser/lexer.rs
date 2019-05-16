@@ -263,12 +263,12 @@ fn scan_symbol(scanner: &mut Scanner, mut ch: char) -> Option<Class> {
 
 #[cfg(test)]
 mod tests {
-    use ahfs_parse::Source;
+    use ahfs_parse::Text;
     use super::*;
 
     #[test]
     fn all() {
-        let source = Source {
+        let source = Text {
             name: "alpha.ahfs".into(),
             body: concat!(
                 "consumes implement interface method\n",
@@ -348,7 +348,7 @@ mod tests {
 
     #[test]
     fn example1() {
-        let source = Source {
+        let source = Text {
             name: "example1.ahfs".into(),
             body: concat!(
                 "/// Comment A.\n",

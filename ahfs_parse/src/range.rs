@@ -12,7 +12,7 @@ pub struct Range {
 }
 
 impl Range {
-    /// Number of integers in range.
+    /// Number of elements in range.
     #[inline]
     pub fn len(&self) -> usize {
         self.end.saturating_sub(self.start)

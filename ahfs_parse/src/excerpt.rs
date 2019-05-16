@@ -1,14 +1,15 @@
-use crate::{Range, Span, Source};
+use ahfs_macro::color;
+use crate::{Lines, Range, Span, Text};
 use std::fmt;
 
-/// Owned part of some original [`Source`][txt] containing a significant range
+/// Owned part of some original [`Text`][txt] containing a significant range
 /// of characters.
 ///
-/// [txt]: struct.Source.html
+/// [txt]: struct.Text.html
 #[derive(Debug)]
 pub struct Excerpt {
-    /// Source excerpt.
-    pub source: Source,
+    /// Source text excerpt.
+    pub text: Text,
 
     /// Number of first line in source excerpt.
     pub line_number: usize,
@@ -17,18 +18,19 @@ pub struct Excerpt {
     pub range: Range,
 }
 
-impl Excerpt {
-    #[inline]
-    pub fn as_span(&self) -> Span {
-        Span {
-            source: &self.source,
-            range: self.range,
-        }
-    }
-}
-
 impl fmt::Display for Excerpt {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        fmt::Display::fmt(&self.as_span(), f)
+        write!(f, concat!(
+            "      : ", color!(b: "{}"), "\n",
+            "      |\n"), self.text.name)?;
+        let lines = Lines {
+            source: &self.text.body,
+            number: self.line_number,
+            range: Some(self.range),
+        };
+        for line in lines {
+            write!(f, "{}", line)?;
+        }
+        Ok(())
     }
 }

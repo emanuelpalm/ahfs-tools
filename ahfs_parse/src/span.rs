@@ -1,13 +1,15 @@
 use ahfs_macro::color;
-use crate::{Excerpt, Lines, Range, Source};
+use crate::{Excerpt, Lines, Range, Text};
 use std::fmt;
 use std::ops;
 
-/// Represents a significant region within a borrowed source code text.
+/// Represents a significant region within a borrowed source code [`Text`][txt].
+///
+/// [txt]: struct.Text.html
 #[derive(Clone)]
 pub struct Span<'a> {
     /// Source text referred to.
-    pub source: &'a Source,
+    pub source: &'a Text,
 
     /// Delimits significant region within `source`.
     pub range: Range,
@@ -52,7 +54,7 @@ impl<'a> Span<'a> {
             end: self.range.end - start,
         });
 
-        Lines { source: source, number, range }
+        Lines { source, number, range }
     }
 
     /// Creates an owned `Excerpt` from this `Span`.
@@ -61,7 +63,7 @@ impl<'a> Span<'a> {
         let offset = (self.source.body.as_ptr() as usize)
             .saturating_sub(lines.source.as_ptr() as usize);
         Excerpt {
-            source: Source {
+            text: Text {
                 name: self.source.name.clone(),
                 body: lines.source.into(),
             },

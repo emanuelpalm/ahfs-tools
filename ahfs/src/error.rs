@@ -19,7 +19,7 @@ pub trait Error: fmt::Debug + fmt::Display {
 
 impl Error for ahfs_parse::Error<Class> {
     fn code(&self) -> &'static str {
-        match self.cause {
+        match self.actual {
             None => "P001",
             Some(_) => "P002",
         }

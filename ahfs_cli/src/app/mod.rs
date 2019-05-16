@@ -6,7 +6,7 @@ use ahfs::gen::svg;
 use ahfs::log;
 use ahfs::parser;
 use ahfs::project::Project;
-use ahfs_parse::Source;
+use ahfs_parse::Text;
 use std::fs;
 use std::io;
 use std::path::PathBuf;
@@ -20,7 +20,7 @@ pub fn doc(args: &[&str]) -> ahfs::Result {
     fs::create_dir_all(&project.target())?;
 
     for path in project.files()?.iter() {
-        let source = Source::read(path)?;
+        let source = Text::read(path)?;
         let tree = parser::parse(&source)?;
 
         for record in tree.records {

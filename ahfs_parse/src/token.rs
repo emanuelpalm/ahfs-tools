@@ -1,12 +1,12 @@
 use crate::Span;
 
-/// Identifies a typed [`Span`][spa] of some [`Source`][src].
+/// Identifies the type of a [`Span`][spa] referring to some [`Text`][txt].
 ///
 /// [spa]: struct.Span.html
-/// [src]: struct.Source.html
+/// [txt]: struct.Text.html
 #[derive(Clone, Debug)]
 pub struct Token<'a, Kind> {
-    /// Concrete token type.
+    /// Token enumeration.
     pub kind: Kind,
 
     /// Location of token in some source text.

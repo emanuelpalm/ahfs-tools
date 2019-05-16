@@ -1,4 +1,4 @@
-use crate::{Span, Source, Token};
+use crate::{Span, Text, Token};
 use std::char;
 use std::fmt;
 
@@ -6,23 +6,27 @@ use std::fmt;
 ///
 /// # Operation
 ///
-/// Extracts _tokens_ from a _source_ text. When created, it contains a
+/// Extracts _tokens_ from a source [`text`][txt]. When created, it contains a
 /// _candidate token_ with length 0 at the beginning of its text. The candidate
 /// token can be expanded to include more characters, and later collected or
 /// discarded when it includes some set of significant characters. If collected,
 /// the candidate is returned. If either collected or discarded, a new
 /// zero-length candidate is created at the end position of the old one.
+///
+/// [txt]: struct.Text.html
 pub struct Scanner<'a> {
-    source: &'a Source,
+    source: &'a Text,
     bytes: &'a [u8],
     start: usize,
     end: usize,
 }
 
 impl<'a> Scanner<'a> {
-    /// Creates new `Scanner` from given source code `text`.
+    /// Creates new `Scanner` from given source code [`text`][txt].
+    ///
+    /// [txt]: struct.Text.html
     #[inline]
-    pub fn new(source: &'a Source) -> Self {
+    pub fn new(source: &'a Text) -> Self {
         Scanner {
             source,
             bytes: source.body.as_bytes(),
@@ -115,7 +119,7 @@ mod tests {
 
     #[test]
     fn collect() {
-        let source = Source {
+        let source = Text {
             name: "".into(),
             body: "aabbccc".into(),
         };
