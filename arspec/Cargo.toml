@@ -1,0 +1,11 @@
+[package]
+name = "arspec"
+version = "0.1.0"
+authors = ["Emanuel Palm <emanuel.palm@ltu.se>"]
+edition = "2018"
+
+[dependencies]
+arspec_macro = { path = "../arspec_macro" }
+arspec_parser = { path = "../arspec_parser" }
+serde = { version = "1.0", features = ["serde_derive"] }
+toml = { version = "0.5" }

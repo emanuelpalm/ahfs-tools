@@ -1,5 +1,5 @@
 [workspace]
-members = ["ahfs", "ahfs_cli", "ahfs_doc", "ahfs_macro", "ahfs_parse"]
+members = ["arspec", "arspec_cli", "arspec_doc", "arspec_macro", "arspec_parser"]
 
 [profile.release]
 lto = true

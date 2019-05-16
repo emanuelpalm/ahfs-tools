@@ -1,8 +1,0 @@
-[package]
-name = "ahfs_parse"
-version = "0.1.0"
-authors = ["Emanuel Palm <emanuelpalm@gmail.com>"]
-edition = "2018"
-
-[dependencies]
-ahfs_macro = { path = "../ahfs_macro" }

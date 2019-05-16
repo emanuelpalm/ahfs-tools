@@ -1,0 +1,10 @@
+[package]
+name = "arspec_cli"
+version = "0.1.0"
+authors = ["Emanuel Palm <emanuel.palm@ltu.se>"]
+edition = "2018"
+
+[dependencies]
+arspec = { path = "../arspec" }
+arspec_macro = { path = "../arspec_macro" }
+arspec_parser = { path = "../arspec_parser" }

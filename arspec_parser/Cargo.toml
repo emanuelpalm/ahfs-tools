@@ -1,0 +1,8 @@
+[package]
+name = "arspec_parser"
+version = "0.1.0"
+authors = ["Emanuel Palm <emanuelpalm@gmail.com>"]
+edition = "2018"
+
+[dependencies]
+arspec_macro = { path = "../arspec_macro" }
