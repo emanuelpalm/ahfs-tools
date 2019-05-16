@@ -1,4 +1,4 @@
-use crate::{Error, Result, Token};
+use crate::{Error, Token};
 use std::fmt;
 
 /// A utility for reading well-defined [`Token`][tok] sequences from an array.
@@ -31,7 +31,7 @@ impl<'a, K: Copy + Eq + fmt::Debug> Matcher<'a, K> {
     /// those [`Token`s][tok] have kinds matching those in `kinds`.
     ///
     /// [tok]: ../token/struct.Token.html
-    pub fn all(&mut self, kinds: &'static [K]) -> Result<&[Token<'a, K>], K> {
+    pub fn all(&mut self, kinds: &'static [K]) -> Result<&[Token<'a, K>], Error<K>> {
         let mut offset = self.offset;
         for kind in kinds {
             let token = match self.tokens.get(offset) {
@@ -55,7 +55,7 @@ impl<'a, K: Copy + Eq + fmt::Debug> Matcher<'a, K> {
     /// `alternatives`.
     ///
     /// [tok]: ../token/struct.Token.html
-    pub fn any(&mut self, alternatives: &'static [K]) -> Result<Token<'a, K>, K> {
+    pub fn any(&mut self, alternatives: &'static [K]) -> Result<Token<'a, K>, Error<K>> {
         let token = match self.tokens.get(self.offset) {
             Some(token) => token,
             None => {
@@ -72,7 +72,7 @@ impl<'a, K: Copy + Eq + fmt::Debug> Matcher<'a, K> {
     /// Returns next [Token][tok] only if its kind matches `kind`.
     ///
     /// [tok]: ../token/struct.Token.html
-    pub fn one(&mut self, kind: K) -> Result<Token<'a, K>, K> {
+    pub fn one(&mut self, kind: K) -> Result<Token<'a, K>, Error<K>> {
         match self.tokens.get(self.offset) {
             Some(token) if kind == token.kind => {
                 self.offset += 1;

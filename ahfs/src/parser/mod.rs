@@ -2,12 +2,12 @@
 //!
 //! This module contains tools useful for parsing specification source texts.
 
-mod token_kind;
-mod parse_spec;
-mod scan;
+mod class;
+mod parser;
+mod lexer;
 mod tree;
 
-pub use self::token_kind::TokenKind;
+pub use self::class::Class;
 pub use self::tree::{
     Implement, ImplementInterface, ImplementMethod,
     Property,
@@ -18,10 +18,10 @@ pub use self::tree::{
     Value,
 };
 
-use ahfs_parse::{Matcher, Result, Scanner, Source, Token};
+use ahfs_parse::{Error, Matcher, Scanner, Source, Token};
 
 #[inline]
-pub fn parse(source: &Source) -> Result<Tree, TokenKind> {
+pub fn parse(source: &Source) -> Result<Tree, Error<Class>> {
     use ahfs_parse::Parser;
 
     ParserAHFS::parse(source)
@@ -30,17 +30,17 @@ pub fn parse(source: &Source) -> Result<Tree, TokenKind> {
 struct ParserAHFS;
 
 impl<'a> ahfs_parse::Parser<'a> for ParserAHFS {
+    type Class = Class;
     type Output = Tree<'a>;
-    type TokenKind = TokenKind;
 
     #[inline]
-    fn scan_(scanner: Scanner<'a>) -> Vec<Token<'a, TokenKind>> {
-        scan::all(scanner)
+    fn scan_(scanner: Scanner<'a>) -> Vec<Token<'a, Class>> {
+        lexer::scan(scanner)
     }
 
     #[inline]
-    fn match_(mut matcher: Matcher<'a, TokenKind>) -> Result<Tree<'a>, TokenKind> {
-        parse_spec::root(&mut matcher)
+    fn match_(mut matcher: Matcher<'a, Class>) -> Result<Tree<'a>, Error<Class>> {
+        parser::root(&mut matcher)
     }
 }
 

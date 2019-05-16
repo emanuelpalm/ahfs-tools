@@ -1,5 +1,5 @@
-use ahfs_parse::{Matcher, Result, Span};
-use crate::parser::token_kind::TokenKind;
+use ahfs_parse::{Error, Matcher, Span};
+use crate::parser::class::Class;
 use crate::parser::tree::{
     Implement, ImplementInterface, ImplementMethod,
     Property,
@@ -11,8 +11,8 @@ use crate::parser::tree::{
 };
 
 
-type R<T> = Result<T, TokenKind>;
-type M<'a> = Matcher<'a, TokenKind>;
+type R<T> = Result<T, Error<Class>>;
+type M<'a> = Matcher<'a, Class>;
 
 /// Match all tokens in `m` that make up a valid AHF specification root.
 pub fn root<'a>(mut m: &mut M<'a>) -> R<Tree<'a>> {
@@ -24,18 +24,18 @@ pub fn root<'a>(mut m: &mut M<'a>) -> R<Tree<'a>> {
 
     fn entry<'a>(m: &mut M<'a>, t: &mut Tree<'a>, c: Option<Span<'a>>) -> R<()> {
         let token = m.any(&[
-            TokenKind::Comment,
-            TokenKind::Implement,
-            TokenKind::Record,
-            TokenKind::Service,
-            TokenKind::System,
+            Class::Comment,
+            Class::Implement,
+            Class::Record,
+            Class::Service,
+            Class::System,
         ])?;
         match token.kind {
-            TokenKind::Comment => entry(m, t, Some(token.span.clone()))?,
-            TokenKind::Implement => implement(m, t, c)?,
-            TokenKind::Record => record(m, t, c)?,
-            TokenKind::Service => service(m, t, c)?,
-            TokenKind::System => system(m, t, c)?,
+            Class::Comment => entry(m, t, Some(token.span.clone()))?,
+            Class::Implement => implement(m, t, c)?,
+            Class::Record => record(m, t, c)?,
+            Class::Service => service(m, t, c)?,
+            Class::System => system(m, t, c)?,
             _ => unreachable!(),
         }
         if m.at_end() {
@@ -48,12 +48,12 @@ pub fn root<'a>(mut m: &mut M<'a>) -> R<Tree<'a>> {
 fn implement<'a>(m: &mut M<'a>, t: &mut Tree<'a>, c: Option<Span<'a>>) -> R<()> {
     let mut implement = {
         let tokens = m.all(&[
-            TokenKind::Identifier,
-            TokenKind::Using,
-            TokenKind::Identifier,
-            TokenKind::Slash,
-            TokenKind::Identifier,
-            TokenKind::BraceLeft,
+            Class::Identifier,
+            Class::Using,
+            Class::Identifier,
+            Class::Slash,
+            Class::Identifier,
+            Class::BraceLeft,
         ])?;
         Implement::new(
             tokens[0].span.clone(),
@@ -70,16 +70,16 @@ fn implement<'a>(m: &mut M<'a>, t: &mut Tree<'a>, c: Option<Span<'a>>) -> R<()> 
 
     fn entry<'a>(m: &mut M<'a>, t: &mut Implement<'a>, c: Option<Span<'a>>) -> R<()> {
         let token = m.any(&[
-            TokenKind::Comment,
-            TokenKind::Interface,
-            TokenKind::Property,
-            TokenKind::BraceRight,
+            Class::Comment,
+            Class::Interface,
+            Class::Property,
+            Class::BraceRight,
         ])?;
         match token.kind {
-            TokenKind::Comment => { return entry(m, t, Some(token.span.clone())); }
-            TokenKind::Interface => implement_interface(m, t, c)?,
-            TokenKind::Property => property(m, &mut t.properties, c)?,
-            TokenKind::BraceRight => { return Ok(()); }
+            Class::Comment => { return entry(m, t, Some(token.span.clone())); }
+            Class::Interface => implement_interface(m, t, c)?,
+            Class::Property => property(m, &mut t.properties, c)?,
+            Class::BraceRight => { return Ok(()); }
             _ => unreachable!(),
         }
         entry(m, t, None)
@@ -88,7 +88,7 @@ fn implement<'a>(m: &mut M<'a>, t: &mut Tree<'a>, c: Option<Span<'a>>) -> R<()> 
 
 fn implement_interface<'a>(m: &mut M<'a>, t: &mut Implement<'a>, c: Option<Span<'a>>) -> R<()> {
     let mut interface = m
-        .all(&[TokenKind::Identifier, TokenKind::BraceLeft])
+        .all(&[Class::Identifier, Class::BraceLeft])
         .map(|tokens| ImplementInterface::new(tokens[0].span.clone(), c))?;
 
     entry(m, &mut interface, None)?;
@@ -98,16 +98,16 @@ fn implement_interface<'a>(m: &mut M<'a>, t: &mut Implement<'a>, c: Option<Span<
 
     fn entry<'a>(m: &mut M<'a>, s: &mut ImplementInterface<'a>, c: Option<Span<'a>>) -> R<()> {
         let token = m.any(&[
-            TokenKind::Comment,
-            TokenKind::Method,
-            TokenKind::Property,
-            TokenKind::BraceRight,
+            Class::Comment,
+            Class::Method,
+            Class::Property,
+            Class::BraceRight,
         ])?;
         match token.kind {
-            TokenKind::Comment => { return entry(m, s, Some(token.span.clone())); }
-            TokenKind::Method => implement_method(m, &mut s.methods, c)?,
-            TokenKind::Property => property(m, &mut s.properties, c)?,
-            TokenKind::BraceRight => { return Ok(()); }
+            Class::Comment => { return entry(m, s, Some(token.span.clone())); }
+            Class::Method => implement_method(m, &mut s.methods, c)?,
+            Class::Property => property(m, &mut s.properties, c)?,
+            Class::BraceRight => { return Ok(()); }
             _ => unreachable!(),
         }
         entry(m, s, None)
@@ -116,7 +116,7 @@ fn implement_interface<'a>(m: &mut M<'a>, t: &mut Implement<'a>, c: Option<Span<
 
 fn implement_method<'a>(m: &mut M<'a>, t: &mut Vec<ImplementMethod<'a>>, c: Option<Span<'a>>) -> R<()> {
     let mut method = m
-        .all(&[TokenKind::Identifier, TokenKind::BraceLeft])
+        .all(&[Class::Identifier, Class::BraceLeft])
         .map(|tokens| ImplementMethod::new(tokens[0].span.clone(), c))?;
 
     map(m, &mut method.data)?;
@@ -126,22 +126,22 @@ fn implement_method<'a>(m: &mut M<'a>, t: &mut Vec<ImplementMethod<'a>>, c: Opti
 }
 
 fn list<'a>(m: &mut M<'a>, t: &mut Vec<Value<'a>>) -> R<()> {
-    if let Some(_) = m.one_optional(TokenKind::SquareRight) {
+    if let Some(_) = m.one_optional(Class::SquareRight) {
         return Ok(());
     }
 
     t.push(value(m).map_err(|mut error| {
-        error.expected.push(TokenKind::SquareRight);
+        error.expected.push(Class::SquareRight);
         error
     })?);
 
     let token = m.any(&[
-        TokenKind::Comma,
-        TokenKind::SquareRight,
+        Class::Comma,
+        Class::SquareRight,
     ])?;
     match token.kind {
-        TokenKind::Comma => list(m, t),
-        TokenKind::SquareRight => Ok(()),
+        Class::Comma => list(m, t),
+        Class::SquareRight => Ok(()),
         _ => unreachable!(),
     }
 }
@@ -149,39 +149,39 @@ fn list<'a>(m: &mut M<'a>, t: &mut Vec<Value<'a>>) -> R<()> {
 fn map<'a>(m: &mut M<'a>, t: &mut Vec<(Span<'a>, Value<'a>)>) -> R<()> {
     let key = {
         let token = m.any(&[
-            TokenKind::Identifier,
-            TokenKind::BraceRight,
+            Class::Identifier,
+            Class::BraceRight,
         ])?;
         match token.kind {
-            TokenKind::Identifier => token.span.clone(),
-            TokenKind::BraceRight => { return Ok(()); }
+            Class::Identifier => token.span.clone(),
+            Class::BraceRight => { return Ok(()); }
             _ => unreachable!(),
         }
     };
 
-    m.one(TokenKind::Colon)?;
+    m.one(Class::Colon)?;
 
     t.push((key, value(m)?));
 
     let token = m.any(&[
-        TokenKind::Comma,
-        TokenKind::BraceRight,
+        Class::Comma,
+        Class::BraceRight,
     ])?;
     match token.kind {
-        TokenKind::Comma => map(m, t),
-        TokenKind::BraceRight => Ok(()),
+        Class::Comma => map(m, t),
+        Class::BraceRight => Ok(()),
         _ => unreachable!(),
     }
 }
 
 fn property<'a>(m: &mut M<'a>, t: &mut Vec<Property<'a>>, c: Option<Span<'a>>) -> R<()> {
     let name = m
-        .all(&[TokenKind::Identifier, TokenKind::Colon])
+        .all(&[Class::Identifier, Class::Colon])
         .map(|tokens| tokens[0].span.clone())?;
 
     let value = value(m)?;
 
-    m.one(TokenKind::Semicolon)?;
+    m.one(Class::Semicolon)?;
 
     t.push(Property {
         name,
@@ -194,7 +194,7 @@ fn property<'a>(m: &mut M<'a>, t: &mut Vec<Property<'a>>, c: Option<Span<'a>>) -
 
 fn record<'a>(m: &mut M<'a>, t: &mut Tree<'a>, c: Option<Span<'a>>) -> R<()> {
     let name = m
-        .all(&[TokenKind::Identifier, TokenKind::BraceLeft])
+        .all(&[Class::Identifier, Class::BraceLeft])
         .map(|tokens| tokens[0].span.clone())?;
 
     let mut record = Record::new(name, c);
@@ -207,21 +207,21 @@ fn record<'a>(m: &mut M<'a>, t: &mut Tree<'a>, c: Option<Span<'a>>) -> R<()> {
     fn entry<'a>(m: &mut M<'a>, t: &mut Record<'a>, c: Option<Span<'a>>) -> R<()> {
         let name = {
             let token = m.any(&[
-                TokenKind::Comment,
-                TokenKind::Identifier,
-                TokenKind::BraceRight,
+                Class::Comment,
+                Class::Identifier,
+                Class::BraceRight,
             ])?;
             match token.kind {
-                TokenKind::Comment => { return entry(m, t, Some(token.span.clone())); }
-                TokenKind::Identifier => token.span.clone(),
-                TokenKind::BraceRight => { return Ok(()); }
+                Class::Comment => { return entry(m, t, Some(token.span.clone())); }
+                Class::Identifier => token.span.clone(),
+                Class::BraceRight => { return Ok(()); }
                 _ => unreachable!(),
             }
         };
 
         let type_ref = {
             let mut type_ref = m
-                .all(&[TokenKind::Colon, TokenKind::Identifier])
+                .all(&[Class::Colon, Class::Identifier])
                 .map(|tokens| TypeRef::new(tokens[1].span.clone()))?;
 
             type_params(m, &mut type_ref.params)?;
@@ -232,12 +232,12 @@ fn record<'a>(m: &mut M<'a>, t: &mut Tree<'a>, c: Option<Span<'a>>) -> R<()> {
         t.entries.push(RecordEntry { name, type_ref, comment: c });
 
         let token = m.any(&[
-            TokenKind::Comma,
-            TokenKind::BraceRight,
+            Class::Comma,
+            Class::BraceRight,
         ])?;
         match token.kind {
-            TokenKind::Comma => entry(m, t, None),
-            TokenKind::BraceRight => Ok(()),
+            Class::Comma => entry(m, t, None),
+            Class::BraceRight => Ok(()),
             _ => unreachable!(),
         }
     }
@@ -245,7 +245,7 @@ fn record<'a>(m: &mut M<'a>, t: &mut Tree<'a>, c: Option<Span<'a>>) -> R<()> {
 
 fn system<'a>(m: &mut M<'a>, t: &mut Tree<'a>, c: Option<Span<'a>>) -> R<()> {
     let mut system = m
-        .all(&[TokenKind::Identifier, TokenKind::BraceLeft])
+        .all(&[Class::Identifier, Class::BraceLeft])
         .map(|tokens| System::new(tokens[0].span.clone(), c))?;
 
     entry(m, &mut system, None)?;
@@ -255,16 +255,16 @@ fn system<'a>(m: &mut M<'a>, t: &mut Tree<'a>, c: Option<Span<'a>>) -> R<()> {
 
     fn entry<'a>(m: &mut M<'a>, t: &mut System<'a>, c: Option<Span<'a>>) -> R<()> {
         let token = m.any(&[
-            TokenKind::Comment,
-            TokenKind::Consumes,
-            TokenKind::Produces,
-            TokenKind::BraceRight,
+            Class::Comment,
+            Class::Consumes,
+            Class::Produces,
+            Class::BraceRight,
         ])?;
         match token.kind {
-            TokenKind::Comment => { return entry(m, t, Some(token.span.clone())); }
-            TokenKind::Consumes => service_ref(m, &mut t.consumes, c)?,
-            TokenKind::Produces => service_ref(m, &mut t.produces, c)?,
-            TokenKind::BraceRight => { return Ok(()); }
+            Class::Comment => { return entry(m, t, Some(token.span.clone())); }
+            Class::Consumes => service_ref(m, &mut t.consumes, c)?,
+            Class::Produces => service_ref(m, &mut t.produces, c)?,
+            Class::BraceRight => { return Ok(()); }
             _ => unreachable!(),
         }
         entry(m, t, None)
@@ -273,7 +273,7 @@ fn system<'a>(m: &mut M<'a>, t: &mut Tree<'a>, c: Option<Span<'a>>) -> R<()> {
 
 fn service<'a>(m: &mut M<'a>, t: &mut Tree<'a>, c: Option<Span<'a>>) -> R<()> {
     let mut service = m
-        .all(&[TokenKind::Identifier, TokenKind::BraceLeft])
+        .all(&[Class::Identifier, Class::BraceLeft])
         .map(|tokens| Service::new(tokens[0].span.clone(), c))?;
 
     entry(m, &mut service, None)?;
@@ -283,17 +283,17 @@ fn service<'a>(m: &mut M<'a>, t: &mut Tree<'a>, c: Option<Span<'a>>) -> R<()> {
 
     fn entry<'a>(m: &mut M<'a>, t: &mut Service<'a>, c: Option<Span<'a>>) -> R<()> {
         let token = m.any(&[
-            TokenKind::Comment,
-            TokenKind::Interface,
-            TokenKind::BraceRight,
+            Class::Comment,
+            Class::Interface,
+            Class::BraceRight,
         ])?;
         match token.kind {
-            TokenKind::Comment => entry(m, t, Some(token.span.clone())),
-            TokenKind::Interface => {
+            Class::Comment => entry(m, t, Some(token.span.clone())),
+            Class::Interface => {
                 service_interface(m, t, c)?;
                 entry(m, t, None)
             }
-            TokenKind::BraceRight => Ok(()),
+            Class::BraceRight => Ok(()),
             _ => unreachable!(),
         }
     }
@@ -301,7 +301,7 @@ fn service<'a>(m: &mut M<'a>, t: &mut Tree<'a>, c: Option<Span<'a>>) -> R<()> {
 
 fn service_interface<'a>(m: &mut M<'a>, t: &mut Service<'a>, c: Option<Span<'a>>) -> R<()> {
     let mut interface = m
-        .all(&[TokenKind::Identifier, TokenKind::BraceLeft])
+        .all(&[Class::Identifier, Class::BraceLeft])
         .map(|tokens| ServiceInterface::new(tokens[0].span.clone(), c))?;
 
     entry(m, &mut interface, None)?;
@@ -311,17 +311,17 @@ fn service_interface<'a>(m: &mut M<'a>, t: &mut Service<'a>, c: Option<Span<'a>>
 
     fn entry<'a>(m: &mut M<'a>, s: &mut ServiceInterface<'a>, c: Option<Span<'a>>) -> R<()> {
         let token = m.any(&[
-            TokenKind::Comment,
-            TokenKind::Method,
-            TokenKind::BraceRight,
+            Class::Comment,
+            Class::Method,
+            Class::BraceRight,
         ])?;
         match token.kind {
-            TokenKind::Comment => entry(m, s, Some(token.span.clone())),
-            TokenKind::Method => {
+            Class::Comment => entry(m, s, Some(token.span.clone())),
+            Class::Method => {
                 service_method(m, &mut s.methods, c)?;
                 entry(m, s, None)
             }
-            TokenKind::BraceRight => Ok(()),
+            Class::BraceRight => Ok(()),
             _ => unreachable!(),
         }
     }
@@ -329,46 +329,46 @@ fn service_interface<'a>(m: &mut M<'a>, t: &mut Service<'a>, c: Option<Span<'a>>
 
 fn service_method<'a>(m: &mut M<'a>, t: &mut Vec<ServiceMethod<'a>>, c: Option<Span<'a>>) -> R<()> {
     let mut method = m
-        .all(&[TokenKind::Identifier, TokenKind::ParenLeft])
+        .all(&[Class::Identifier, Class::ParenLeft])
         .map(|tokens| ServiceMethod::new(tokens[0].span.clone(), c))?;
 
-    let token = m.any(&[TokenKind::Identifier, TokenKind::ParenRight])?;
+    let token = m.any(&[Class::Identifier, Class::ParenRight])?;
     match token.kind {
-        TokenKind::Identifier => {
+        Class::Identifier => {
             let mut type_ref = TypeRef::new(token.span.clone());
             type_params(m, &mut type_ref.params)?;
 
-            if let Err(mut error) = m.one(TokenKind::ParenRight) {
+            if let Err(mut error) = m.one(Class::ParenRight) {
                 if type_ref.params.len() == 0 {
-                    error.expected.push(TokenKind::AngleLeft);
+                    error.expected.push(Class::AngleLeft);
                 }
                 return Err(error);
             }
 
             method.input = Some(type_ref);
         }
-        TokenKind::ParenRight => {}
+        Class::ParenRight => {}
         _ => unreachable!(),
     }
 
-    let token = m.any(&[TokenKind::Colon, TokenKind::Semicolon])?;
+    let token = m.any(&[Class::Colon, Class::Semicolon])?;
     match token.kind {
-        TokenKind::Colon => {
-            let token = m.one(TokenKind::Identifier)?;
+        Class::Colon => {
+            let token = m.one(Class::Identifier)?;
 
             let mut type_ref = TypeRef::new(token.span.clone());
             type_params(m, &mut type_ref.params)?;
 
-            if let Err(mut error) = m.one(TokenKind::Semicolon) {
+            if let Err(mut error) = m.one(Class::Semicolon) {
                 if type_ref.params.len() == 0 {
-                    error.expected.push(TokenKind::AngleLeft);
+                    error.expected.push(Class::AngleLeft);
                 }
                 return Err(error);
             }
 
             method.output = Some(type_ref);
         }
-        TokenKind::Semicolon => {}
+        Class::Semicolon => {}
         _ => unreachable!(),
     }
 
@@ -379,7 +379,7 @@ fn service_method<'a>(m: &mut M<'a>, t: &mut Vec<ServiceMethod<'a>>, c: Option<S
 
 fn service_ref<'a>(m: &mut M<'a>, s: &mut Vec<ServiceRef<'a>>, c: Option<Span<'a>>) -> R<()> {
     let service_ref = m
-        .all(&[TokenKind::Identifier, TokenKind::Semicolon])
+        .all(&[Class::Identifier, Class::Semicolon])
         .map(|tokens| ServiceRef { name: tokens[0].span.clone(), comment: c })?;
 
     s.push(service_ref);
@@ -388,25 +388,25 @@ fn service_ref<'a>(m: &mut M<'a>, s: &mut Vec<ServiceRef<'a>>, c: Option<Span<'a
 }
 
 fn type_params<'a>(m: &mut M<'a>, t: &mut Vec<TypeRef<'a>>) -> R<()> {
-    if let None = m.one_optional(TokenKind::AngleLeft) {
+    if let None = m.one_optional(Class::AngleLeft) {
         return Ok(());
     }
     return entry(m, t);
 
     fn entry<'a>(m: &mut M<'a>, t: &mut Vec<TypeRef<'a>>) -> R<()> {
         let mut type_ref = m
-            .one(TokenKind::Identifier)
+            .one(Class::Identifier)
             .map(|token| TypeRef::new(token.span.clone()))?;
 
         type_params(m, &mut type_ref.params)?;
 
         let token = m.any(&[
-            TokenKind::Comma,
-            TokenKind::AngleRight,
+            Class::Comma,
+            Class::AngleRight,
         ])?;
         match token.kind {
-            TokenKind::Comma => entry(m, t)?,
-            TokenKind::AngleRight => {}
+            Class::Comma => entry(m, t)?,
+            Class::AngleRight => {}
             _ => unreachable!(),
         };
 
@@ -418,26 +418,26 @@ fn type_params<'a>(m: &mut M<'a>, t: &mut Vec<TypeRef<'a>>) -> R<()> {
 
 fn value<'a>(m: &mut M<'a>) -> R<Value<'a>> {
     let token = m.any(&[
-        TokenKind::Null,
-        TokenKind::Boolean,
-        TokenKind::Integer,
-        TokenKind::Float,
-        TokenKind::String,
-        TokenKind::SquareLeft,
-        TokenKind::BraceLeft,
+        Class::Null,
+        Class::Boolean,
+        Class::Integer,
+        Class::Float,
+        Class::String,
+        Class::SquareLeft,
+        Class::BraceLeft,
     ])?;
     Ok(match token.kind {
-        TokenKind::Null => Value::Null,
-        TokenKind::Boolean => Value::Boolean(token.span.clone()),
-        TokenKind::Integer => Value::Integer(token.span.clone()),
-        TokenKind::Float => Value::Float(token.span.clone()),
-        TokenKind::String => Value::String(token.span.clone()),
-        TokenKind::SquareLeft => {
+        Class::Null => Value::Null,
+        Class::Boolean => Value::Boolean(token.span.clone()),
+        Class::Integer => Value::Integer(token.span.clone()),
+        Class::Float => Value::Float(token.span.clone()),
+        Class::String => Value::String(token.span.clone()),
+        Class::SquareLeft => {
             let mut entries = Vec::new();
             list(m, &mut entries)?;
             Value::List(entries.into_boxed_slice())
         }
-        TokenKind::BraceLeft => {
+        Class::BraceLeft => {
             let mut entries = Vec::new();
             map(m, &mut entries)?;
             Value::Map(entries.into_boxed_slice())

@@ -1,17 +1,17 @@
 //! Lexical analysis utilities.
 
 use ahfs_parse::{Scanner, Token};
-use crate::parser::TokenKind;
+use crate::parser::Class;
 
 /// Creates a slice of `Tokens` from all characters accessible via given `scanner`.
-pub fn all(mut scanner: Scanner) -> Vec<Token<TokenKind>> {
+pub fn scan(mut scanner: Scanner) -> Vec<Token<Class>> {
     let mut tokens = Vec::new();
     scan_all(&mut scanner, &mut tokens);
     tokens
 }
 
 #[inline]
-fn scan_all<'a>(scanner: &mut Scanner<'a>, out: &mut Vec<Token<'a, TokenKind>>) -> Option<()> {
+fn scan_all<'a>(scanner: &mut Scanner<'a>, out: &mut Vec<Token<'a, Class>>) -> Option<()> {
     let mut ch;
     loop {
         ch = scanner.next()?;
@@ -22,17 +22,17 @@ fn scan_all<'a>(scanner: &mut Scanner<'a>, out: &mut Vec<Token<'a, TokenKind>>) 
         }
 
         let name = match ch {
-            '<' => TokenKind::AngleLeft,
-            '>' => TokenKind::AngleRight,
-            '{' => TokenKind::BraceLeft,
-            '}' => TokenKind::BraceRight,
-            ':' => TokenKind::Colon,
-            ',' => TokenKind::Comma,
-            '(' => TokenKind::ParenLeft,
-            ')' => TokenKind::ParenRight,
-            '[' => TokenKind::SquareLeft,
-            ']' => TokenKind::SquareRight,
-            ';' => TokenKind::Semicolon,
+            '<' => Class::AngleLeft,
+            '>' => Class::AngleRight,
+            '{' => Class::BraceLeft,
+            '}' => Class::BraceRight,
+            ':' => Class::Colon,
+            ',' => Class::Comma,
+            '(' => Class::ParenLeft,
+            ')' => Class::ParenRight,
+            '[' => Class::SquareLeft,
+            ']' => Class::SquareRight,
+            ';' => Class::Semicolon,
             '0' => scan_radix_number(scanner)?,
             '1'...'9' => scan_number(scanner)?,
             '+' | '-' => scan_number_or_symbol(scanner)?,
@@ -49,7 +49,7 @@ fn scan_all<'a>(scanner: &mut Scanner<'a>, out: &mut Vec<Token<'a, TokenKind>>) 
 }
 
 #[inline]
-fn scan_radix_number(scanner: &mut Scanner) -> Option<TokenKind> {
+fn scan_radix_number(scanner: &mut Scanner) -> Option<Class> {
     let mut ch = scanner.next()?;
     match ch {
         'b' => loop {
@@ -79,10 +79,10 @@ fn scan_radix_number(scanner: &mut Scanner) -> Option<TokenKind> {
         _ => {}
     };
     scanner.unwind();
-    Some(TokenKind::Integer)
+    Some(Class::Integer)
 }
 
-fn scan_number(scanner: &mut Scanner) -> Option<TokenKind> {
+fn scan_number(scanner: &mut Scanner) -> Option<Class> {
     let mut is_float = false;
     let mut ch;
 
@@ -127,29 +127,29 @@ fn scan_number(scanner: &mut Scanner) -> Option<TokenKind> {
 
     scanner.unwind();
 
-    Some(if is_float { TokenKind::Float } else { TokenKind::Integer })
+    Some(if is_float { Class::Float } else { Class::Integer })
 }
 
 #[inline]
-fn scan_number_or_symbol(mut scanner: &mut Scanner) -> Option<TokenKind> {
+fn scan_number_or_symbol(mut scanner: &mut Scanner) -> Option<Class> {
     let ch = scanner.next()?;
     if ch >= '0' && ch <= '9' {
         scan_number(&mut scanner)
     } else if ch.is_whitespace() {
         scanner.unwind();
-        Some(TokenKind::Error)
+        Some(Class::Error)
     } else {
         scan_symbol(&mut scanner, ch)
     }
 }
 
 #[inline]
-fn scan_string(scanner: &mut Scanner) -> Option<TokenKind> {
+fn scan_string(scanner: &mut Scanner) -> Option<Class> {
     let mut ch;
     'outer: loop {
         ch = scanner.next()?;
         match ch {
-            '"' => break Some(TokenKind::String),
+            '"' => break Some(Class::String),
             '\\' => {
                 ch = scanner.next()?;
                 match ch {
@@ -160,7 +160,7 @@ fn scan_string(scanner: &mut Scanner) -> Option<TokenKind> {
                                 '0'...'9' |
                                 'A'...'F' |
                                 'a'...'f' => continue,
-                                _ => break 'outer Some(TokenKind::Error),
+                                _ => break 'outer Some(Class::Error),
                             }
                         }
                     }
@@ -168,13 +168,13 @@ fn scan_string(scanner: &mut Scanner) -> Option<TokenKind> {
                 }
             }
             c if !c.is_control() => {}
-            _ => break Some(TokenKind::Error),
+            _ => break Some(Class::Error),
         }
     }
 }
 
 #[inline]
-fn scan_comment(scanner: &mut Scanner) -> Option<TokenKind> {
+fn scan_comment(scanner: &mut Scanner) -> Option<Class> {
     let mut ch = scanner.next()?;
     match ch {
         '/' => {
@@ -188,7 +188,7 @@ fn scan_comment(scanner: &mut Scanner) -> Option<TokenKind> {
                 ch = scanner.next()?;
             }
             if keep {
-                Some(TokenKind::Comment)
+                Some(Class::Comment)
             } else {
                 scanner.discard();
                 return None;
@@ -207,7 +207,7 @@ fn scan_comment(scanner: &mut Scanner) -> Option<TokenKind> {
                 ch = scanner.next()?;
             }
             if keep {
-                Some(TokenKind::Comment)
+                Some(Class::Comment)
             } else {
                 scanner.discard();
                 return None;
@@ -215,14 +215,14 @@ fn scan_comment(scanner: &mut Scanner) -> Option<TokenKind> {
         }
         _ => {
             scanner.unwind();
-            Some(TokenKind::Slash)
+            Some(Class::Slash)
         }
     }
 }
 
-fn scan_symbol(scanner: &mut Scanner, mut ch: char) -> Option<TokenKind> {
+fn scan_symbol(scanner: &mut Scanner, mut ch: char) -> Option<Class> {
     if !ch.is_alphabetic() && ch != '_' {
-        return Some(TokenKind::Error);
+        return Some(Class::Error);
     }
     loop {
         ch = scanner.next()?;
@@ -233,31 +233,31 @@ fn scan_symbol(scanner: &mut Scanner, mut ch: char) -> Option<TokenKind> {
     }
     Some(match scanner.review() {
         // Keywords.
-        "consumes" => TokenKind::Consumes,
-        "implement" => TokenKind::Implement,
-        "interface" => TokenKind::Interface,
-        "method" => TokenKind::Method,
-        "produces" => TokenKind::Produces,
-        "property" => TokenKind::Property,
-        "record" => TokenKind::Record,
-        "service" => TokenKind::Service,
-        "system" => TokenKind::System,
-        "using" => TokenKind::Using,
+        "consumes" => Class::Consumes,
+        "implement" => Class::Implement,
+        "interface" => Class::Interface,
+        "method" => Class::Method,
+        "produces" => Class::Produces,
+        "property" => Class::Property,
+        "record" => Class::Record,
+        "service" => Class::Service,
+        "system" => Class::System,
+        "using" => Class::Using,
 
         // Null.
-        "null" => TokenKind::Null,
+        "null" => Class::Null,
 
         // Booleans.
-        "true" | "false" => TokenKind::Boolean,
+        "true" | "false" => Class::Boolean,
 
         // Floats.
-        "inf" | "+inf" | "-inf" | "NaN" => TokenKind::Float,
+        "inf" | "+inf" | "-inf" | "NaN" => Class::Float,
 
         // Errors.
-        "+" | "-" => TokenKind::Error,
+        "+" | "-" => Class::Error,
 
         // Identifier.
-        _ => TokenKind::Identifier,
+        _ => Class::Identifier,
     })
 }
 
@@ -292,7 +292,7 @@ mod tests {
             ).into()
         };
         let scanner = Scanner::new(&source);
-        let tokens = super::all(scanner);
+        let tokens = super::scan(scanner);
 
         // Check token strings.
         assert_eq!(
@@ -315,32 +315,32 @@ mod tests {
             tokens.iter().map(|item| item.span.as_str()).collect::<Vec<_>>()
         );
 
-        // Check token kinds.
+        // Check token classes.
         assert_eq!(
             vec![
-                TokenKind::Consumes, TokenKind::Implement, TokenKind::Interface, TokenKind::Method,
-                TokenKind::Produces, TokenKind::Property, TokenKind::Record, TokenKind::Service,
-                TokenKind::System, TokenKind::Using,
-                TokenKind::AngleLeft, TokenKind::AngleRight,
-                TokenKind::BraceLeft, TokenKind::BraceRight,
-                TokenKind::Colon, TokenKind::Comma,
-                TokenKind::ParenLeft, TokenKind::ParenRight,
-                TokenKind::Slash,
-                TokenKind::SquareLeft, TokenKind::SquareRight,
-                TokenKind::Semicolon,
-                TokenKind::Null,
-                TokenKind::Boolean, TokenKind::Boolean,
-                TokenKind::Integer, TokenKind::Integer, TokenKind::Integer,
-                TokenKind::Integer, TokenKind::Integer,
-                TokenKind::Float, TokenKind::Float, TokenKind::Float,
-                TokenKind::Float, TokenKind::Float,
-                TokenKind::Float, TokenKind::Float, TokenKind::Float, TokenKind::Float,
-                TokenKind::String,
-                TokenKind::Identifier, TokenKind::Identifier, TokenKind::Identifier,
-                TokenKind::Error, TokenKind::Error, TokenKind::Error, TokenKind::Error,
-                TokenKind::Error, TokenKind::Error, TokenKind::Error, TokenKind::Error,
-                TokenKind::Error,
-                TokenKind::Comment, TokenKind::Comment,
+                Class::Consumes, Class::Implement, Class::Interface, Class::Method,
+                Class::Produces, Class::Property, Class::Record, Class::Service,
+                Class::System, Class::Using,
+                Class::AngleLeft, Class::AngleRight,
+                Class::BraceLeft, Class::BraceRight,
+                Class::Colon, Class::Comma,
+                Class::ParenLeft, Class::ParenRight,
+                Class::Slash,
+                Class::SquareLeft, Class::SquareRight,
+                Class::Semicolon,
+                Class::Null,
+                Class::Boolean, Class::Boolean,
+                Class::Integer, Class::Integer, Class::Integer,
+                Class::Integer, Class::Integer,
+                Class::Float, Class::Float, Class::Float,
+                Class::Float, Class::Float,
+                Class::Float, Class::Float, Class::Float, Class::Float,
+                Class::String,
+                Class::Identifier, Class::Identifier, Class::Identifier,
+                Class::Error, Class::Error, Class::Error, Class::Error,
+                Class::Error, Class::Error, Class::Error, Class::Error,
+                Class::Error,
+                Class::Comment, Class::Comment,
             ],
             tokens.iter().map(|item| item.kind).collect::<Vec<_>>(),
         );
@@ -362,7 +362,7 @@ mod tests {
             ).into(),
         };
         let scanner = Scanner::new(&source);
-        let tokens = super::all(scanner);
+        let tokens = super::scan(scanner);
 
         // Check token strings.
         assert_eq!(
@@ -379,19 +379,19 @@ mod tests {
             tokens.iter().map(|item| item.span.as_str()).collect::<Vec<_>>()
         );
 
-        // Check token kinds.
+        // Check token classes.
         assert_eq!(
             vec![
-                TokenKind::Comment,
-                TokenKind::Service, TokenKind::Identifier, TokenKind::BraceLeft,
-                TokenKind::Comment,
-                TokenKind::Interface, TokenKind::Identifier, TokenKind::BraceLeft,
-                TokenKind::Comment,
-                TokenKind::Method, TokenKind::Identifier, TokenKind::ParenLeft,
-                TokenKind::Identifier, TokenKind::ParenRight, TokenKind::Colon,
-                TokenKind::Identifier, TokenKind::Semicolon,
-                TokenKind::BraceRight,
-                TokenKind::BraceRight,
+                Class::Comment,
+                Class::Service, Class::Identifier, Class::BraceLeft,
+                Class::Comment,
+                Class::Interface, Class::Identifier, Class::BraceLeft,
+                Class::Comment,
+                Class::Method, Class::Identifier, Class::ParenLeft,
+                Class::Identifier, Class::ParenRight, Class::Colon,
+                Class::Identifier, Class::Semicolon,
+                Class::BraceRight,
+                Class::BraceRight,
             ],
             tokens.iter().map(|item| item.kind).collect::<Vec<_>>(),
         );

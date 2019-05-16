@@ -1,4 +1,4 @@
-use crate::parser::TokenKind;
+use crate::parser::Class;
 use std::fmt;
 use std::io;
 use std::result;
@@ -17,7 +17,7 @@ pub trait Error: fmt::Debug + fmt::Display {
     }
 }
 
-impl Error for ahfs_parse::Error<TokenKind> {
+impl Error for ahfs_parse::Error<Class> {
     fn code(&self) -> &'static str {
         match self.cause {
             None => "P001",

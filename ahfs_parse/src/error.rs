@@ -1,9 +1,5 @@
 use crate::{Excerpt, Token};
 use std::fmt;
-use std::result;
-
-/// A parsing result.
-pub type Result<T, TokenKind> = result::Result<T, Error<TokenKind>>;
 
 /// A parser error.
 #[derive(Debug)]

@@ -14,7 +14,7 @@ mod source;
 mod span;
 mod token;
 
-pub use self::error::{Error, Result};
+pub use self::error::Error;
 pub use self::excerpt::Excerpt;
 pub use self::lines::{Line, Lines};
 pub use self::matcher::Matcher;
@@ -28,15 +28,15 @@ use std::fmt;
 
 /// Some text parser.
 pub trait Parser<'a> {
+    /// The type used to enumerate tokens identified in parsed source strings.
+    type Class: Copy + Eq + fmt::Debug + fmt::Display;
+
     /// Whatever type is produced by a successful parser execution.
     type Output: 'a;
 
-    /// The type used to enumerate tokens identified in parsed source strings.
-    type TokenKind: Copy + Eq + fmt::Debug + fmt::Display;
-
     /// Attempts to parse referenced [`source`](struct.Source.html) text.
     #[inline]
-    fn parse(source: &'a Source) -> Result<Self::Output, Self::TokenKind> {
+    fn parse(source: &'a Source) -> Result<Self::Output, Error<Self::Class>> {
         let scanner = Scanner::new(source);
         let tokens = Self::scan_(scanner);
         let matcher = Matcher::new(tokens);
@@ -47,9 +47,9 @@ pub trait Parser<'a> {
     ///
     /// [tok]: struct.Token.html
     /// [sca]: struct.Scanner.html
-    fn scan_(scanner: Scanner<'a>) -> Vec<Token<'a, Self::TokenKind>>;
+    fn scan_(scanner: Scanner<'a>) -> Vec<Token<'a, Self::Class>>;
 
     /// Attempts to find valid token patterns using given
     /// [`matcher`](struct.Matcher.html).
-    fn match_(matcher: Matcher<'a, Self::TokenKind>) -> Result<Self::Output, Self::TokenKind>;
+    fn match_(matcher: Matcher<'a, Self::Class>) -> Result<Self::Output, Error<Self::Class>>;
 }
