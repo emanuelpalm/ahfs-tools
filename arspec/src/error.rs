@@ -1,4 +1,5 @@
-use crate::spec::parser::Class;
+use crate::project;
+use crate::spec;
 use std::fmt;
 use std::io;
 use std::result;
@@ -17,11 +18,20 @@ pub trait Error: fmt::Debug + fmt::Display {
     }
 }
 
-impl Error for arspec_parser::Error<Class> {
+impl Error for arspec_parser::Error<project::parser::Class> {
     fn code(&self) -> &'static str {
         match self.actual {
-            None => "P001",
-            Some(_) => "P002",
+            None => "PP01",
+            Some(_) => "PP02",
+        }
+    }
+}
+
+impl Error for arspec_parser::Error<spec::parser::Class> {
+    fn code(&self) -> &'static str {
+        match self.actual {
+            None => "PS01",
+            Some(_) => "PS02",
         }
     }
 }
@@ -59,18 +69,6 @@ impl Error for io::Error {
 
     fn as_io_error(&self) -> Option<&io::Error> {
         Some(self)
-    }
-}
-
-impl Error for toml::de::Error {
-    fn code(&self) -> &'static str {
-        "TDES"
-    }
-}
-
-impl Error for toml::ser::Error {
-    fn code(&self) -> &'static str {
-        "TSER"
     }
 }
 

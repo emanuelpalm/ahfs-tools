@@ -3,9 +3,11 @@
 //! This module contains tools useful for managing a folder containing a
 //! specification project.
 
-mod options;
+pub mod parser;
 
-pub use self::options::Options;
+mod configuration;
+
+pub use self::configuration::Configuration;
 
 use crate::error::Result;
 use std::fs;
@@ -13,22 +15,22 @@ use std::io;
 use std::path::{Path, PathBuf};
 
 // Default project file name.
-const PROJECT_FILE: &'static str = "project.toml";
+const PROJECT_FILE: &'static str = "project.txt";
 
 // File extension of project source files.
 const SOURCE_EXTENSION: &'static str = "ahfs";
 
-/// Represents an AHFS project.
+/// An Arrowhead Framework specification project.
 #[derive(Debug)]
 pub struct Project {
     root: Box<Path>,
-    options: Options,
+    configuration: Configuration,
 }
 
 impl Project {
-    /// Attempts to create new AHFS project with `name` at given `path`.
+    /// Attempt to create new specification project with `name` at given `path`.
     ///
-    /// Concretely, tries to create an `"project.toml"` folder inside `path`
+    /// Concretely, tries to create an `"project.txt"` folder inside `path`
     /// and fill it with default options.
     pub fn create<N, P>(name: N, path: P) -> Result<Project>
         where N: AsRef<str>,
@@ -37,17 +39,17 @@ impl Project {
         let path = path.into();
         fs::create_dir_all(&path)?;
 
-        let options = Options::new(name.as_ref());
-        options.write_to(path.join(PROJECT_FILE))?;
+        let configuration = Configuration::new(name.as_ref());
+        configuration.write_to(path.join(PROJECT_FILE))?;
 
         Ok(Project {
             root: path.into(),
-            options,
+            configuration,
         })
     }
 
-    /// Attempts to locate AHFS project by looking inside `path` and all of its
-    /// parent directories.
+    /// Attempt to locate specification project by looking inside `path` and
+    /// all of its parent directories.
     pub fn locate<P>(path: P) -> Result<Project>
         where P: Into<PathBuf>
     {
@@ -64,12 +66,12 @@ impl Project {
             }
         }
 
-        let options = Options::read_at(&path)?;
+        let configuration = Configuration::read_at(&path)?;
         path.pop();
 
         Ok(Project {
             root: path.into(),
-            options,
+            configuration,
         })
     }
 
@@ -106,20 +108,17 @@ impl Project {
         &self.root
     }
 
-    /// Project options, as specified in `project.toml` file in project root.
+    /// Project options, as specified in `project.txt` file in project root.
     #[inline]
-    pub fn options(&self) -> &Options {
-        &self.options
+    pub fn configuration(&self) -> &Configuration {
+        &self.configuration
     }
 
     /// Target output folder.
     #[inline]
     pub fn target(&self) -> PathBuf {
         let mut buf: PathBuf = self.root().into();
-        buf.push(self.options()
-            .project()
-            .out_dir()
-            .unwrap_or_else(|| "target".as_ref()));
+        buf.push("target");
         buf
     }
 }

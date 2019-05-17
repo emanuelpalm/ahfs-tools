@@ -20,7 +20,7 @@ pub fn doc(args: &[&str]) -> arspec::Result {
     fs::create_dir_all(&project.target())?;
 
     for path in project.files()?.iter() {
-        let source = Text::read(path)?;
+        let source = Text::read_at(path)?;
         let tree = parser::parse(&source)?;
 
         for record in tree.records {
@@ -83,6 +83,7 @@ pub fn status(args: &[&str]) -> arspec::Result {
         return Err(Error::StatusArgCountNot0.into());
     }
     let project = Project::locate(".")?;
+    let conf = project.configuration();
     log::completion(&format!(
         concat!(
               "Project:     {}\n",
@@ -90,10 +91,10 @@ pub fn status(args: &[&str]) -> arspec::Result {
             "  Path:        {}\n",
             "  Description: {}\n",
         ),
-        project.options().project().name(),
-        project.options().project().version(),
+        conf.name,
+        conf.version,
         project.root().canonicalize()?.to_string_lossy(),
-        project.options().project().description().unwrap_or("<none>"),
+        conf.description.as_ref().unwrap_or(&"<none>".to_string()),
     ));
     Ok(())
 }

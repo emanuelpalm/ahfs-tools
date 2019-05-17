@@ -14,7 +14,7 @@ pub struct Text {
 
 impl Text {
     /// Attempt to read contents of file at `path` into a new `Text`.
-    pub fn read<P>(path: P) -> io::Result<Text>
+    pub fn read_at<P>(path: P) -> io::Result<Text>
         where P: AsRef<Path>
     {
         let path = path.as_ref();

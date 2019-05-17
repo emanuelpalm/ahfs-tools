@@ -1,4 +1,0 @@
-[project]
-name = "Arrowhead Core"
-description = "Specifications for the mandatory core systems and services of Arrowhead, as well as the non-mandatory supporting systems and services."
-version = "4.2.0"
