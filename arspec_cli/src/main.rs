@@ -1,8 +1,8 @@
 mod app;
 mod cliargs;
+mod log;
 
 use arspec::Error;
-use arspec::log;
 use arspec_macro::color;
 use std::env;
 use std::process;

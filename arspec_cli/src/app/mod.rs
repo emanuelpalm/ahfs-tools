@@ -3,10 +3,10 @@ mod error;
 pub use self::error::Error;
 
 use arspec::gen::svg;
-use arspec::log;
 use arspec::spec::parser;
 use arspec::project::Project;
 use arspec_parser::Text;
+use crate::log;
 use std::fs;
 use std::io;
 use std::path::PathBuf;
