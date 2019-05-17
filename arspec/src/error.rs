@@ -3,7 +3,7 @@ use std::fmt;
 use std::io;
 use std::result;
 
-/// A generic AHFS result.
+/// A generic ARSPEC result.
 pub type Result<T = ()> = result::Result<T, Box<Error>>;
 
 /// Error trait implemented by all AHFS error types.

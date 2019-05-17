@@ -7,6 +7,10 @@ pub use self::class::Class;
 use arspec_parser::{Error, Matcher, Parser, Scanner, Text, Token};
 use crate::spec::Specification;
 
+/// Attempt to create [`Specification`][spc] from given source [`text`][txt].
+///
+/// [spc]: ../struct.Specification.html
+/// [txt]: ../../../arspec_parser/struct.Text.html
 #[inline]
 pub fn parse(text: &Text) -> Result<Specification, Error<Class>> {
     SpecParser::parse(text)

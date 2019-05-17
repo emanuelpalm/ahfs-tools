@@ -2,10 +2,8 @@ use std::fmt;
 
 /// Classifies the [`Span`][span] identified by a [`Token`][token].
 ///
-/// TODO: Fix markdown links.
-///
-/// [span]: ../../source/struct.Span.html
-/// [token]: ../token/struct.Token.html
+/// [span]: ../../../arspec_parser/struct.Span.html
+/// [token]: ../../../arspec_parser/struct.Token.html
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub enum Class {
     // Delimiters.

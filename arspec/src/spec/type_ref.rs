@@ -1,8 +1,17 @@
 use arspec_parser::{Span, Range};
 
+/// A type reference.
+///
+/// Can refer either to a [`Record`][rec] type definition, or some built-in or
+/// other type.
+///
+/// [rec]: struct.Record.html
 #[derive(Debug)]
 pub struct TypeRef<'a> {
+    /// Name of type referred to.
     pub name: Span<'a>,
+
+    /// Generic type parameters, if any.
     pub params: Vec<TypeRef<'a>>,
 }
 

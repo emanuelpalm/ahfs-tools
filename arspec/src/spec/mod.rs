@@ -16,17 +16,18 @@ pub use self::system::System;
 pub use self::type_ref::TypeRef;
 pub use self::value::Value;
 
-use arspec_parser::{Error, Text};
-use self::parser::Class;
-use std::path::Path;
-
-/// A parse spec, derived from a single [`Source`][src].
-///
-/// [src]: ../../source/struct.Source.html
+/// An Arrowhead Framework specification collection.
 #[derive(Debug, Default)]
 pub struct Specification<'a> {
+    /// Service implementation definitions.
     pub implementations: Vec<Implement<'a>>,
+
+    /// Record type definitions.
     pub records: Vec<Record<'a>>,
+
+    /// Abstract service definitions.
     pub services: Vec<Service<'a>>,
+
+    /// System definitions.
     pub systems: Vec<System<'a>>,
 }

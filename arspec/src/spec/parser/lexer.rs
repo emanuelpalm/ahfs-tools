@@ -3,7 +3,11 @@
 use arspec_parser::{Scanner, Token};
 use super::Class;
 
-/// Creates a slice of `Tokens` from all characters accessible via given `scanner`.
+/// Create a slice of [`Tokens`][tok] from all characters accessible via given
+/// [`scanner`][sca].
+///
+/// [sca]: ../../../arspec_parser/struct.Scanner.html
+/// [tok]: ../../../arspec_parser/struct.Token.html
 pub fn scan(mut scanner: Scanner) -> Vec<Token<Class>> {
     let mut tokens = Vec::new();
     scan_all(&mut scanner, &mut tokens);

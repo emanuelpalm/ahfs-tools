@@ -14,7 +14,9 @@ use super::Class;
 type R<T> = Result<T, Error<Class>>;
 type M<'a> = Matcher<'a, Class>;
 
-/// Match all tokens in `m` that make up a valid AHF specification root.
+/// Attempt to consume all tokens in `m` and produce a [`Specification`][spc].
+///
+/// [spc]: ../struct.Specification.html
 pub fn root<'a>(mut m: &mut M<'a>) -> R<Specification<'a>> {
     let mut spec = Specification::default();
 

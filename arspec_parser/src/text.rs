@@ -2,7 +2,7 @@ use std::fs;
 use std::io;
 use std::path::Path;
 
-/// A owned source code text.
+/// An owned source code text.
 #[derive(Debug)]
 pub struct Text {
     /// Name of text.
