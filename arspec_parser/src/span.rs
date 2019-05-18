@@ -60,8 +60,8 @@ impl<'a> Span<'a> {
     /// Creates an owned `Excerpt` from this `Span`.
     pub fn to_excerpt(&self) -> Excerpt {
         let lines = self.lines();
-        let offset = (self.source.body.as_ptr() as usize)
-            .saturating_sub(lines.source.as_ptr() as usize);
+        let offset = (lines.source.as_ptr() as usize)
+            .saturating_sub(self.source.body.as_ptr() as usize);
         Excerpt {
             text: Text {
                 name: self.source.name.clone(),
