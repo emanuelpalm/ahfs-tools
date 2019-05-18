@@ -18,76 +18,66 @@ impl<'a> Parser<'a> for ConfigurationParser {
     type Output = Configuration;
 
     #[inline]
-    fn analyze(scanner: Scanner<'a>) -> Vec<Token<'a, Class>> {
+    fn analyze(mut scanner: Scanner<'a>) -> Vec<Token<'a, Class>> {
         let mut tokens = Vec::new();
-        inner(scanner, &mut tokens);
+        scan_all(&mut scanner, &mut tokens);
         return tokens;
 
-        fn inner<'a>(mut scanner: Scanner<'a>, out: &mut Vec<Token<'a, Class>>) -> Option<()> {
+        fn scan_all<'a>(scanner: &mut Scanner<'a>, out: &mut Vec<Token<'a, Class>>) -> Option<()> {
             let mut ch;
             loop {
-                // Pair name.
-                {
-                    loop {
-                        ch = scanner.next()?;
-                        if ch.is_whitespace() {
-                            scanner.discard();
-                        } else {
-                            break;
-                        }
-                    }
-                    loop {
-                        if ch == ':' {
-                            break;
-                        }
-                        ch = scanner.next()?;
-                    }
-                    let class = match scanner.review() {
-                        "ProjectDescription:" => Class::ProjectDescription,
-                        "ProjectName:" => Class::ProjectName,
-                        "ProjectVersion:" => Class::ProjectVersion,
-                        _ => {
-                            out.push(scanner.collect(Class::InvalidName));
-                            return Some(());
-                        }
-                    };
-                    out.push(scanner.collect(class));
+                ch = scanner.next()?;
+
+                if ch.is_whitespace() {
+                    scanner.discard();
+                    continue;
                 }
 
-                // Pair value.
-                {
-                    loop {
-                        ch = scanner.next()?;
-                        if ch.is_whitespace() {
-                            scanner.discard();
-                        } else {
-                            break;
-                        }
-                    }
-                    match ch {
-                        '"' => {
-                            scanner.discard();
-                            loop {
-                                match scanner.next()? {
-                                    '"' => {
-                                        scanner.unwind();
-                                        out.push(scanner.collect(Class::String));
-                                        scanner.next()?;
-                                        break;
-                                    }
-                                    '\\' => { scanner.next()?; }
-                                    _ => {}
-                                }
-                            }
+                let class = match ch {
+                    ':' => Class::Colon,
+                    '"' => scan_string(scanner)?,
+                    'P' => scan_symbol(scanner)?,
+                    _ => Class::InvalidToken,
+                };
 
-                        }
+                out.push(scanner.collect(class));
+            }
+        }
+
+        fn scan_string(scanner: &mut Scanner) -> Option<Class> {
+            loop {
+                match scanner.next()? {
+                    '\\' => match scanner.next()? {
+                        '"' | '\\' => {}
                         _ => {
-                            out.push(scanner.collect(Class::InvalidValue));
-                            return Some(());
+                            scanner.unwind();
+                            scanner.discard();
+                            scanner.next();
+                            return Some(Class::InvalidEscape);
                         }
+                    },
+                    '"' => {
+                        return Some(Class::String);
                     }
+                    _ => {}
                 }
             }
+        }
+
+        fn scan_symbol(scanner: &mut Scanner) -> Option<Class> {
+            loop {
+                let ch = scanner.next()?;
+                if !ch.is_ascii_alphabetic() {
+                    scanner.unwind();
+                    break;
+                }
+            }
+            Some(match scanner.review() {
+                "ProjectDescription" => Class::ProjectDescription,
+                "ProjectName" => Class::ProjectName,
+                "ProjectVersion" => Class::ProjectVersion,
+                _ => Class::InvalidToken,
+            })
         }
     }
 
@@ -109,23 +99,51 @@ impl<'a> Parser<'a> for ConfigurationParser {
                 Class::ProjectVersion => &mut version,
                 _ => unreachable!(),
             };
+            matcher.one(Class::Colon)?;
             let token = matcher.one(Class::String)?;
+
             *target = Some(token.span);
         }
 
-        Ok(Configuration {
+        return Ok(Configuration {
             name: name.map_or_else(
                 || "New Project".to_string(),
-                |s| s.as_str().into(),
+                span_to_string,
             ),
             description: description.map(
-                |s| s.as_str().into(),
+                span_to_string,
             ),
             version: version.map_or_else(
                 || "0.1.0".to_string(),
-                |s| s.as_str().into(),
+                span_to_string,
             ),
-        })
+        });
+
+        fn span_to_string(span: Span) -> String {
+            let input = span.as_str();
+            let input = &input[1..input.len() - 1];
+            let mut output = String::with_capacity(input.len());
+
+            let mut chars = input.chars();
+            loop {
+                let ch = match chars.next() {
+                    Some(ch) => match ch {
+                        '\\' => match chars.next() {
+                            Some(ch) => ch,
+                            None => {
+                                break;
+                            }
+                        }
+                        ch => ch,
+                    }
+                    None => {
+                        break;
+                    }
+                };
+                output.push(ch);
+            }
+            output
+        }
     }
 }
 
@@ -135,8 +153,9 @@ impl<'a> Parser<'a> for ConfigurationParser {
 /// [token]: ../../../arspec_parser/struct.Token.html
 #[derive(Copy, Clone, Debug, Eq, PartialEq)]
 pub enum Class {
-    InvalidName,
-    InvalidValue,
+    Colon,
+    InvalidEscape,
+    InvalidToken,
     ProjectDescription,
     ProjectName,
     ProjectVersion,
@@ -146,8 +165,9 @@ pub enum Class {
 impl fmt::Display for Class {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         f.write_str(match *self {
-            Class::InvalidName => "InvalidName",
-            Class::InvalidValue => "InvalidValue",
+            Class::Colon => ":",
+            Class::InvalidEscape => "InvalidEscape",
+            Class::InvalidToken => "InvalidToken",
             Class::ProjectDescription => "ProjectDescription",
             Class::ProjectName => "ProjectName",
             Class::ProjectVersion => "ProjectVersion",
