@@ -25,7 +25,7 @@ fn scan_all<'a>(scanner: &mut Scanner<'a>, out: &mut Vec<Token<'a, Class>>) -> O
             continue;
         }
 
-        let name = match ch {
+        let class = match ch {
             '<' => Class::AngleLeft,
             '>' => Class::AngleRight,
             '{' => Class::BraceLeft,
@@ -48,7 +48,7 @@ fn scan_all<'a>(scanner: &mut Scanner<'a>, out: &mut Vec<Token<'a, Class>>) -> O
             _ => scan_symbol(scanner, ch)?,
         };
 
-        out.push(scanner.collect(name));
+        out.push(scanner.collect(class));
     }
 }
 

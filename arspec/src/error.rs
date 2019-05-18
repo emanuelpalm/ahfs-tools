@@ -7,7 +7,7 @@ use std::result;
 /// A generic ARSPEC result.
 pub type Result<T = ()> = result::Result<T, Box<Error>>;
 
-/// Error trait implemented by all AHFS error types.
+/// Error trait to be implemented by most ARSPEC error types.
 pub trait Error: fmt::Debug + fmt::Display {
     /// Machine-readable error code.
     fn code(&self) -> &'static str;
