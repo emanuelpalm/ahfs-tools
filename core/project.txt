@@ -1,6 +1,6 @@
 ProjectName: "Arrowhead Core"
 ProjectDescription: "
-    Specifications for the mandatory core systems and services of Arrowhead, as
-    well as the non-mandatory supporting systems and services.
+    Specifications for the standardized core systems of Arrowhead Framework,
+    including both the mandatory and supporting systems.
 "
 ProjectVersion: "4.2.0"
