@@ -37,7 +37,7 @@ impl<'a> Parser<'a> for ConfigurationParser {
                     ':' => Class::Colon,
                     '"' => scan_string(scanner)?,
                     'P' => scan_symbol(scanner)?,
-                    _ => Class::InvalidToken,
+                    _ => Class::UnknownSymbol,
                 };
 
                 out.push(scanner.collect(class));
@@ -45,20 +45,18 @@ impl<'a> Parser<'a> for ConfigurationParser {
         }
 
         fn scan_string(scanner: &mut Scanner) -> Option<Class> {
+            let mut class = Class::String;
             loop {
                 match scanner.next()? {
+                    '"' => {
+                        return Some(class);
+                    }
                     '\\' => match scanner.next()? {
-                        '"' | '\\' => {}
+                        '"' | '\\' | 'n' | 'r' | 't' => {}
                         _ => {
-                            scanner.unwind();
-                            scanner.discard();
-                            scanner.next();
-                            return Some(Class::InvalidEscape);
+                            class = Class::InvalidStringEscape;
                         }
                     },
-                    '"' => {
-                        return Some(Class::String);
-                    }
                     _ => {}
                 }
             }
@@ -76,7 +74,7 @@ impl<'a> Parser<'a> for ConfigurationParser {
                 "ProjectDescription" => Class::ProjectDescription,
                 "ProjectName" => Class::ProjectName,
                 "ProjectVersion" => Class::ProjectVersion,
-                _ => Class::InvalidToken,
+                _ => Class::UnknownSymbol,
             })
         }
     }
@@ -129,6 +127,9 @@ impl<'a> Parser<'a> for ConfigurationParser {
                 let ch = match chars.next() {
                     Some(ch) => match ch {
                         '\\' => match chars.next() {
+                            Some('t') => '\t',
+                            Some('n') => '\n',
+                            Some('r') => '\r',
                             Some(ch) => ch,
                             None => {
                                 break;
@@ -153,25 +154,35 @@ impl<'a> Parser<'a> for ConfigurationParser {
 /// [token]: ../../../arspec_parser/struct.Token.html
 #[derive(Copy, Clone, Debug, Eq, PartialEq)]
 pub enum Class {
+    // Delimiters.
     Colon,
-    InvalidEscape,
-    InvalidToken,
+
+    // Symbols.
     ProjectDescription,
     ProjectName,
     ProjectVersion,
+
+    // Literals.
     String,
+
+    // Errors.
+    InvalidStringEscape,
+    UnknownSymbol,
 }
 
 impl fmt::Display for Class {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         f.write_str(match *self {
             Class::Colon => ":",
-            Class::InvalidEscape => "InvalidEscape",
-            Class::InvalidToken => "InvalidToken",
+
             Class::ProjectDescription => "ProjectDescription",
             Class::ProjectName => "ProjectName",
             Class::ProjectVersion => "ProjectVersion",
+
             Class::String => "String",
+
+            Class::InvalidStringEscape => "<InvalidStringEscape>",
+            Class::UnknownSymbol => "<UnknownSymbol>",
         })
     }
 }
