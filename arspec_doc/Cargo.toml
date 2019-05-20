@@ -3,5 +3,7 @@ name = "arspec_doc"
 version = "0.1.0"
 authors = ["Emanuel Palm <emanuelpalm@gmail.com>"]
 edition = "2018"
+build = "build/build.rs"
 
-[dependencies]
+[build-dependencies]
+arspec_parser = { path = "../arspec_parser" }
