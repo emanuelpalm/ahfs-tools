@@ -141,7 +141,7 @@ fn scan_number_or_symbol(mut scanner: &mut Scanner) -> Option<Class> {
         scan_number(&mut scanner)
     } else if ch.is_whitespace() {
         scanner.unwind();
-        Some(Class::Error)
+        Some(Class::InvalidSymbolChar)
     } else {
         scan_symbol(&mut scanner, ch)
     }
@@ -149,30 +149,42 @@ fn scan_number_or_symbol(mut scanner: &mut Scanner) -> Option<Class> {
 
 #[inline]
 fn scan_string(scanner: &mut Scanner) -> Option<Class> {
+    let mut class = Class::String;
     let mut ch;
     'outer: loop {
         ch = scanner.next()?;
         match ch {
-            '"' => break Some(Class::String),
+            '"' => {
+                return Some(class);
+            }
             '\\' => {
                 ch = scanner.next()?;
                 match ch {
+                    '"' | '\\' | 'n' | 'r' | 't' => {}
                     'u' => {
-                        ch = scanner.next()?;
-                        for _ in 0..4 {
+                        let mut i = 4;
+                        while i > 0 {
+                            ch = scanner.next()?;
+                            i -= 1;
                             match ch {
                                 '0'...'9' |
                                 'A'...'F' |
                                 'a'...'f' => continue,
-                                _ => break 'outer Some(Class::Error),
+                                _ => {
+                                    if ch == '"' {
+                                        scanner.unwind();
+                                    }
+                                    class = Class::InvalidStringEscape;
+                                },
                             }
                         }
                     }
-                    _ => {}
+                    _ => {
+                        class = Class::InvalidStringEscape;
+                    }
                 }
             }
-            c if !c.is_control() => {}
-            _ => break Some(Class::Error),
+            _ => {},
         }
     }
 }
@@ -226,7 +238,7 @@ fn scan_comment(scanner: &mut Scanner) -> Option<Class> {
 
 fn scan_symbol(scanner: &mut Scanner, mut ch: char) -> Option<Class> {
     if !ch.is_alphabetic() && ch != '_' {
-        return Some(Class::Error);
+        return Some(Class::InvalidSymbolChar);
     }
     loop {
         ch = scanner.next()?;
@@ -258,7 +270,7 @@ fn scan_symbol(scanner: &mut Scanner, mut ch: char) -> Option<Class> {
         "inf" | "+inf" | "-inf" | "NaN" => Class::Float,
 
         // Errors.
-        "+" | "-" => Class::Error,
+        "+" | "-" => Class::InvalidSymbolChar,
 
         // Identifier.
         _ => Class::Identifier,
@@ -285,7 +297,8 @@ mod tests {
                 "0 1 202 -30 +40\n",
                 "50.0 6.1234 7.e+20 8e-10 1e9\n",
                 "inf +inf -inf NaN\n",
-                "\"Hello, World!\"\n",
+                "\"Hello, World!\" \"\\uBad\" \"\\uFree\"\n",
+                "\"123\\uXYZ456\"\n",
                 "\n",
                 "IdentifierName smallCaps _underscore\n",
                 "+ - * # ! ^ ~ ..\n",
@@ -293,7 +306,7 @@ mod tests {
                 "/** This too! */\n",
                 "// This is an ignored comment.\n",
                 "/* This too! */\n",
-            ).into()
+            ).into(),
         };
         let scanner = Scanner::new(&source);
         let tokens = super::scan(scanner);
@@ -310,7 +323,8 @@ mod tests {
                 "0", "1", "202", "-30", "+40",
                 "50.0", "6.1234", "7.e+20", "8e-10", "1e9",
                 "inf", "+inf", "-inf", "NaN",
-                "\"Hello, World!\"",
+                "\"Hello, World!\"", "\"\\uBad\"", "\"\\uFree\"",
+                "\"123\\uXYZ456\"",
                 "IdentifierName", "smallCaps", "_underscore",
                 "+", "-", "*", "#", "!", "^", "~", ".", ".",
                 "/// This is a doc comment.",
@@ -339,11 +353,12 @@ mod tests {
                 Class::Float, Class::Float, Class::Float,
                 Class::Float, Class::Float,
                 Class::Float, Class::Float, Class::Float, Class::Float,
-                Class::String,
+                Class::String, Class::InvalidStringEscape, Class::InvalidStringEscape,
+                Class::InvalidStringEscape,
                 Class::Identifier, Class::Identifier, Class::Identifier,
-                Class::Error, Class::Error, Class::Error, Class::Error,
-                Class::Error, Class::Error, Class::Error, Class::Error,
-                Class::Error,
+                Class::InvalidSymbolChar, Class::InvalidSymbolChar, Class::InvalidSymbolChar,
+                Class::InvalidSymbolChar, Class::InvalidSymbolChar, Class::InvalidSymbolChar,
+                Class::InvalidSymbolChar, Class::InvalidSymbolChar, Class::InvalidSymbolChar,
                 Class::Comment, Class::Comment,
             ],
             tokens.iter().map(|item| item.kind).collect::<Vec<_>>(),

@@ -42,7 +42,11 @@ pub enum Class {
     // Other.
     Identifier,
     Comment,
-    Error,
+
+    // Errors.
+    InvalidStringEscape,
+    InvalidStringChar,
+    InvalidSymbolChar,
 }
 
 impl fmt::Display for Class {
@@ -80,7 +84,10 @@ impl fmt::Display for Class {
 
             Class::Identifier => "Identifier",
             Class::Comment => "Comment",
-            Class::Error => "Error",
+
+            Class::InvalidStringEscape => "<InvalidStringEscape>",
+            Class::InvalidStringChar => "<InvalidStringChar>",
+            Class::InvalidSymbolChar => "<InvalidSymbolChar>",
         })
     }
 }
