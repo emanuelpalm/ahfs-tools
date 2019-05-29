@@ -1,3 +1,0 @@
-mod afm;
-
-fn main() {}

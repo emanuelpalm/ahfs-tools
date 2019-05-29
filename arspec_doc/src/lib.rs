@@ -1,3 +1,5 @@
+mod font;
+
 pub trait Document {
     fn size(&self) -> Vector;
     fn render(&self, target: &mut [u8]);
@@ -31,9 +33,8 @@ impl Element for Text {
 }
 
 pub enum TextFont {
-    SansSerif,
-    Serif,
-    Monospaced,
+    Sans,
+    Mono,
 }
 
 pub enum TextSize {
