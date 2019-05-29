@@ -14,9 +14,12 @@ pub use self::maxp::MaximumProfileTable;
 use self::region::Region;
 
 /// An OpenType font file.
+///
+/// Currently, this implementation is designed only to support metrics
+/// calculations for European fonts. In particular, it is only strictly
+/// required to be able to read the fonts that comes bundled with this
+/// application.
 pub struct FontFile<'a> {
-    file: Region<'a>,
-
     cmap: CharacterToGlyphIndexMappingTable<'a>,
     hhea: HorizontalHeaderTable<'a>,
     hmtx: HorizontalMetricsTable<'a>,
@@ -49,23 +52,22 @@ impl<'a> FontFile<'a> {
                 };
                 let from = file.read_u32_at(offset + 8)? as usize;
                 let to = from + file.read_u32_at(offset + 12)? as usize;
-                *target = file.subsection(from..to);
+                *target = file.subregion(from..to);
             }
         }
 
-        let cmap = CharacterToGlyphIndexMappingTable::try_from(&file, cmap?)?;
-        let hhea = HorizontalHeaderTable::try_from(hhea?)?;
-        let maxp = MaximumProfileTable::try_from(maxp?)?;
-        let kern = kern.and_then(|kern| KerningTable::try_from(kern));
+        let cmap = CharacterToGlyphIndexMappingTable::try_new(&file, cmap?)?;
+        let hhea = HorizontalHeaderTable::try_new(hhea?)?;
+        let maxp = MaximumProfileTable::try_new(maxp?)?;
+        let kern = kern.and_then(|kern| KerningTable::try_new(kern));
 
-        let hmtx = HorizontalMetricsTable::try_from(
+        let hmtx = HorizontalMetricsTable::try_new(
             maxp.num_glyphs(),
             hhea.number_of_h_metrics(),
             hmtx?,
         )?;
 
         Some(FontFile {
-            file,
             cmap,
             hhea,
             hmtx,

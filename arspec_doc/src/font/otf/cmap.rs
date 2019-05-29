@@ -22,21 +22,21 @@ pub struct CharacterToGlyphIndexMappingTable<'a> {
 
 impl<'a> CharacterToGlyphIndexMappingTable<'a> {
     #[inline]
-    pub fn try_from(file: &Region<'a>, region: Region<'a>) -> Option<Self> {
-        let version = region.read_u16_at(0)?;
+    pub fn try_new(file: &Region<'a>, cmap: Region<'a>) -> Option<Self> {
+        let version = cmap.read_u16_at(0)?;
         if version != 0 {
             return None;
         }
 
         let mut subtable = None;
 
-        let table_count = region.read_u16_at(2)? as usize;
+        let table_count = cmap.read_u16_at(2)? as usize;
         for i in 0..table_count {
             let offset = 4 + 8 * i;
-            match region.read_u16_at(offset)? {
+            match cmap.read_u16_at(offset)? {
                 PLATFORM_UNICODE => {}
                 PLATFORM_WINDOWS => {
-                    match region.read_u16_at(offset + 2)? {
+                    match cmap.read_u16_at(offset + 2)? {
                         PLATFORM_WINDOWS_UNICODE_BMP |
                         PLATFORM_WINDOWS_UNICODE_FULL => {}
                         _ => continue,
@@ -44,8 +44,8 @@ impl<'a> CharacterToGlyphIndexMappingTable<'a> {
                 }
                 _ => continue,
             }
-            let index = region.read_u32_at(offset + 4)? as usize;
-            subtable = file.subsection(region.range().start + index..file.range().end);
+            let index = cmap.read_u32_at(offset + 4)? as usize;
+            subtable = file.subregion(cmap.range().start + index..file.range().end);
             break;
         }
 

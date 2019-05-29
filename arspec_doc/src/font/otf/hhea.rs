@@ -7,15 +7,15 @@ pub struct HorizontalHeaderTable<'a> {
 
 impl<'a> HorizontalHeaderTable<'a> {
     #[inline]
-    pub fn try_from(region: Region<'a>) -> Option<Self> {
-        let major_version = region.read_u16_at(0)?;
+    pub fn try_new(hhea: Region<'a>) -> Option<Self> {
+        let major_version = hhea.read_u16_at(0)?;
         if major_version < 1 {
             return None;
         }
-        if region.len() < 36 {
+        if hhea.len() < 36 {
             return None;
         }
-        Some (HorizontalHeaderTable { region })
+        Some (HorizontalHeaderTable { region: hhea })
     }
 
     /// Typographic ascent (Distance from the baseline of highest ascender).

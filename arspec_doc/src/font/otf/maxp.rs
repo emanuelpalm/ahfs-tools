@@ -6,20 +6,20 @@ pub struct MaximumProfileTable<'a> {
 }
 
 impl<'a> MaximumProfileTable<'a> {
-    pub fn try_from(region: Region<'a>) -> Option<Self> {
-        let version = region.read_u32_at(0)?;
+    pub fn try_new(maxp: Region<'a>) -> Option<Self> {
+        let version = maxp.read_u32_at(0)?;
         match version {
-            0x00005000 => if region.len() < 6 {
+            0x00005000 => if maxp.len() < 6 {
                 return None;
             },
-            0x00010000 => if region.len() < 32 {
+            0x00010000 => if maxp.len() < 32 {
                 return None;
             },
             _ => {
                 return None;
             }
         }
-        Some(MaximumProfileTable { region })
+        Some(MaximumProfileTable { region: maxp })
     }
 
     /// Profile table version, which must be either `0x00005000` or

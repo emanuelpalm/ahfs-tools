@@ -1,3 +1,5 @@
+use std::convert::TryFrom;
+use std::u16;
 use super::Region;
 
 /// Table containing metrics for horizontal text layout for individual glyphs.
@@ -9,20 +11,28 @@ pub struct HorizontalMetricsTable<'a> {
 
 impl<'a> HorizontalMetricsTable<'a> {
     #[inline]
-    pub fn try_from(
+    pub fn try_new(
         num_glyphs: u16,
         number_of_h_metrics: u16,
-        region: Region<'a>,
+        hmtx: Region<'a>,
     ) -> Option<Self>
     {
         if number_of_h_metrics > num_glyphs {
             return None;
         }
-        Some(HorizontalMetricsTable { num_glyphs, number_of_h_metrics, region })
+        Some(HorizontalMetricsTable {
+            num_glyphs,
+            number_of_h_metrics,
+            region: hmtx
+        })
     }
 
     /// Get horizontal metrics for glyph at given `index`.
-    pub fn get(&self, index: u16) -> Option<HorizontalMetrics> {
+    pub fn lookup(&self, index: u32) -> Option<HorizontalMetrics> {
+        let index = match u16::try_from(index).ok() {
+            Some(index) => index,
+            None => { return None; },
+        };
         let (aw_index, lsb_index) = if index < self.number_of_h_metrics {
             let offset = 4 * index;
             (index, index + 2)

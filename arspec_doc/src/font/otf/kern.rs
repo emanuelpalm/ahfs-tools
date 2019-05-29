@@ -40,20 +40,20 @@ pub struct KerningTable<'a> {
 }
 
 impl<'a> KerningTable<'a> {
-    pub fn try_from(region: Region<'a>) -> Option<Self> {
-        let version = region.read_u16_at(0)?;
+    pub fn try_new(kern: Region<'a>) -> Option<Self> {
+        let version = kern.read_u16_at(0)?;
         if version != 0 {
             return None;
         }
-        let n_tables = region.read_u16_at(2)? as usize;
+        let n_tables = kern.read_u16_at(2)? as usize;
 
         let mut subtable = None;
         let mut offset = 4;
         for i in 0..n_tables {
-            let length = region.read_u16_at(offset + 2)?;
-            let coverage = region.read_u16_at(offset + 4)?;
+            let length = kern.read_u16_at(offset + 2)?;
+            let coverage = kern.read_u16_at(offset + 4)?;
             if coverage == COVERAGE_MASK_HORIZONTAL {
-                subtable = region.subsection(offset..offset + length as usize);
+                subtable = kern.subregion(offset..offset + length as usize);
                 break;
             }
             offset += length as usize;
