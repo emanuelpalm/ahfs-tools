@@ -1,3 +1,5 @@
+#![allow(dead_code)]
+
 use std::convert::TryFrom;
 use std::u16;
 use super::Region;
@@ -35,7 +37,7 @@ impl<'a> HorizontalMetricsTable<'a> {
         };
         let (aw_index, lsb_index) = if index < self.number_of_h_metrics {
             let offset = 4 * index;
-            (index, index + 2)
+            (offset, offset + 2)
         } else if index < self.num_glyphs {
             let offset = 4 * self.number_of_h_metrics;
             (offset - 4, offset + 2 * index)

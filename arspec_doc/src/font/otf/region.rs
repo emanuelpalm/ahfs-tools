@@ -41,6 +41,7 @@ impl<'a> Region<'a> {
     be_read_at!(fn read_i8_at(&self, ...) -> i8);
     be_read_at!(fn read_i16_at(&self, ...) -> i16);
     be_read_at!(fn read_i32_at(&self, ...) -> i32);
+    be_read_at!(fn read_i64_at(&self, ...) -> i64);
     be_read_at!(fn read_u8_at(&self, ...) -> u8);
     be_read_at!(fn read_u16_at(&self, ...) -> u16);
     be_read_at!(fn read_u32_at(&self, ...) -> u32);

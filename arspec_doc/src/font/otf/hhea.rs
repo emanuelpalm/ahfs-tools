@@ -1,3 +1,5 @@
+#![allow(dead_code)]
+
 use super::Region;
 
 /// Table containing metrics for horizontal text layout shared by all glyphs.

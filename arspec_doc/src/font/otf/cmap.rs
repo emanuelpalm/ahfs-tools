@@ -1,3 +1,5 @@
+#![allow(dead_code)]
+
 use super::Region;
 
 const PLATFORM_UNICODE: u16 = 0;
@@ -50,7 +52,7 @@ impl<'a> CharacterToGlyphIndexMappingTable<'a> {
         }
 
         let subtable = subtable?;
-        let format = Format::try_from(subtable.read_u16_at(0)?)?;
+        let format = Format::try_new(subtable.read_u16_at(0)?)?;
 
         Some(CharacterToGlyphIndexMappingTable {
             subtable,
@@ -148,7 +150,7 @@ impl<'a> CharacterToGlyphIndexMappingTable<'a> {
                     } else {
                         let mut start_glyph = read_at(group + 8);
                         if format == Format::Type12 {
-                            start_glyph += (ch - start_c);
+                            start_glyph += ch - start_c;
                         }
                         return start_glyph;
                     }
@@ -169,7 +171,7 @@ enum Format {
 }
 
 impl Format {
-    pub fn try_from(format: u16) -> Option<Self> {
+    pub fn try_new(format: u16) -> Option<Self> {
         Some(match format {
             0 => Format::Type0,
             4 => Format::Type4,

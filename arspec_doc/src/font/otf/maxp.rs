@@ -1,3 +1,5 @@
+#![allow(dead_code)]
+
 use super::Region;
 
 /// This table establishes the memory requirements for this font.

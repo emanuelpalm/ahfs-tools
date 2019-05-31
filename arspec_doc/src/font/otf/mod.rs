@@ -1,4 +1,7 @@
+#![allow(dead_code)]
+
 mod cmap;
+mod head;
 mod hhea;
 mod hmtx;
 mod kern;
@@ -6,6 +9,7 @@ mod maxp;
 mod region;
 
 pub use self::cmap::CharacterToGlyphIndexMappingTable;
+pub use self::head::FontHeaderTable;
 pub use self::hhea::HorizontalHeaderTable;
 pub use self::hmtx::{HorizontalMetrics, HorizontalMetricsTable};
 pub use self::kern::KerningTable;
@@ -21,6 +25,7 @@ use self::region::Region;
 /// application.
 pub struct FontFile<'a> {
     cmap: CharacterToGlyphIndexMappingTable<'a>,
+    head: FontHeaderTable<'a>,
     hhea: HorizontalHeaderTable<'a>,
     hmtx: HorizontalMetricsTable<'a>,
     kern: Option<KerningTable<'a>>,
@@ -34,6 +39,7 @@ impl<'a> FontFile<'a> {
         let file = Region::new(file);
 
         let mut cmap = None;
+        let mut head = None;
         let mut hhea = None;
         let mut hmtx = None;
         let mut kern = None;
@@ -44,6 +50,7 @@ impl<'a> FontFile<'a> {
                 let offset = 12 + 16 * i;
                 let target = match file.get(offset..offset + 4)? {
                     b"cmap" => &mut cmap,
+                    b"head" => &mut head,
                     b"hhea" => &mut hhea,
                     b"hmtx" => &mut hmtx,
                     b"kern" => &mut kern,
@@ -57,6 +64,7 @@ impl<'a> FontFile<'a> {
         }
 
         let cmap = CharacterToGlyphIndexMappingTable::try_new(&file, cmap?)?;
+        let head = FontHeaderTable::try_new(head?)?;
         let hhea = HorizontalHeaderTable::try_new(hhea?)?;
         let maxp = MaximumProfileTable::try_new(maxp?)?;
         let kern = kern.and_then(|kern| KerningTable::try_new(kern));
@@ -69,6 +77,7 @@ impl<'a> FontFile<'a> {
 
         Some(FontFile {
             cmap,
+            head,
             hhea,
             hmtx,
             kern,
@@ -80,6 +89,12 @@ impl<'a> FontFile<'a> {
     #[inline]
     pub fn cmap(&self) -> &CharacterToGlyphIndexMappingTable<'a> {
         &self.cmap
+    }
+
+    /// Font header.
+    #[inline]
+    pub fn head(&self) -> &FontHeaderTable<'a> {
+        &self.head
     }
 
     /// Horizontal header.
@@ -96,8 +111,8 @@ impl<'a> FontFile<'a> {
 
     /// Kerning.
     #[inline]
-    pub fn kern(&self) -> &Option<KerningTable<'a>> {
-        &self.kern
+    pub fn kern(&self) -> Option<&KerningTable<'a>> {
+        self.kern.as_ref()
     }
 
     /// Maximum profile.

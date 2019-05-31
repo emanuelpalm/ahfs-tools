@@ -1,3 +1,5 @@
+#![allow(dead_code)]
+
 use super::Region;
 
 /// If set to 1, the table has horizontal data, 0 if vertical.
@@ -49,7 +51,7 @@ impl<'a> KerningTable<'a> {
 
         let mut subtable = None;
         let mut offset = 4;
-        for i in 0..n_tables {
+        for _ in 0..n_tables {
             let length = kern.read_u16_at(offset + 2)?;
             let coverage = kern.read_u16_at(offset + 4)?;
             if coverage == COVERAGE_MASK_HORIZONTAL {
