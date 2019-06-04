@@ -8,9 +8,28 @@ pub struct Region<'a> {
 
 macro_rules! be_read_at {
     (fn $name:ident(&self, ...) -> $typ:ident) => {
+        #[inline]
         pub fn $name(&self, offset: usize) -> Option<$typ> {
             self.get(offset..offset + std::mem::size_of::<$typ>())
                 .map(|r| $typ::from_be(unsafe { (r.as_ptr() as *const $typ).read() }))
+        }
+    };
+}
+
+macro_rules! be_read_2x_at {
+    (fn $name:ident(&self, ...) -> $typ:ident) => {
+        #[inline]
+        pub fn $name(&self, offset: usize) -> Option<($typ, $typ)> {
+            let size = std::mem::size_of::<$typ>();
+            self.get(offset..offset + size * 2).map(|r| {
+                let ptr = r.as_ptr() as *const $typ;
+                unsafe {
+                    (
+                        $typ::from_be(ptr.read()),
+                        $typ::from_be(ptr.offset(size as isize).read()),
+                    )
+                }
+            })
         }
     };
 }
@@ -38,13 +57,14 @@ impl<'a> Region<'a> {
         self.bytes.len()
     }
 
-    be_read_at!(fn read_i8_at(&self, ...) -> i8);
     be_read_at!(fn read_i16_at(&self, ...) -> i16);
-    be_read_at!(fn read_i32_at(&self, ...) -> i32);
     be_read_at!(fn read_i64_at(&self, ...) -> i64);
     be_read_at!(fn read_u8_at(&self, ...) -> u8);
     be_read_at!(fn read_u16_at(&self, ...) -> u16);
     be_read_at!(fn read_u32_at(&self, ...) -> u32);
+
+    be_read_2x_at!(fn read_2x_u16_at(&self, ...) -> u16);
+    be_read_2x_at!(fn read_2x_u32_at(&self, ...) -> u32);
 
     pub fn subregion(&self, range: ops::Range<usize>) -> Option<Region<'a>> {
         if range.start > (isize::max_value() as usize)

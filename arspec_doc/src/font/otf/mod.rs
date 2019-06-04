@@ -5,6 +5,7 @@ mod head;
 mod hhea;
 mod hmtx;
 mod kern;
+mod loca;
 mod maxp;
 mod region;
 
@@ -13,6 +14,7 @@ pub use self::head::FontHeaderTable;
 pub use self::hhea::HorizontalHeaderTable;
 pub use self::hmtx::{HorizontalMetrics, HorizontalMetricsTable};
 pub use self::kern::KerningTable;
+pub use self::loca::IndexToLocation;
 pub use self::maxp::MaximumProfileTable;
 
 use self::region::Region;
@@ -29,6 +31,7 @@ pub struct FontFile<'a> {
     hhea: HorizontalHeaderTable<'a>,
     hmtx: HorizontalMetricsTable<'a>,
     kern: Option<KerningTable<'a>>,
+    loca: IndexToLocation<'a>,
     maxp: MaximumProfileTable<'a>,
 }
 
@@ -43,6 +46,7 @@ impl<'a> FontFile<'a> {
         let mut hhea = None;
         let mut hmtx = None;
         let mut kern = None;
+        let mut loca = None;
         let mut maxp = None;
         {
             let table_count = file.read_u16_at(4)? as usize;
@@ -54,6 +58,7 @@ impl<'a> FontFile<'a> {
                     b"hhea" => &mut hhea,
                     b"hmtx" => &mut hmtx,
                     b"kern" => &mut kern,
+                    b"loca" => &mut loca,
                     b"maxp" => &mut maxp,
                     _ => continue,
                 };
@@ -66,9 +71,9 @@ impl<'a> FontFile<'a> {
         let cmap = CharacterToGlyphIndexMappingTable::try_new(&file, cmap?)?;
         let head = FontHeaderTable::try_new(head?)?;
         let hhea = HorizontalHeaderTable::try_new(hhea?)?;
-        let maxp = MaximumProfileTable::try_new(maxp?)?;
         let kern = kern.and_then(|kern| KerningTable::try_new(kern));
-
+        let loca = IndexToLocation::try_new(loca?, head.index_to_loc_format())?;
+        let maxp = MaximumProfileTable::try_new(maxp?)?;
         let hmtx = HorizontalMetricsTable::try_new(
             maxp.num_glyphs(),
             hhea.number_of_h_metrics(),
@@ -81,6 +86,7 @@ impl<'a> FontFile<'a> {
             hhea,
             hmtx,
             kern,
+            loca,
             maxp,
         })
     }
@@ -113,6 +119,12 @@ impl<'a> FontFile<'a> {
     #[inline]
     pub fn kern(&self) -> Option<&KerningTable<'a>> {
         self.kern.as_ref()
+    }
+
+    /// Index to location.
+    #[inline]
+    pub fn loca(&self) -> &IndexToLocation<'a> {
+        &self.loca
     }
 
     /// Maximum profile.

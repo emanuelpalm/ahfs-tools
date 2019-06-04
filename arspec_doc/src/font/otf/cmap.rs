@@ -61,17 +61,17 @@ impl<'a> CharacterToGlyphIndexMappingTable<'a> {
     }
 
     /// Acquires glyph index for given char `ch`.
-    pub fn lookup(&self, ch: char) -> u32 {
-        let ch = ch as u32;
+    pub fn lookup(&self, ch: char) -> usize {
+        let ch = ch as usize;
         match self.format {
             Format::Type0 => {
                 let len = self.subtable.read_u16_at(2)
-                    .map(|len| (len - 6) as u32)
+                    .map(|len| (len - 6) as usize)
                     .unwrap_or(0);
 
                 if ch < len {
                     self.subtable.read_u8_at(6 + ch as usize)
-                        .unwrap_or(0) as u32
+                        .unwrap_or(0) as usize
                 } else {
                     0
                 }
@@ -91,14 +91,14 @@ impl<'a> CharacterToGlyphIndexMappingTable<'a> {
                 let end_count = 14;
                 let mut search = end_count;
 
-                if ch >= read_at(search + range_shift * 2) as u32 {
+                if ch >= read_at(search + range_shift * 2) as usize {
                     search += range_shift * 2;
                 }
 
                 search -= 2;
                 while entry_selector != 0 {
                     search_range >>= 1;
-                    let end = read_at(search + search_range * 2) as u32;
+                    let end = read_at(search + search_range * 2) as usize;
                     if ch > end {
                         search += search_range * 2;
                     }
@@ -107,37 +107,38 @@ impl<'a> CharacterToGlyphIndexMappingTable<'a> {
                 search += 2;
 
                 let item = (search - end_count) / 2;
-                if ch > read_at(end_count + 2 * item) as u32 {
+                if ch > read_at(end_count + 2 * item) as usize {
                     return 0;
                 }
-                let start = read_at(14 + seg_count * 2 + 2 + 2 * item) as u32;
+                let start = read_at(14 + seg_count * 2 + 2 + 2 * item) as usize;
                 if ch < start {
                     return 0;
                 }
                 let offset = read_at(14 + seg_count * 6 + 2 + 2 * item) as usize;
                 if offset == 0 {
                     (ch as i32 + read_at(14 + seg_count * 4 + 2 + 2 * item) as i32)
-                        as u16 as u32
+                        as u16 as usize
                 } else {
                     read_at(offset + (ch - start) as usize * 2
-                        + 14 + seg_count * 6 + 2 + 2 * item) as u32
+                        + 14 + seg_count * 6 + 2 + 2 * item) as usize
                 }
             }
             Format::Type6 => {
-                let first = self.subtable.read_u16_at(6).unwrap_or(0) as u32;
-                let count = self.subtable.read_u16_at(8).unwrap_or(0) as u32;
+                let first = self.subtable.read_u16_at(6).unwrap_or(0) as usize;
+                let count = self.subtable.read_u16_at(8).unwrap_or(0) as usize;
                 if ch >= first && ch < first + count {
                     return self.subtable.read_u16_at(10 + (ch - first) as usize * 2)
-                        .unwrap_or(0) as u32;
+                        .unwrap_or(0) as usize;
                 }
                 0
             }
             format @ Format::Type12 | format @ Format::Type13 => {
-                let mut low = 0 as u32;
+                let mut low = 0 as usize;
                 let mut high = self.subtable.read_u16_at(12)
-                    .unwrap_or(0) as u32;
+                    .unwrap_or(0) as usize;
 
-                let read_at = |i| self.subtable.read_u32_at(i).unwrap_or(0);
+                let read_at = |i| self.subtable.read_u32_at(i)
+                    .unwrap_or(0) as usize;
 
                 while low < high {
                     let mid = (low + high) / 2;

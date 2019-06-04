@@ -52,8 +52,7 @@ impl<'a> KerningTable<'a> {
         let mut subtable = None;
         let mut offset = 4;
         for _ in 0..n_tables {
-            let length = kern.read_u16_at(offset + 2)?;
-            let coverage = kern.read_u16_at(offset + 4)?;
+            let (length, coverage) = kern.read_2x_u16_at(offset + 2)?;
             if coverage == COVERAGE_MASK_HORIZONTAL {
                 subtable = kern.subregion(offset..offset + length as usize);
                 break;
