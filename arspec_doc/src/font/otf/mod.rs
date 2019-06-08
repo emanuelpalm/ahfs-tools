@@ -1,6 +1,7 @@
 #![allow(dead_code)]
 
 mod cmap;
+mod glyf;
 mod head;
 mod hhea;
 mod hmtx;
@@ -10,28 +11,28 @@ mod maxp;
 mod region;
 
 pub use self::cmap::CharacterToGlyphIndexMappingTable;
+pub use self::glyf::GlyphDataTable;
 pub use self::head::FontHeaderTable;
 pub use self::hhea::HorizontalHeaderTable;
 pub use self::hmtx::{HorizontalMetrics, HorizontalMetricsTable};
 pub use self::kern::KerningTable;
-pub use self::loca::IndexToLocation;
 pub use self::maxp::MaximumProfileTable;
 
+use self::loca::IndexToLocationTable;
 use self::region::Region;
 
-/// An OpenType font file.
+/// An OpenType Font (OTF) file.
 ///
-/// Currently, this implementation is designed only to support metrics
-/// calculations for European fonts. In particular, it is only strictly
-/// required to be able to read the fonts that comes bundled with this
+/// Provides access to some of the tables in an OTF file. The implementation is
+/// designed only to support reading the fonts that come bundled with the
 /// application.
 pub struct FontFile<'a> {
     cmap: CharacterToGlyphIndexMappingTable<'a>,
+    glyf: GlyphDataTable<'a>,
     head: FontHeaderTable<'a>,
     hhea: HorizontalHeaderTable<'a>,
     hmtx: HorizontalMetricsTable<'a>,
     kern: Option<KerningTable<'a>>,
-    loca: IndexToLocation<'a>,
     maxp: MaximumProfileTable<'a>,
 }
 
@@ -42,6 +43,7 @@ impl<'a> FontFile<'a> {
         let file = Region::new(file);
 
         let mut cmap = None;
+        let mut glyf = None;
         let mut head = None;
         let mut hhea = None;
         let mut hmtx = None;
@@ -54,6 +56,7 @@ impl<'a> FontFile<'a> {
                 let offset = 12 + 16 * i;
                 let target = match file.get(offset..offset + 4)? {
                     b"cmap" => &mut cmap,
+                    b"glyf" => &mut glyf,
                     b"head" => &mut head,
                     b"hhea" => &mut hhea,
                     b"hmtx" => &mut hmtx,
@@ -72,8 +75,12 @@ impl<'a> FontFile<'a> {
         let head = FontHeaderTable::try_new(head?)?;
         let hhea = HorizontalHeaderTable::try_new(hhea?)?;
         let kern = kern.and_then(|kern| KerningTable::try_new(kern));
-        let loca = IndexToLocation::try_new(loca?, head.index_to_loc_format())?;
+        let loca = IndexToLocationTable::try_new(
+            loca?,
+            head.index_to_loc_format()
+        )?;
         let maxp = MaximumProfileTable::try_new(maxp?)?;
+        let glyf = GlyphDataTable::new(glyf?, loca);
         let hmtx = HorizontalMetricsTable::try_new(
             maxp.num_glyphs(),
             hhea.number_of_h_metrics(),
@@ -82,11 +89,11 @@ impl<'a> FontFile<'a> {
 
         Some(FontFile {
             cmap,
+            glyf,
             head,
             hhea,
             hmtx,
             kern,
-            loca,
             maxp,
         })
     }
@@ -95,6 +102,12 @@ impl<'a> FontFile<'a> {
     #[inline]
     pub fn cmap(&self) -> &CharacterToGlyphIndexMappingTable<'a> {
         &self.cmap
+    }
+
+    /// Glyph table.
+    #[inline]
+    pub fn glyf(&self) -> &GlyphDataTable<'a> {
+        &self.glyf
     }
 
     /// Font header.
@@ -119,12 +132,6 @@ impl<'a> FontFile<'a> {
     #[inline]
     pub fn kern(&self) -> Option<&KerningTable<'a>> {
         self.kern.as_ref()
-    }
-
-    /// Index to location.
-    #[inline]
-    pub fn loca(&self) -> &IndexToLocation<'a> {
-        &self.loca
     }
 
     /// Maximum profile.

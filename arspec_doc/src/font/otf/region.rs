@@ -34,6 +34,24 @@ macro_rules! be_read_2x_at {
     };
 }
 
+macro_rules! be_read_n_at {
+    (fn $name:ident(&self, [$typ:ident]) -> bool) => {
+        #[inline]
+        pub fn $name(&self, offset: usize, target: &mut [$typ]) -> bool {
+            let size = std::mem::size_of::<$typ>() * target.len();
+            return self.get(offset..offset + size)
+                .map(|r| {
+                    let ptr = r.as_ptr() as *const $typ;
+                    unsafe {
+                        ptr.copy_to_nonoverlapping(target.as_mut_ptr(), target.len());
+                    }
+                    true
+                })
+                .unwrap_or(false)
+        }
+    };
+}
+
 impl<'a> Region<'a> {
     #[inline]
     pub fn new(bytes: &'a [u8]) -> Self {
@@ -63,8 +81,12 @@ impl<'a> Region<'a> {
     be_read_at!(fn read_u16_at(&self, ...) -> u16);
     be_read_at!(fn read_u32_at(&self, ...) -> u32);
 
+    be_read_2x_at!(fn read_2x_i16_at(&self, ...) -> i16);
+    be_read_2x_at!(fn read_2x_u8_at(&self, ...) -> u8);
     be_read_2x_at!(fn read_2x_u16_at(&self, ...) -> u16);
     be_read_2x_at!(fn read_2x_u32_at(&self, ...) -> u32);
+
+    be_read_n_at!(fn read_u16s_at(&self, [u16]) -> bool);
 
     pub fn subregion(&self, range: ops::Range<usize>) -> Option<Region<'a>> {
         if range.start > (isize::max_value() as usize)
