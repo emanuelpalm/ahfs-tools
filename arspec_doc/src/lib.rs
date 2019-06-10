@@ -32,16 +32,6 @@ impl Element for Text {
     }
 }
 
-pub enum TextFont {
-    Sans,
-    Mono,
-}
-
-pub enum TextSize {
-    Em(f64),
-    Pixels(f64),
-}
-
 #[derive(Debug)]
 pub struct TextSpan {
     pub style: TextStyle,
@@ -50,10 +40,10 @@ pub struct TextSpan {
 
 #[derive(Debug)]
 pub enum TextStyle {
-    Bold,
-    BoldItalic,
-    Italic,
-    Regular,
+    Mono,
+    Sans,
+    SansBold,
+    SansItalic,
 }
 
 #[derive(Copy, Clone, Debug)]

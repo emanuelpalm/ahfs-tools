@@ -7,6 +7,8 @@ pub struct FontHeaderTable<'a> {
 }
 
 impl<'a> FontHeaderTable<'a> {
+    #[doc(hidden)]
+    #[inline]
     pub fn try_new(head: Region<'a>) -> Option<Self> {
         let major_version = head.read_u16_at(0)?;
         if major_version != 1 {

@@ -8,6 +8,8 @@ pub struct MaximumProfileTable<'a> {
 }
 
 impl<'a> MaximumProfileTable<'a> {
+    #[doc(hidden)]
+    #[inline]
     pub fn try_new(maxp: Region<'a>) -> Option<Self> {
         let version = maxp.read_u32_at(0)?;
         match version {

@@ -32,7 +32,7 @@ pub struct GlyphDataTable<'a> {
 }
 
 impl<'a> GlyphDataTable<'a> {
-    /// Create new glyph data table from `glyf` and `loca`.
+    #[doc(hidden)]
     #[inline]
     pub fn new(glyf: Region<'a>, loca: IndexToLocationTable<'a>) -> Self {
         GlyphDataTable { region: glyf, loca }

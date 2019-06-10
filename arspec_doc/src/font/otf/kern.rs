@@ -2,38 +2,12 @@
 
 use super::Region;
 
-/// If set to 1, the table has horizontal data, 0 if vertical.
-const COVERAGE_MASK_HORIZONTAL: u16 = 0b0000_0000_0000_0001;
-
-/// If this bit is set to 1, the table has minimum values. If set to 0, the
-/// table has kerning values.
-const COVERAGE_MASK_MINIMUM: u16 = 0b0000_0000_0000_0010;
-
-/// If set to 1, kerning is perpendicular to the flow of the text.
-///
-/// If the text is normally written horizontally, kerning will be done in the
-/// up and down directions. If kerning values are positive, the text will be
-/// kerned upwards; if they are negative, the text will be kerned downwards.
-///
-/// If the text is normally written vertically, kerning will be done in the
-/// left and right directions. If kerning values are positive, the text will be
-/// kerned to the right; if they are negative, the text will be kerned to the
-/// left.
-///
-/// The value 0x8000 in the kerning data resets the cross-stream kerning back
-/// to 0.
-const COVERAGE_MASK_CROSS_STREAM: u16 = 0b0000_0000_0000_0100;
-
-/// If this bit is set to 1 the value in this table should replace the value
-/// currently being accumulated.
-const COVERAGE_MASK_OVERRIDE: u16 = 0b0000_0000_0000_1000;
-
-/// Reserved. This should be set to zero.
-const COVERAGE_MASK_RESERVED: u16 = 0b0000_0000_1111_0000;
-
-/// Format of the subtable. Only formats 0 and 2 have been defined. Formats 1
-/// and 3 through 255 are reserved for future use.
-const COVERAGE_MASK_FORMAT: u16 = 0b1111_1111_0000_0000;
+const COVERAGE_MASK_HORIZONTAL: u16 = 0x0001;
+const COVERAGE_MASK_MINIMUM: u16 = 0x0002;
+const COVERAGE_MASK_CROSS_STREAM: u16 = 0x0004;
+const COVERAGE_MASK_OVERRIDE: u16 = 0x0008;
+const COVERAGE_MASK_RESERVED: u16 = 0x00F0;
+const COVERAGE_MASK_FORMAT: u16 = 0xFF00;
 
 /// The kerning table contains the values that control the inter-character
 /// spacing for the glyphs in a font.
@@ -42,6 +16,8 @@ pub struct KerningTable<'a> {
 }
 
 impl<'a> KerningTable<'a> {
+    #[doc(hidden)]
+    #[inline]
     pub fn try_new(kern: Region<'a>) -> Option<Self> {
         let version = kern.read_u16_at(0)?;
         if version != 0 {

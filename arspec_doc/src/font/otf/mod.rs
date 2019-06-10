@@ -1,6 +1,7 @@
 #![allow(dead_code)]
 
 mod cmap;
+mod error;
 mod glyf;
 mod head;
 mod hhea;
@@ -11,6 +12,7 @@ mod maxp;
 mod region;
 
 pub use self::cmap::CharacterToGlyphIndexMappingTable;
+pub use self::error::Error;
 pub use self::glyf::GlyphDataTable;
 pub use self::head::FontHeaderTable;
 pub use self::hhea::HorizontalHeaderTable;
@@ -20,12 +22,20 @@ pub use self::maxp::MaximumProfileTable;
 
 use self::loca::IndexToLocationTable;
 use self::region::Region;
+use std::result;
+
+pub type Result<T> = result::Result<T, Error>;
+
+const FONT_MONO: &'static [u8] = include_bytes!(concat!(env!("CARGO_MANIFEST_DIR"), "/assets/fonts/noto/NotoMono-Regular-pruned.ttf"));
+const FONT_SANS: &'static [u8] = include_bytes!(concat!(env!("CARGO_MANIFEST_DIR"), "/assets/fonts/noto/NotoSans-Regular-pruned.ttf"));
+const FONT_SANS_BOLD: &'static [u8] = include_bytes!(concat!(env!("CARGO_MANIFEST_DIR"), "/assets/fonts/noto/NotoSans-Bold-pruned.ttf"));
+const FONT_SANS_ITALIC: &'static [u8] = include_bytes!(concat!(env!("CARGO_MANIFEST_DIR"), "/assets/fonts/noto/NotoSans-Italic-pruned.ttf"));
 
 /// An OpenType Font (OTF) file.
 ///
 /// Provides access to some of the tables in an OTF file. The implementation is
-/// designed only to support reading the fonts that come bundled with the
-/// application.
+/// only guaranteed to support reading the fonts that come bundled with this
+/// package.
 pub struct FontFile<'a> {
     cmap: CharacterToGlyphIndexMappingTable<'a>,
     glyf: GlyphDataTable<'a>,
@@ -36,12 +46,44 @@ pub struct FontFile<'a> {
     maxp: MaximumProfileTable<'a>,
 }
 
-impl<'a> FontFile<'a> {
-    pub fn try_from(file: &'a [u8]) -> Option<Self> {
-        // TODO: Fine-grained error detection.
+macro_rules! load_font {
+    (pub fn $name:ident (); $font:expr; $doc:expr) => {
+        #[doc = $doc]
+        #[inline]
+        pub fn $name() -> Result<Self> {
+            FontFile::try_from($font)
+        }
+    };
+}
 
+impl<'a> FontFile<'a> {
+    load_font!(
+        pub fn load_mono(); FONT_MONO;
+        "Default monospaced font."
+    );
+    load_font!(
+        pub fn load_sans(); FONT_SANS;
+        "Default sans-serif font."
+    );
+    load_font!(
+        pub fn load_sans_bold(); FONT_SANS_BOLD;
+        "Default sans-serif font, bold variant."
+    );
+    load_font!(
+        pub fn load_sans_italic(); FONT_SANS_ITALIC;
+        "Default sans-serif font, italicized variant."
+    );
+
+    #[doc(hidden)]
+    pub fn try_from(file: &'a [u8]) -> Result<Self> {
         let file = Region::new(file);
 
+        // Check file version.
+        if file.read_u32_at(0).ok_or(Error::SFNT)? != 0x00010000 {
+            return Err(Error::SFNT);
+        }
+
+        // Load table regions.
         let mut cmap = None;
         let mut glyf = None;
         let mut head = None;
@@ -51,10 +93,10 @@ impl<'a> FontFile<'a> {
         let mut loca = None;
         let mut maxp = None;
         {
-            let table_count = file.read_u16_at(4)? as usize;
+            let table_count = file.read_u16_at(4).ok_or(Error::SFNT)? as usize;
             for i in 0..table_count {
                 let offset = 12 + 16 * i;
-                let target = match file.get(offset..offset + 4)? {
+                let target = match file.get(offset..offset + 4).ok_or(Error::SFNT)? {
                     b"cmap" => &mut cmap,
                     b"glyf" => &mut glyf,
                     b"head" => &mut head,
@@ -65,29 +107,35 @@ impl<'a> FontFile<'a> {
                     b"maxp" => &mut maxp,
                     _ => continue,
                 };
-                let from = file.read_u32_at(offset + 8)? as usize;
-                let to = from + file.read_u32_at(offset + 12)? as usize;
+                let from = file.read_u32_at(offset + 8).ok_or(Error::SFNT)? as usize;
+                let to = from + file.read_u32_at(offset + 12).ok_or(Error::SFNT)? as usize;
                 *target = file.subregion(from..to);
             }
         }
+        let cmap = cmap.ok_or(Error::SFNT)?;
+        let glyf = glyf.ok_or(Error::SFNT)?;
+        let head = head.ok_or(Error::SFNT)?;
+        let hhea = hhea.ok_or(Error::SFNT)?;
+        let hmtx = hmtx.ok_or(Error::SFNT)?;
+        let loca = loca.ok_or(Error::SFNT)?;
+        let maxp = maxp.ok_or(Error::SFNT)?;
 
-        let cmap = CharacterToGlyphIndexMappingTable::try_new(&file, cmap?)?;
-        let head = FontHeaderTable::try_new(head?)?;
-        let hhea = HorizontalHeaderTable::try_new(hhea?)?;
+        // Initialize tables.
+        let cmap = CharacterToGlyphIndexMappingTable::try_new(&file, cmap).ok_or(Error::CMAP)?;
+        let head = FontHeaderTable::try_new(head).ok_or(Error::HEAD)?;
+        let hhea = HorizontalHeaderTable::try_new(hhea).ok_or(Error::HHEA)?;
         let kern = kern.and_then(|kern| KerningTable::try_new(kern));
-        let loca = IndexToLocationTable::try_new(
-            loca?,
-            head.index_to_loc_format()
-        )?;
-        let maxp = MaximumProfileTable::try_new(maxp?)?;
-        let glyf = GlyphDataTable::new(glyf?, loca);
+        let loca = IndexToLocationTable::try_new(loca, head.index_to_loc_format())
+            .ok_or(Error::LOCA)?;
+        let maxp = MaximumProfileTable::try_new(maxp).ok_or(Error::MAXP)?;
+        let glyf = GlyphDataTable::new(glyf, loca);
         let hmtx = HorizontalMetricsTable::try_new(
             maxp.num_glyphs(),
             hhea.number_of_h_metrics(),
-            hmtx?,
-        )?;
+            hmtx,
+        ).ok_or(Error::HMTX)?;
 
-        Some(FontFile {
+        Ok(FontFile {
             cmap,
             glyf,
             head,

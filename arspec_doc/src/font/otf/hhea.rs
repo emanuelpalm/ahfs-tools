@@ -8,6 +8,7 @@ pub struct HorizontalHeaderTable<'a> {
 }
 
 impl<'a> HorizontalHeaderTable<'a> {
+    #[doc(hidden)]
     #[inline]
     pub fn try_new(hhea: Region<'a>) -> Option<Self> {
         let major_version = hhea.read_u16_at(0)?;

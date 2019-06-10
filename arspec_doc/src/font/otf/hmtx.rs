@@ -12,6 +12,7 @@ pub struct HorizontalMetricsTable<'a> {
 }
 
 impl<'a> HorizontalMetricsTable<'a> {
+    #[doc(hidden)]
     #[inline]
     pub fn try_new(
         num_glyphs: u16,

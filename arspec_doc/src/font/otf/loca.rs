@@ -11,6 +11,8 @@ pub struct IndexToLocationTable<'a> {
 }
 
 impl<'a> IndexToLocationTable<'a> {
+    #[doc(hidden)]
+    #[inline]
     pub fn try_new(loca: Region<'a>, format: i16) -> Option<Self> {
         Some(IndexToLocationTable {
             region: loca,

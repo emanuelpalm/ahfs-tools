@@ -23,6 +23,7 @@ pub struct CharacterToGlyphIndexMappingTable<'a> {
 }
 
 impl<'a> CharacterToGlyphIndexMappingTable<'a> {
+    #[doc(hidden)]
     #[inline]
     pub fn try_new(file: &Region<'a>, cmap: Region<'a>) -> Option<Self> {
         let version = cmap.read_u16_at(0)?;
