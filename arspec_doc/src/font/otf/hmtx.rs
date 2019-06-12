@@ -31,17 +31,17 @@ impl<'a> HorizontalMetricsTable<'a> {
     }
 
     /// Get horizontal metrics for glyph at given `index`.
-    pub fn lookup(&self, index: u32) -> Option<HorizontalMetrics> {
-        let index = match u16::try_from(index).ok() {
-            Some(index) => index,
+    pub fn lookup(&self, glyph_index: usize) -> Option<HorizontalMetrics> {
+        let glyph_index = match u16::try_from(glyph_index).ok() {
+            Some(glyph_index) => glyph_index,
             None => { return None; },
         };
-        let (aw_index, lsb_index) = if index < self.number_of_h_metrics {
-            let offset = 4 * index;
+        let (aw_index, lsb_index) = if glyph_index < self.number_of_h_metrics {
+            let offset = 4 * glyph_index;
             (offset, offset + 2)
-        } else if index < self.num_glyphs {
+        } else if glyph_index < self.num_glyphs {
             let offset = 4 * self.number_of_h_metrics;
-            (offset - 4, offset + 2 * index)
+            (offset - 4, offset + 2 * glyph_index)
         } else {
             return None;
         };

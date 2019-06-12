@@ -41,8 +41,8 @@ impl<'a> KerningTable<'a> {
     /// Looks up the space, in font design units, between glyphs `a` and `b`.
     ///
     /// The order of `a` and `b` is significant.
-    pub fn lookup(&self, a: u32, b: u32) -> i16 {
-        if a > u16::max_value() as u32 || b > u16::max_value() as u32 {
+    pub fn lookup(&self, a: usize, b: usize) -> i16 {
+        if a > u16::max_value() as usize || b > u16::max_value() as usize {
             return 0;
         }
         let mut left: i32 = 0;
@@ -55,7 +55,7 @@ impl<'a> KerningTable<'a> {
             let middle = (left + right) / 2;
             let offset = 14 + (middle as usize) * 6;
             let ab0 = match self.subtable.read_u32_at(offset) {
-                Some(x) => x,
+                Some(x) => x as usize,
                 None => { break; }
             };
             if ab < ab0 {

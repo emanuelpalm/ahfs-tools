@@ -53,7 +53,27 @@ impl<'a> CharacterToGlyphIndexMappingTable<'a> {
         }
 
         let subtable = subtable?;
-        let format = Format::try_new(subtable.read_u16_at(0)?)?;
+        let format = match subtable.read_u16_at(0)? {
+            0 => Format::Type0 {
+                length: subtable.read_u16_at(2)
+                    .map(|len| (len - 6) as usize)
+                    .unwrap_or(0),
+            },
+            4 => Format::Type4 {
+                seg_count: subtable.read_u16_at(6).unwrap_or(0) as usize / 2,
+                range_shift: subtable.read_u16_at(12).unwrap_or(0) as usize / 2,
+            },
+            6 => {
+                let first = subtable.read_u16_at(6).unwrap_or(0) as usize;
+                Format::Type6 {
+                    first,
+                    end: first + subtable.read_u16_at(8).unwrap_or(0) as usize,
+                }
+            }
+            12 => Format::Type12,
+            13 => Format::Type13,
+            _ => { return None; }
+        };
 
         Some(CharacterToGlyphIndexMappingTable {
             subtable,
@@ -65,29 +85,23 @@ impl<'a> CharacterToGlyphIndexMappingTable<'a> {
     pub fn lookup(&self, ch: char) -> usize {
         let ch = ch as usize;
         match self.format {
-            Format::Type0 => {
-                let len = self.subtable.read_u16_at(2)
-                    .map(|len| (len - 6) as usize)
-                    .unwrap_or(0);
-
-                if ch < len {
+            Format::Type0 { length } => {
+                if ch < length {
                     self.subtable.read_u8_at(6 + ch as usize)
                         .unwrap_or(0) as usize
                 } else {
                     0
                 }
             }
-            Format::Type4 => {
+            Format::Type4 { seg_count, range_shift } => {
                 if ch > 0xffff {
                     return 0;
                 }
 
                 let read_at = |i| self.subtable.read_u16_at(i).unwrap_or(0);
 
-                let seg_count = (read_at(6) / 2) as usize;
                 let mut search_range = (read_at(8) / 2) as usize;
                 let mut entry_selector = read_at(10);
-                let range_shift = (read_at(12) / 2) as usize;
 
                 let end_count = 14;
                 let mut search = end_count;
@@ -124,10 +138,8 @@ impl<'a> CharacterToGlyphIndexMappingTable<'a> {
                         + 14 + seg_count * 6 + 2 + 2 * item) as usize
                 }
             }
-            Format::Type6 => {
-                let first = self.subtable.read_u16_at(6).unwrap_or(0) as usize;
-                let count = self.subtable.read_u16_at(8).unwrap_or(0) as usize;
-                if ch >= first && ch < first + count {
+            Format::Type6 { first, end } => {
+                if ch >= first && ch < end {
                     return self.subtable.read_u16_at(10 + (ch - first) as usize * 2)
                         .unwrap_or(0) as usize;
                 }
@@ -135,8 +147,7 @@ impl<'a> CharacterToGlyphIndexMappingTable<'a> {
             }
             format @ Format::Type12 | format @ Format::Type13 => {
                 let mut low = 0 as usize;
-                let mut high = self.subtable.read_u16_at(12)
-                    .unwrap_or(0) as usize;
+                let mut high = self.subtable.read_u16_at(12).unwrap_or(0) as usize;
 
                 let read_at = |i| self.subtable.read_u32_at(i)
                     .unwrap_or(0) as usize;
@@ -165,24 +176,17 @@ impl<'a> CharacterToGlyphIndexMappingTable<'a> {
 
 #[derive(Copy, Clone, Eq, PartialEq)]
 enum Format {
-    Type0,
-    Type4,
-    Type6,
+    Type0 {
+        length: usize,
+    },
+    Type4 {
+        seg_count: usize,
+        range_shift: usize,
+    },
+    Type6 {
+        first: usize,
+        end: usize,
+    },
     Type12,
     Type13,
-}
-
-impl Format {
-    pub fn try_new(format: u16) -> Option<Self> {
-        Some(match format {
-            0 => Format::Type0,
-            4 => Format::Type4,
-            6 => Format::Type6,
-            12 => Format::Type12,
-            13 => Format::Type13,
-            _ => {
-                return None;
-            }
-        })
-    }
 }
