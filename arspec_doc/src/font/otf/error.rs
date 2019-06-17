@@ -1,4 +1,5 @@
 /// OTF error type.
+#[derive(Debug)]
 pub enum Error {
     SFNT = 0x00,
     CMAP = 0x01,

@@ -26,11 +26,6 @@ use std::result;
 
 pub type Result<T> = result::Result<T, Error>;
 
-const FONT_MONO: &'static [u8] = include_bytes!(concat!(env!("CARGO_MANIFEST_DIR"), "/assets/fonts/noto/NotoMono-Regular-pruned.ttf"));
-const FONT_SANS: &'static [u8] = include_bytes!(concat!(env!("CARGO_MANIFEST_DIR"), "/assets/fonts/noto/NotoSans-Regular-pruned.ttf"));
-const FONT_SANS_BOLD: &'static [u8] = include_bytes!(concat!(env!("CARGO_MANIFEST_DIR"), "/assets/fonts/noto/NotoSans-Bold-pruned.ttf"));
-const FONT_SANS_ITALIC: &'static [u8] = include_bytes!(concat!(env!("CARGO_MANIFEST_DIR"), "/assets/fonts/noto/NotoSans-Italic-pruned.ttf"));
-
 /// An OpenType Font (OTF) file.
 ///
 /// Provides access to some of the tables in an OTF file. The implementation is
@@ -46,34 +41,7 @@ pub struct FontFile<'a> {
     maxp: MaximumProfileTable<'a>,
 }
 
-macro_rules! load_font {
-    (pub fn $name:ident (); $font:expr; $doc:expr) => {
-        #[doc = $doc]
-        #[inline]
-        pub fn $name() -> Result<Self> {
-            FontFile::try_from($font)
-        }
-    };
-}
-
 impl<'a> FontFile<'a> {
-    load_font!(
-        pub fn load_mono(); FONT_MONO;
-        "Default monospaced font."
-    );
-    load_font!(
-        pub fn load_sans(); FONT_SANS;
-        "Default sans-serif font."
-    );
-    load_font!(
-        pub fn load_sans_bold(); FONT_SANS_BOLD;
-        "Default sans-serif font, bold variant."
-    );
-    load_font!(
-        pub fn load_sans_italic(); FONT_SANS_ITALIC;
-        "Default sans-serif font, italicized variant."
-    );
-
     #[doc(hidden)]
     pub fn try_from(file: &'a [u8]) -> Result<Self> {
         let file = Region::new(file);
