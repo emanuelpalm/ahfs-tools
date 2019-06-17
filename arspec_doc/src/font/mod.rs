@@ -3,9 +3,7 @@ mod otf;
 
 use self::error::Error;
 use std::cell::RefCell;
-use std::collections::HashMap;
 use std::result;
-use core::borrow::BorrowMut;
 
 const FONT_MONO: &'static [u8] = include_bytes!(concat!(env!("CARGO_MANIFEST_DIR"), "/assets/fonts/noto/NotoMono-Regular-pruned.ttf"));
 const FONT_SANS: &'static [u8] = include_bytes!(concat!(env!("CARGO_MANIFEST_DIR"), "/assets/fonts/noto/NotoSans-Regular-pruned.ttf"));
@@ -19,8 +17,8 @@ pub struct Font<'a> {
     advance_width_max: f32,
     line_height: f32,
     units_per_em: f32,
-    advance_width_cache: RefCell<HashMap<char, f32>>,
-    glyph_index_cache: RefCell<HashMap<char, usize>>,
+    advance_width_cache: RefCell<[u16; 127]>, // TODO: Load on init rather than lazily. Shrink.
+    glyph_index_cache: RefCell<[usize; 127]>, // TODO: Load on init rather than lazily. Shrink.
 }
 
 macro_rules! load_font {
@@ -64,39 +62,49 @@ impl<'a> Font<'a> {
             advance_width_max,
             line_height,
             units_per_em,
-            advance_width_cache: RefCell::new(HashMap::new()),
-            glyph_index_cache: RefCell::new(HashMap::new()),
+            advance_width_cache: RefCell::new([u16::min_value(); 127]),
+            glyph_index_cache: RefCell::new([usize::min_value(); 127]),
         })
     }
 
+    // TODO: Take glyph index as argument instead of char.
     pub fn advance_width_of(&self, ch: char) -> f32 {
-        {
+        let is_ascii = (ch as u32) <= 127;
+        if is_ascii {
             let cache = self.advance_width_cache.borrow();
-            if let Some(advance_width) = cache.get(&ch) {
-                return *advance_width;
+            let value = cache[ch as u8 as usize];
+            if value != u16::min_value() {
+                return value as f32 / self.units_per_em;
             }
         }
         let glyph_index = self.glyph_index_of(ch);
-        let advance_width = (match self.file.hmtx().lookup(glyph_index) {
-            Some(metrics) => metrics.advance_width as f32,
-            None => self.advance_width_max,
-        }) / self.units_per_em;
-        self.advance_width_cache.borrow_mut().insert(ch, advance_width);
-        advance_width
+        let advance_width = match self.file.hmtx().lookup(glyph_index) {
+            Some(metrics) => metrics.advance_width,
+            None => { return self.advance_width_max; },
+        };
+        if is_ascii {
+            self.advance_width_cache.borrow_mut()[ch as u32 as usize] = advance_width;
+        }
+        advance_width as f32 / self.units_per_em
     }
 
     fn glyph_index_of(&self, ch: char) -> usize {
-        {
+        let is_ascii = (ch as u32) <= 127;
+        if is_ascii {
             let cache = self.glyph_index_cache.borrow();
-            if let Some(glyph_index) = cache.get(&ch) {
-                return *glyph_index;
+            let value = cache[ch as u8 as usize];
+            if value != usize::min_value() {
+                return value;
             }
         }
         let glyph_index = self.file.cmap().lookup(ch);
-        self.glyph_index_cache.borrow_mut().insert(ch, glyph_index);
+        if is_ascii {
+            self.glyph_index_cache.borrow_mut()[ch as u32 as usize] = glyph_index;
+        }
         glyph_index
     }
 
+    // TODO: Take glyph indexes as argument instead of chars.
     pub fn kerning_between(&self, a: char, b: char) -> f32 {
         let kern = match self.file.kern() {
             Some(kern) => kern,
@@ -113,6 +121,7 @@ impl<'a> Font<'a> {
     }
 
     pub fn line_width_of(&self, line: &str) -> f32 {
+        // TODO: Seems to yield slightly incorrect result. Rounding issue?
         line.chars().fold((0.0, '\0'), |(mut width, last), ch| {
             width += self.advance_width_of(ch) + self.kerning_between(last, ch);
             (width, ch)
@@ -127,22 +136,22 @@ mod tests {
     #[test]
     fn line_width_benchmark() {
         let line = concat!(
-            "Napriek všeobecnému presvedčeniu nie je Lorem Ipsum len náhodný",
-            "text. Jeho korene sú v časti klasickej latinskej literatúry z",
-            "roku 45 pred n.l., takže má viac ako 2000 rokov. Richard",
-            "McClintock, profesor latinčiny na Hampden-Sydney College vo",
-            " Virgínii, hľadal jedno z menej určitých latinských slov,",
-            "consectetur, z pasáže Lorem Ipsum, a ako vyhľadával výskyt tohto",
-            "slova v klasickej literatúre, objavil jeho nepochybný zdroj.",
-            "Lorem Ipsum pochádza z odsekov 1.10.32 a 1.10.33 Cicerovho diela",
-            "'De finibus bonorum et malorum' (O najvyššom dobre a zle),",
-            "napísaného v roku 45 pred n.l. Táto kniha je pojednaním o teórii",
-            "etiky, a bola veľmi populárna v renesancii. Prvý riadok Lorem",
-            "Ipsum, 'Lorem ipsum dolor sit amet..', je z riadku v odseku",
-            "1.10.32. Štandardný úsek Lorem Ipsum, používaný od 16. storočia,",
-            "je pre zaujímavosť uvedený nižšie. Odseky 1.10.32 a 1.10.33 z",
-            "'De finibus bonorum et malorum' od Cicera tu sú tiež uvedené v",
-            "ich presnom pôvodnom tvare, doplnené anglickými verziami z roku",
+            "Napriek všeobecnému presvedčeniu nie je Lorem Ipsum len náhodný ",
+            "text. Jeho korene sú v časti klasickej latinskej literatúry z ",
+            "roku 45 pred n.l., takže má viac ako 2000 rokov. Richard ",
+            "McClintock, profesor latinčiny na Hampden-Sydney College vo ",
+            "Virgínii, hľadal jedno z menej určitých latinských slov, ",
+            "consectetur, z pasáže Lorem Ipsum, a ako vyhľadával výskyt tohto ",
+            "slova v klasickej literatúre, objavil jeho nepochybný zdroj. ",
+            "Lorem Ipsum pochádza z odsekov 1.10.32 a 1.10.33 Cicerovho diela ",
+            "'De finibus bonorum et malorum' (O najvyššom dobre a zle), ",
+            "napísaného v roku 45 pred n.l. Táto kniha je pojednaním o teórii ",
+            "etiky, a bola veľmi populárna v renesancii. Prvý riadok Lorem ",
+            "Ipsum, 'Lorem ipsum dolor sit amet..', je z riadku v odseku ",
+            "1.10.32. Štandardný úsek Lorem Ipsum, používaný od 16. storočia, ",
+            "je pre zaujímavosť uvedený nižšie. Odseky 1.10.32 a 1.10.33 z ",
+            "'De finibus bonorum et malorum' od Cicera tu sú tiež uvedené v ",
+            "ich presnom pôvodnom tvare, doplnené anglickými verziami z roku ",
             "1914, v preklade H. Rackhama.",
         );
 
