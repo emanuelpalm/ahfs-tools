@@ -1,5 +1,6 @@
 #![allow(dead_code)]
 
+use std::char;
 use super::Region;
 
 const PLATFORM_UNICODE: u16 = 0;
@@ -70,8 +71,6 @@ impl<'a> CharacterToGlyphIndexMappingTable<'a> {
                     end: first + subtable.read_u16_at(8).unwrap_or(0) as usize,
                 }
             }
-            12 => Format::Type12,
-            13 => Format::Type13,
             _ => { return None; }
         };
 
@@ -79,6 +78,115 @@ impl<'a> CharacterToGlyphIndexMappingTable<'a> {
             subtable,
             format,
         })
+    }
+
+    /// Creates new iterator for iterating through all table glyph indexes.
+    pub fn iter(&'a self) -> CharacterToGlyphIndexIter<'a> {
+        let mut state = CharacterToGlyphIndexIterState::default();
+        CharacterToGlyphIndexIter {
+            table: self,
+            lambda: match self.format {
+                Format::Type0 { length } => {
+                    state.f0_length = length;
+                    |table, state| {
+                        if state.offset < state.f0_length {
+                            let next = Some((
+                                char::from(state.offset as u8),
+                                table.subtable.read_u8_at(6 + state.offset).unwrap_or(0) as u32,
+                            ));
+                            state.offset += 1;
+                            next
+                        }
+                        else {
+                            None
+                        }
+                    }
+                },
+                Format::Type4 { seg_count, range_shift } => {
+                    state.f4_seg_count = seg_count;
+                    state.f4_range_shift = range_shift;
+                    state.f4_end_codes = 14;
+                    state.f4_start_codes = 16 + seg_count * 2;
+                    state.f4_id_deltas = 16 + seg_count * 4;
+                    state.f4_id_range_offsets = 16 + seg_count * 6;
+                    state.f4_end_code = self.subtable.read_u16_at(state.f4_end_codes)
+                        .unwrap_or(0xFFFF);
+                    state.f4_start_code = self.subtable.read_u16_at(state.f4_start_codes)
+                        .unwrap_or(0xFFFF);
+                    state.f4_id_delta = self.subtable.read_i16_at(state.f4_id_deltas)
+                        .unwrap_or(0);
+                    state.f4_id_range_offset = self.subtable.read_u16_at(state.f4_id_range_offsets)
+                        .unwrap_or(0);
+
+                    |table, state| {
+                        if state.f4_end_code == 0xFFFF {
+                            return None;
+                        }
+
+                        let next = Some((
+                            char::from_u32(state.offset as u32).unwrap_or('�'),
+                            match state.f4_id_range_offset {
+                                0 => ((state.offset as i32) + (state.f4_id_delta as i32)) as u16,
+                                _ => {
+                                    let index = state.f4_id_range_offsets
+                                        + state.f4_id_range_offset as usize
+                                        + ((state.offset - state.f4_start_code as usize) * 2);
+
+                                    let glyph_id = table.subtable.read_u16_at(index)?;
+                                    if glyph_id != 0 {
+                                        ((glyph_id as i32) + (state.f4_id_delta as i32)) as u16
+                                    } else {
+                                        0
+                                    }
+                                }
+                            } as u32
+                        ));
+
+                        if state.offset == state.f4_end_code as usize {
+                            state.f4_end_codes += 2;
+                            state.f4_end_code = table.subtable
+                                .read_u16_at(state.f4_end_codes)?;
+
+                            state.f4_start_codes += 2;
+                            state.f4_start_code = table.subtable
+                                .read_u16_at(state.f4_start_codes)?;
+
+                            state.f4_id_deltas += 2;
+                            state.f4_id_delta = table.subtable
+                                .read_i16_at(state.f4_id_deltas)?;
+
+                            state.f4_id_range_offsets += 2;
+                            state.f4_id_range_offset = table.subtable
+                                .read_u16_at(state.f4_id_range_offsets)?;
+
+                            state.offset = state.f4_start_code as usize;
+                        } else {
+                            state.offset += 1;
+                        }
+
+                        next
+                    }
+                },
+                Format::Type6 { first, end } => {
+                    state.f6_first = first;
+                    state.f6_end = end;
+                    |table, state| {
+                        if state.offset >= state.f6_first && state.offset < state.f6_end {
+                            let next = Some((
+                                char::from_u32(state.offset as u32).unwrap_or('�'),
+                                table.subtable.read_u16_at(10 + (state.offset - state.f6_first) * 2)
+                                    .unwrap_or(0) as u32,
+                            ));
+                            state.offset += 1;
+                            next
+                        } else {
+                            None
+                        }
+                    }
+                },
+            },
+            state,
+        }
     }
 
     /// Acquires glyph index for given char `ch`.
@@ -145,33 +253,44 @@ impl<'a> CharacterToGlyphIndexMappingTable<'a> {
                 }
                 0
             }
-            format @ Format::Type12 | format @ Format::Type13 => {
-                let mut low = 0 as usize;
-                let mut high = self.subtable.read_u16_at(12).unwrap_or(0) as usize;
-
-                let read_at = |i| self.subtable.read_u32_at(i)
-                    .unwrap_or(0) as usize;
-
-                while low < high {
-                    let mid = (low + high) / 2;
-                    let group = 16 + (mid * 12) as usize;
-                    let start_c = read_at(group);
-                    if ch < start_c {
-                        high = mid;
-                    } else if ch > read_at(group + 4) {
-                        low = mid + 1;
-                    } else {
-                        let mut start_glyph = read_at(group + 8);
-                        if format == Format::Type12 {
-                            start_glyph += ch - start_c;
-                        }
-                        return start_glyph;
-                    }
-                }
-                0
-            }
         }
     }
+}
+
+pub struct CharacterToGlyphIndexIter<'a> {
+    table: &'a CharacterToGlyphIndexMappingTable<'a>,
+    lambda: fn(&CharacterToGlyphIndexMappingTable<'a>, &mut CharacterToGlyphIndexIterState) -> Option<(char, u32)>,
+    state: CharacterToGlyphIndexIterState,
+}
+
+impl<'a, 'b: 'a> Iterator for CharacterToGlyphIndexIter<'a> {
+    type Item = (char, u32);
+
+    #[inline]
+    fn next(&mut self) -> Option<(char, u32)> {
+        (self.lambda)(self.table, &mut self.state)
+    }
+}
+
+#[derive(Default)]
+struct CharacterToGlyphIndexIterState {
+    offset: usize,
+
+    f0_length: usize,
+
+    f4_seg_count: usize,
+    f4_range_shift: usize,
+    f4_end_codes: usize,
+    f4_start_codes: usize,
+    f4_id_deltas: usize,
+    f4_id_range_offsets: usize,
+    f4_end_code: u16,
+    f4_start_code: u16,
+    f4_id_delta: i16,
+    f4_id_range_offset: u16,
+
+    f6_first: usize,
+    f6_end: usize,
 }
 
 #[derive(Copy, Clone, Eq, PartialEq)]
@@ -187,6 +306,4 @@ enum Format {
         first: usize,
         end: usize,
     },
-    Type12,
-    Type13,
 }

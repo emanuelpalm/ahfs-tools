@@ -43,7 +43,7 @@ pub struct FontFile<'a> {
 
 impl<'a> FontFile<'a> {
     #[doc(hidden)]
-    pub fn try_from(file: &'a [u8]) -> Result<Self> {
+    pub fn try_new(file: &'a [u8]) -> Result<Self> {
         let file = Region::new(file);
 
         // Check file version.
