@@ -1,14 +1,23 @@
 mod otf;
 
-use std::env;
+use std::collections::HashMap;
+use std::{env, fmt};
 use std::fs::File;
 use std::path::Path;
 use std::io::Write;
 
-const FONT_MONO: &'static [u8] = include_bytes!(concat!(env!("CARGO_MANIFEST_DIR"), "/assets/fonts/noto/NotoMono-Regular-pruned.ttf"));
-const FONT_SANS: &'static [u8] = include_bytes!(concat!(env!("CARGO_MANIFEST_DIR"), "/assets/fonts/noto/NotoSans-Regular-pruned.ttf"));
-const FONT_SANS_BOLD: &'static [u8] = include_bytes!(concat!(env!("CARGO_MANIFEST_DIR"), "/assets/fonts/noto/NotoSans-Bold-pruned.ttf"));
-const FONT_SANS_ITALIC: &'static [u8] = include_bytes!(concat!(env!("CARGO_MANIFEST_DIR"), "/assets/fonts/noto/NotoSans-Italic-pruned.ttf"));
+const FONT_MONO: &'static [u8] = include_bytes!(concat!(
+    env!("CARGO_MANIFEST_DIR"), "/assets/fonts/noto/NotoSansMono-Regular-European.ttf"
+));
+const FONT_SANS: &'static [u8] = include_bytes!(concat!(
+    env!("CARGO_MANIFEST_DIR"), "/assets/fonts/noto/NotoSans-Regular-European.ttf"
+));
+const FONT_SANS_BOLD: &'static [u8] = include_bytes!(concat!(
+    env!("CARGO_MANIFEST_DIR"), "/assets/fonts/noto/NotoSans-Bold-European.ttf"
+));
+const FONT_SANS_ITALIC: &'static [u8] = include_bytes!(concat!(
+    env!("CARGO_MANIFEST_DIR"), "/assets/fonts/noto/NotoSans-Italic-European.ttf"
+));
 
 fn main() {
     let out_dir = env::var("OUT_DIR").unwrap();
@@ -25,125 +34,129 @@ fn package_font(font_file: &[u8], dest_path: &Path) {
 
     let font = otf::FontFile::try_new(font_file).unwrap();
 
-    // Package simpler values.
-    {
-        let units_per_em = font.head().units_per_em() as f32;
-        out.push_str(&format!(
-            concat!(
-                "Font {{\n",
-                "    line_height: {},\n",
-                "    units_per_em: {},\n",
-            ),
-            {
-                let hhea = font.hhea();
-                (hhea.ascender() - hhea.descender() + hhea.line_gap()) as f32 / units_per_em
-            },
-            units_per_em,
-        ));
-    }
-
-    let glyph_indexes: Vec<(u16, u16)> = font.cmap().iter()
-        .filter_map(|(ch, glyph_index)| {
-            if (ch as u32) < (u16::max_value() as u32) {
-                Some((ch as u32 as u16, glyph_index as u16))
-            } else {
-                None
+    let mut glyphs: Vec<Glyph> = font.cmap()
+        .iter()
+        .map(|(token, index)| {
+            Glyph {
+                token,
+                index,
+                advance_width: 0,
+                kerning: Vec::new(),
             }
         })
         .collect();
-    let glyph_indexes_len = glyph_indexes.len();
 
-    // Package advance widths.
     {
-        let mut advance_widths = Vec::with_capacity(glyph_indexes_len);
-        let mut advance_width_index = Vec::with_capacity(glyph_indexes_len);
-        {
-            let hmtx = font.hmtx();
-            for (cp, glyph_index) in &glyph_indexes {
-                if let Some(metrics) = hmtx.lookup(*glyph_index as usize) {
-                    advance_widths.push(metrics.advance_width);
-                    advance_width_index.push(*cp);
-                }
+        let hmtx = font.hmtx();
+        for glyph in &mut glyphs {
+            if let Some(metrics) = hmtx.lookup(glyph.index) {
+                glyph.advance_width = metrics.advance_width;
             }
         }
-
-        out.push_str("    advance_widths: [");
-        let mut offset = 0usize;
-        if let Some((last, rest)) = advance_widths.split_last() {
-            for advance_width in rest {
-                if offset & 0x0f == 0 {
-                    out.push_str("\n        ");
-                    offset = 0;
-                }
-                offset += 1;
-                out.push_str(&format!("{}, ", advance_width));
-            }
-            out.push_str(&format!("{}", last));
-        }
-        out.push_str("],\n    advance_width_index: [");
-        offset = 0;
-        if let Some((last, rest)) = advance_width_index.split_last() {
-            for index in rest {
-                if offset & 0x0f == 0 {
-                    out.push_str("\n        ");
-                    offset = 0;
-                }
-                offset += 1;
-                out.push_str(&format!("{}, ", index));
-            }
-            out.push_str(&format!("{}", last));
-        }
-        out.push_str("],\n");
     }
 
-    // Package horizontal kerning values.
-    {
-        let mut kernings = Vec::new();
-        let mut kerning_index = Vec::new();
-        if let Some(kern) = font.kern() {
-            kernings.reserve(glyph_indexes_len * 4);
-            kerning_index.reserve(glyph_indexes_len * 4);
-            for (cp_a, glyph_index_a) in &glyph_indexes {
-                for (cp_b, glyph_index_b) in &glyph_indexes {
-                    let kerning = kern.lookup(*glyph_index_a as usize, *glyph_index_b as usize);
-                    if kerning != 0 {
-                        kerning_index.push((*cp_a as u32) | ((*cp_b as u32) << 16));
-                        kernings.push(kerning);
-                    }
-                }
+    let mut glyphs = glyphs.drain(..).fold(vec![Glyph::default(); 127], |mut glyphs, glyph| {
+        let token = glyph.token as u32;
+        if token < (u16::max_value() as u32) {
+            if token < 127 {
+                glyphs[token as usize] = glyph;
+            } else {
+                glyphs.push(glyph);
             }
         }
+        glyphs
+    });
 
-        out.push_str("    kernings: [");
-        let mut offset = 0usize;
-        if let Some((last, rest)) = kernings.split_last() {
-            for kerning in rest {
-                if offset & 0x0f == 0 {
-                    out.push_str("\n        ");
-                    offset = 0;
-                }
-                offset += 1;
-                out.push_str(&format!("{}, ", kerning));
-            }
-            out.push_str(&format!("{}", last));
+    let mut indexes = HashMap::new();
+
+    for (index, glyph) in glyphs.iter().enumerate() {
+        indexes.insert(glyph.index, index);
+    }
+
+    if let Some(kern) = font.kern() {
+        for (left, right, kerning) in kern.iter() {
+            let left = indexes.get(&(left as u32)).unwrap();
+            let right = indexes.get(&(right as u32)).unwrap();
+            let glyph = glyphs.get_mut(*left as usize).unwrap();
+            glyph.kerning.push((*right as u16, kerning));
         }
-        out.push_str("],\n    kerning_index: [");
-        offset = 0;
-        if let Some((last, rest)) = kerning_index.split_last() {
-            for index in rest {
-                if offset & 0x0f == 0 {
-                    out.push_str("\n        ");
-                    offset = 0;
+    }
+
+    // Package simpler values.
+    out.push_str(&format!(
+        concat!(
+            "Font {{\n",
+            "    line_height: {},\n",
+            "    units_per_em: {},\n",
+        ),
+        {
+            let hhea = font.hhea();
+            hhea.ascender() - hhea.descender() + hhea.line_gap()
+        },
+        font.head().units_per_em(),
+    ));
+
+    // Package non-ASCII glyph indexes.
+    out.push_str("    glyph_indexes_nonascii: &");
+    package_array(&mut out, &glyphs[127..].iter()
+        .map(|g| g.token as u32 as u16)
+        .collect::<Vec<u16>>());
+    out.push_str(",\n");
+
+    // Package advance widths.
+    out.push_str("    advance_widths: &");
+    package_array(&mut out, &glyphs.iter()
+        .map(|g| g.advance_width)
+        .collect::<Vec<u16>>());
+    out.push_str(",\n");
+
+
+    // Package horizontal kerning values.
+    if font.kern().is_some() {
+        out.push_str("    kernings: Some(&[");
+        for glyph in &glyphs {
+            out.push_str("\n        &[");
+            if let Some(((right, kerning), rest)) = glyph.kerning.split_first() {
+                out.push_str(&format!("({}, {})", right, kerning));
+                for (right, kerning) in rest {
+                    out.push_str(&format!(", ({}, {})", right, kerning));
                 }
-                offset += 1;
-                out.push_str(&format!("{}, ", index));
             }
-            out.push_str(&format!("{}", last));
+            out.push_str("],");
         }
-        out.push_str("],\n");
+        out.push_str("\n    ]),\n");
+    } else {
+        out.push_str("    kernings: None,\n");
     }
 
     out.push('}');
 
     out_file.write_all(out.as_bytes()).unwrap();
+}
+
+fn package_array<T: fmt::Display>(out: &mut String, array: &[T]) {
+    let mut offset = 0usize;
+
+    out.push('[');
+    for item in array {
+        if offset & 0x07 == 0 {
+            out.push_str("\n       ");
+            offset = 0;
+        }
+        offset += 1;
+        out.push_str(&format!(" {},", item));
+    }
+    if array.len() > 0 {
+        out.push_str("\n    ]");
+    } else {
+        out.push(']');
+    }
+}
+
+#[derive(Clone, Default)]
+struct Glyph {
+    token: char,
+    index: u32,
+    advance_width: u16,
+    kerning: Vec<(u16, i16)>,
 }

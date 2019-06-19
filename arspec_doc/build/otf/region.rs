@@ -20,13 +20,13 @@ macro_rules! be_read_2x_at {
     (fn $name:ident(&self, ...) -> $typ:ident) => {
         #[inline]
         pub fn $name(&self, offset: usize) -> Option<($typ, $typ)> {
-            let size = std::mem::size_of::<$typ>();
-            self.get(offset..offset + size * 2).map(|r| {
+            let size = std::mem::size_of::<$typ>() * 2;
+            self.get(offset..offset + size).map(|r| {
                 let ptr = r.as_ptr() as *const $typ;
                 unsafe {
                     (
                         $typ::from_be(ptr.read()),
-                        $typ::from_be(ptr.offset(size as isize).read()),
+                        $typ::from_be(ptr.offset(1).read()),
                     )
                 }
             })

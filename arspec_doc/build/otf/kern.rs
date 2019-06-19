@@ -29,7 +29,7 @@ impl<'a> KerningTable<'a> {
         let mut offset = 4;
         for _ in 0..n_tables {
             let (length, coverage) = kern.read_2x_u16_at(offset + 2)?;
-            if coverage == COVERAGE_MASK_HORIZONTAL {
+            if coverage & COVERAGE_MASK_HORIZONTAL != 0 {
                 subtable = kern.subregion(offset..offset + length as usize);
                 break;
             }
@@ -38,11 +38,19 @@ impl<'a> KerningTable<'a> {
         Some(KerningTable { subtable: subtable? })
     }
 
+    pub fn iter(&'a self) -> KerningIter<'a> {
+        KerningIter {
+            subtable: &self.subtable,
+            offset: 0,
+            end: self.subtable.read_u16_at(6).unwrap_or(0) as usize,
+        }
+    }
+
     /// Looks up the space, in font design units, between glyphs `a` and `b`.
     ///
     /// The order of `a` and `b` is significant.
-    pub fn lookup(&self, a: usize, b: usize) -> i16 {
-        if a > u16::max_value() as usize || b > u16::max_value() as usize {
+    pub fn lookup(&self, a: u32, b: u32) -> i16 {
+        if a > u16::max_value() as u32 || b > u16::max_value() as u32 {
             return 0;
         }
         let mut left: i32 = 0;
@@ -55,7 +63,7 @@ impl<'a> KerningTable<'a> {
             let middle = (left + right) / 2;
             let offset = 14 + (middle as usize) * 6;
             let ab0 = match self.subtable.read_u32_at(offset) {
-                Some(x) => x as usize,
+                Some(x) => x as u32,
                 None => { break; }
             };
             if ab < ab0 {
@@ -67,5 +75,26 @@ impl<'a> KerningTable<'a> {
             }
         }
         0
+    }
+}
+
+pub struct KerningIter<'a> {
+    subtable: &'a Region<'a>,
+    offset: usize,
+    end: usize,
+}
+
+impl<'a> Iterator for KerningIter<'a> {
+    type Item = (u16, u16, i16);
+
+    fn next(&mut self) -> Option<(u16, u16, i16)> {
+        if self.offset >= self.end {
+            return None;
+        }
+        let offset = 14 + self.offset * 6;
+        let (left, right) = self.subtable.read_2x_u16_at(offset)?;
+        let kerning = self.subtable.read_i16_at(offset + 4)?;
+        self.offset += 1;
+        Some((left, right, kerning))
     }
 }
