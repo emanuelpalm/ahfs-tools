@@ -83,22 +83,3 @@ impl<'a> Font<'a> {
         }).0
     }
 }
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn line_width_benchmark() {
-        let line = concat!(
-            "Töja!",
-        );
-
-        let mut font = Font::sans();
-        let mut width = 0;
-        for _ in 0..1 {
-            width = font.line_width_of(line);
-        }
-        panic!("{}", width)
-    }
-}
