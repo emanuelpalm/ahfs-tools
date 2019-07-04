@@ -9,31 +9,27 @@ use std::io::Write;
 macro_rules! include_font {
     ($path:tt) => (include_bytes!(concat!(env!("CARGO_MANIFEST_DIR"), "/assets/fonts/", $path)));
 }
-const FONT_MONO: &'static [u8] = include_font!("noto/NotoSansMono-Regular-European.ttf");
-const FONT_SANS: &'static [u8] = include_font!("noto/NotoSans-Regular-European.ttf");
-const FONT_SANS_BOLD: &'static [u8] = include_font!("/noto/NotoSans-Bold-European.ttf");
-const FONT_SANS_ITALIC: &'static [u8] = include_font!("noto/NotoSans-Italic-European.ttf");
 
 fn main() {
     let out_dir = env::var("OUT_DIR").unwrap();
 
     build_font(
-        FONT_MONO,
+        include_font!("noto/NotoSansMono-Regular-European.ttf"),
         "NotoSansMono-Regular-European",
         &Path::new(&out_dir).join("font_mono.rs"),
     );
     build_font(
-        FONT_SANS,
+        include_font!("noto/NotoSans-Regular-European.ttf"),
         "NotoSans-Regular-European",
         &Path::new(&out_dir).join("font_sans.rs"),
     );
     build_font(
-        FONT_SANS_BOLD,
+        include_font!("noto/NotoSans-Bold-European.ttf"),
         "NotoSans-Bold-European",
         &Path::new(&out_dir).join("font_sans_bold.rs"),
     );
     build_font(
-        FONT_SANS_ITALIC,
+        include_font!("noto/NotoSans-Italic-European.ttf"),
         "NotoSans-Italic-European",
         &Path::new(&out_dir).join("font_sans_italic.rs"),
     );

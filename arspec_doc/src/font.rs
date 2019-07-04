@@ -33,19 +33,19 @@ impl<'a> Font<'a> {
         &FONT_MONO
     }
 
-    /// Default sans serif font.
+    /// Default sans-serif font.
     #[inline]
     pub fn sans() -> &'static Font<'static> {
         &FONT_SANS
     }
 
-    /// Default sans serif bold font.
+    /// Default sans-serif bold font.
     #[inline]
     pub fn sans_bold() -> &'static Font<'static> {
         &FONT_SANS_BOLD
     }
 
-    /// Default sans serif italic font.
+    /// Default sans-serif italic font.
     #[inline]
     pub fn sans_italic() -> &'static Font<'static> {
         &FONT_SANS_ITALIC
@@ -59,20 +59,20 @@ impl<'a> Font<'a> {
 
     /// Font ascender, in font units.
     #[inline]
-    pub fn ascender(&self) -> i16 {
-        self.ascender
+    pub fn ascender(&self) -> f32 {
+        self.ascender as f32 / self.units_per_em as f32
     }
 
     /// Font descender, in font units.
     #[inline]
-    pub fn descender(&self) -> i16 {
-        self.descender
+    pub fn descender(&self) -> f32 {
+        self.descender as f32 / self.units_per_em as f32
     }
 
     /// Font line gap, in font units.
     #[inline]
-    pub fn line_gap(&self) -> i16 {
-        self.line_gap
+    pub fn line_gap(&self) -> f32 {
+        self.line_gap as f32 / self.units_per_em as f32
     }
 
     /// Acquires glyph index of `ch`.
@@ -92,50 +92,42 @@ impl<'a> Font<'a> {
 
     /// Determines advance width, in font units, of glyph identified by `gi`.
     #[inline]
-    pub fn advance_width_of(&self, gi: GlyphIndex) -> u16 {
-        self.advance_widths[gi as usize]
+    pub fn advance_width_of(&self, gi: GlyphIndex) -> f32 {
+        self.advance_widths[gi as usize] as f32 / self.units_per_em as f32
     }
 
     /// Determines kerning width, in font units, between the glyphs identified
     /// by `a` and `b`. Note that the order of `a` and `b` is significant.
-    pub fn kerning_between(&self, a: GlyphIndex, b: GlyphIndex) -> i16 {
+    pub fn kerning_between(&self, a: GlyphIndex, b: GlyphIndex) -> f32 {
         if let Some(kernings) = self.kernings {
             if a as usize >= kernings.len() {
-                return 0;
+                return 0.0;
             }
             let sublist = kernings[a as usize];
             match sublist.binary_search_by(|item| item.0.cmp(&b)) {
-                Ok(index) => sublist[index].1,
-                Err(_) => 0,
+                Ok(index) => sublist[index].1 as f32 / self.units_per_em as f32,
+                Err(_) => 0.0,
             }
         } else {
-            0
+            0.0
         }
     }
 
     /// Determines line height in font units.
     #[inline]
-    pub fn line_height(&self) -> i16 {
-        self.ascender - self.descender + self.line_gap
+    pub fn line_height(&self) -> f32 {
+        (self.ascender - self.descender + self.line_gap) as f32 / self.units_per_em as f32
     }
 
     /// Determines width, in font units, of given line of characters.
-    #[inline]
-    pub fn line_width_of(&self, line: &str) -> i32 {
-        line.chars().fold((0, 0), |(mut width, last), ch| {
+    ///
+    /// Note that newlines in `line` are ignored.
+    pub fn line_width_of(&self, line: &str) -> f32 {
+        line.chars().fold((0.0, 0), |(mut width, last), ch| {
             let gi = self.glyph_index_of(ch);
-            width += self.advance_width_of(gi) as i32 + self.kerning_between(last, gi) as i32;
+            width += self.advance_width_of(gi) + self.kerning_between(last, gi);
             (width, gi)
         }).0
-    }
-
-    /// Creates scaled variant of font, with glyphs of given pixel size.
-    pub fn scale<'b: 'a>(&'b self, size_px: f32) -> FontScaled<'a, 'b> {
-        FontScaled {
-            font: self,
-            line_height: self.line_height() as f32,
-            scale: size_px / (self.units_per_em as f32),
-        }
     }
 
     /// Length, in font units, of both the width and height of the canonical
@@ -155,56 +147,5 @@ impl<'a> Font<'a> {
     #[inline]
     pub fn source_name(&self) -> &'a str {
         self.source_name
-    }
-}
-
-/// A scaled font.
-pub struct FontScaled<'a, 'b: 'a> {
-    font: &'b Font<'a>,
-    line_height: f32,
-    scale: f32,
-}
-
-impl<'a, 'b: 'a> FontScaled<'a, 'b> {
-    /// Font ascender, in pixels.
-    #[inline]
-    pub fn ascender(&self) -> f32 {
-        self.font.ascender() as f32 * self.scale
-    }
-
-    /// Font descender, in pixels.
-    #[inline]
-    pub fn descender(&self) -> f32 {
-        self.font.descender() as f32 * self.scale
-    }
-
-    /// Font line gap, in pixels.
-    #[inline]
-    pub fn line_gap(&self) -> f32 {
-        self.font.line_gap() as f32 * self.scale
-    }
-
-    /// Determines advance width, in pixels, of glyph identified by `gi`.
-    #[inline]
-    pub fn advance_width_of(&self, gi: GlyphIndex) -> f32 {
-        self.font.advance_width_of(gi) as f32 * self.scale
-    }
-
-    /// Determines kerning width, in pixels, between the glyphs identified
-    /// by `a` and `b`. Note that the order of `a` and `b` is significant.
-    pub fn kerning_between(&self, a: GlyphIndex, b: GlyphIndex) -> f32 {
-        self.font.kerning_between(a, b) as f32 * self.scale
-    }
-
-    /// Determines line height in pixels.
-    #[inline]
-    pub fn line_height(&self) -> f32 {
-        self.line_height
-    }
-
-    /// Determines width, in pixels, of given line of characters.
-    #[inline]
-    pub fn line_width_of(&self, line: &str) -> f32 {
-        self.font.line_width_of(line) as f32 * self.scale
     }
 }

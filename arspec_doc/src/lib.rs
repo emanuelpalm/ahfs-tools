@@ -1,53 +1,44 @@
 mod font;
+mod text;
 
-pub trait Document {
-    fn size(&self) -> Vector;
-    fn render(&self, target: &mut [u8]);
+pub use self::font::{Font, GlyphIndex};
+pub use self::text::{Text, TextLine, TextSize, TextSpan, TextStyle};
+
+#[derive(Debug)]
+pub struct Document {
+    pub name: String,
+    pub elements: Vec<Element>,
 }
 
-pub trait Element {
-    fn bounds(&self) -> Bounds;
-    fn render(&self, target: &mut [u8]);
+impl Document {
+    pub fn render_svg(&self) {
+    }
+}
+
+#[derive(Debug)]
+pub enum Element {
+    Rect(Rect),
+    Text(Text),
+}
+
+#[derive(Debug)]
+pub struct Rect {
+    pub position: Vector,
+    pub size: Vector,
+    pub color: Color,
+    pub radius: f32,
 }
 
 #[derive(Copy, Clone, Debug)]
-pub struct Bounds {
-    pub offset: Vector,
-    pub size: Vector,
-}
-
-#[derive(Debug)]
-pub struct Text {
-    pub font_size: f64,
-    pub spans: Vec<TextSpan>,
-}
-
-impl Element for Text {
-    fn bounds(&self) -> Bounds {
-        unimplemented!()
-    }
-
-    fn render(&self, target: &mut [u8]) {
-        unimplemented!()
-    }
-}
-
-#[derive(Debug)]
-pub struct TextSpan {
-    pub style: TextStyle,
-    pub data: String,
-}
-
-#[derive(Debug)]
-pub enum TextStyle {
-    Mono,
-    Sans,
-    SansBold,
-    SansItalic,
+pub struct Color {
+    pub r: u8,
+    pub g: u8,
+    pub b: u8,
+    pub a: u8,
 }
 
 #[derive(Copy, Clone, Debug)]
 pub struct Vector {
-    pub x: f64,
-    pub y: f64,
+    pub x: f32,
+    pub y: f32,
 }
