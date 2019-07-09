@@ -1,35 +1,11 @@
 use arspec::spec::Record;
 use crate::Font;
-use super::{Element, Write};
+use super::Element;
 
-fn calculate_record_height(record: &Record) -> f32 {
-    record.entries.len() as f32 * Font::sans().line_height() * 16.0 + 71.0
-}
-
-fn calculate_record_width(record: &Record) -> f32 {
-    let colon_space_width = Font::sans().line_width_of(": ");
-    let width = record.entries.iter()
-        .map(|entry| (Font::sans_italic().line_width_of(entry.name.as_str())
-            + colon_space_width
-            + Font::sans_bold().line_width_of(entry.type_ref.as_str())) as usize)
-        .max()
-        .unwrap_or(0) * 16 + 20;
-    width as f32
-}
-
-impl<'a> From<&'a Record<'a>> for Element<'a> {
-    fn from(source: &'a Record<'a>) -> Self {
-        Element {
-            source,
-            width: calculate_record_width(source),
-            height: calculate_record_height(source),
-        }
-    }
-}
-
-impl<'a> Write for Record<'a> {
-    fn write(&self, width: f32, height: f32, target: &mut String) {
-        let mut offset = 78;
+impl<'a> Element for Record<'a> {
+    fn encode(&self, measurement: (f32, f32), target: &mut String) {
+        let (width, height) = measurement;
+        let mut offset = 78.0;
         target.push_str(&format!(
             concat!(
                 "<rect x=\"0\" y=\"0\" width=\"{width0}\" height=\"{height0}\"",
@@ -42,7 +18,8 @@ impl<'a> Write for Record<'a> {
                 "",
                 "<g text-anchor=\"middle\">",
                 "<text x=\"50%\" y=\"24\" fill=\"#444\" font-size=\"15\">«record»</text>",
-                "<text x=\"50%\" y=\"43\" fill=\"#3E7EFF\" font-size=\"18\" font-weight=\"bold\">{name}</text>",
+                "<text x=\"50%\" y=\"43\" fill=\"#3E7EFF\" font-size=\"18\"",
+                " font-weight=\"bold\">{name}</text>",
                 "</g>",
                 "",
                 "<g fill=\"#333\" font-size=\"16\">",
@@ -58,24 +35,50 @@ impl<'a> Write for Record<'a> {
             name = self.name.as_str(),
             entries = self.entries.iter()
                 .fold(String::new(), |mut acc, entry| {
-                    let x = entry.type_ref.as_str()
+                    let escaped_type_ref_str = entry.type_ref.as_str()
                         .replace('<', "&lt;")
                         .replace('>', "&gt;");
 
                     acc.push_str(&format!(
                         concat!(
                             "<text x=\"10\" y=\"{}\">",
-                            "<tspan font-style=\"italic\">{}</tspan>: ",
+                            "<tspan font-style=\"italic\">{}</tspan>",
+                            "<tspan>: </tspan>",
                             "<tspan fill=\"#170591\" font-weight=\"bold\">{}</tspan>",
                             "</text>",
                         ),
-                        offset,
+                        offset as usize,
                         entry.name.as_str(),
-                        x,
+                        escaped_type_ref_str,
                     ));
-                    offset += 20;
+                    offset += Font::sans().line_height() * 16.0;
                     acc
                 }),
         ));
+    }
+
+    fn measure(&self) -> (f32, f32) {
+        (
+            // Width.
+            {
+                let colon_space = Font::sans().line_width_of(": ");
+                let entry_width_max = self.entries.iter()
+                    .map(|entry| {
+                        let name = Font::sans_italic().line_width_of(entry.name.as_str());
+                        let type_ref = Font::sans_bold().line_width_of(entry.type_ref.as_str());
+                        (name + colon_space + type_ref) * 16.0
+                    } as usize)
+                    .max()
+                    .unwrap_or(0);
+
+                let name_width = Font::sans_bold().line_width_of(self.name.as_str()) * 18.0;
+
+                (entry_width_max as f32).max(name_width) + 20.0
+            },
+            // Height.
+            {
+                (self.entries.len() as f32 * Font::sans().line_height() * 16.0 + 71.0).round()
+            }
+        )
     }
 }

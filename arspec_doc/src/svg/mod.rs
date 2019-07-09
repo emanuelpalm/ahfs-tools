@@ -1,44 +1,48 @@
 pub mod record;
+pub mod service;
 
 use crate::Font;
 
-pub trait Write {
-    fn write(&self, width: f32, height: f32, target: &mut String);
+/// Represents some type that can be encoded as an SVG image.
+pub trait Element {
+    /// Encodes this as SVG image and writes it to `target`.
+    ///
+    /// The given `measurement` must have been retrieved via an earlier call to
+    /// `measure()` on the same object.
+    fn encode(&self, measurement: (f32, f32), target: &mut String);
+
+    /// Calculates bounds of this SVG image, in pixels.
+    fn measure(&self) -> (f32, f32);
 }
 
-pub struct Element<'a> {
-    pub source: &'a dyn Write,
-    pub width: f32,
-    pub height: f32,
-}
-
-pub fn render<'a, E>(element: E) -> String
-    where E: Into<Element<'a>>,
+/// Creates complete XML/SVG file for this SVG element.
+pub fn render<E>(element: &E) -> String
+    where E: Element,
 {
-    let element = element.into();
+    let (width, height) = element.measure();
 
     // Render XML version specifier and outer SVG element.
     let mut target = format!(concat!(
-        "<?xml version=\"1.0\" standalone=\"no\"?>\n",
-        "<svg width=\"{0}px\" height=\"{1}px\" viewBox=\"0 0 {0} {1}\"",
-        " xmlns=\"http://www.w3.org/2000/svg\" version=\"1.1\">\n",
-    ), element.width, element.height);
+            "<?xml version=\"1.0\" standalone=\"no\"?>\n",
+            "<svg width=\"{0}px\" height=\"{1}px\" viewBox=\"0 0 {0} {1}\"",
+            " xmlns=\"http://www.w3.org/2000/svg\" version=\"1.1\">\n",
+        ), width, height);
 
-    // Render definitions.
+    // Render CSS style definitions.
     target.push_str("<defs><style type=\"text/css\">");
     for font in Font::all() {
         target.push_str(&format!(concat!(
-            "@font-face {{\n",
-            " font-family: \"{}\";\n",
-            " font-style: {};\n",
-            " font-weight: {};\n",
-            " src: \"{}\" format('truetype');\n",
-            "}}\n",
+            "@font-face{{",
+            "font-family:\"{}\";",
+            "font-style:{};",
+            "font-weight:{};",
+            "src:\"{}\" format('truetype');",
+            "}}",
         ), font.name(), font.style(), font.weight(), font.source_name()));
     }
     target.push_str("</style></defs>\n");
 
-    element.source.write(element.width, element.height, &mut target);
+    element.encode((width, height), &mut target);
 
     target.push_str("\n</svg>\n");
     target

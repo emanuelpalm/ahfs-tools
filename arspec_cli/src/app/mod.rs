@@ -32,12 +32,19 @@ pub fn doc(args: &[&str]) -> arspec::Result {
 
             fs::write(target_path, target)?;
         }
+
+        for service in tree.services {
+            let target = svg::render(&service);
+            let target_path = project.target()
+                .join(format!("service-{}.svg", service.name.as_str()));
+
+            fs::write(target_path, target)?;
+        }
     }
 
     for font in Font::all() {
         fs::File::create(project.target().join(font.source_name()))
-            .and_then(|mut file| file.write_all(font.source()))
-            .unwrap()
+            .and_then(|mut file| file.write_all(font.source()))?;
     }
 
     Ok(())
