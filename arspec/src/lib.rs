@@ -1,4 +1,3 @@
-pub mod gen;
 pub mod meta;
 pub mod project;
 pub mod spec;

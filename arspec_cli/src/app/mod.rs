@@ -2,14 +2,16 @@ mod error;
 
 pub use self::error::Error;
 
-use arspec::gen::svg;
 use arspec::spec::parser;
 use arspec::project::Project;
+use arspec_doc::Font;
+use arspec_doc::svg;
 use arspec_parser::Text;
 use crate::log;
 use std::fs;
 use std::io;
 use std::path::PathBuf;
+use std::io::Write;
 
 /// Prints list of all project source files and exits.
 pub fn doc(args: &[&str]) -> arspec::Result {
@@ -31,6 +33,13 @@ pub fn doc(args: &[&str]) -> arspec::Result {
             fs::write(target_path, target)?;
         }
     }
+
+    for font in Font::all() {
+        fs::File::create(project.target().join(font.source_name()))
+            .and_then(|mut file| file.write_all(font.source()))
+            .unwrap()
+    }
+
     Ok(())
 }
 

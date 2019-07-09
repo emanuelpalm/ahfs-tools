@@ -15,28 +15,36 @@ fn main() {
 
     build_font(
         include_font!("noto/NotoSansMono-Regular-European.ttf"),
-        "NotoSansMono-Regular-European",
+        "NotoSansMono-Regular-European.ttf",
+        "Noto Sans Mono",
         &Path::new(&out_dir).join("font_mono.rs"),
     );
     build_font(
         include_font!("noto/NotoSans-Regular-European.ttf"),
-        "NotoSans-Regular-European",
+        "NotoSans-Regular-European.ttf",
+        "Noto Sans",
         &Path::new(&out_dir).join("font_sans.rs"),
     );
     build_font(
         include_font!("noto/NotoSans-Bold-European.ttf"),
-        "NotoSans-Bold-European",
+        "NotoSans-Bold-European.ttf",
+        "Noto Sans",
         &Path::new(&out_dir).join("font_sans_bold.rs"),
     );
     build_font(
         include_font!("noto/NotoSans-Italic-European.ttf"),
-        "NotoSans-Italic-European",
+        "NotoSans-Italic-European.ttf",
+        "Noto Sans",
         &Path::new(&out_dir).join("font_sans_italic.rs"),
     );
 }
 
 /// Generates `Font` from referenced `font_file` and writes it to `dest_path`.
-fn build_font(font_file: &[u8], font_name: &str, dest_path: &Path) {
+fn build_font(
+    font_file: &[u8],
+    font_file_name: &str,
+    font_name: &str,
+    dest_path: &Path) {
     let font = otf::FontFile::try_new(font_file).unwrap();
 
     // Prepare font glyphs.
@@ -89,11 +97,12 @@ fn build_font(font_file: &[u8], font_name: &str, dest_path: &Path) {
         glyphs
     };
 
-    // Render font glyphs.
     let out = format!(
         concat!(
             "Font {{\n",
             "    name: \"{name}\",\n",
+            "    style: FontStyle::{style},\n",
+            "    weight: FontWeight::{weight},\n",
             "\n",
             "    ascender: {ascender},\n",
             "    descender: {descender},\n",
@@ -105,10 +114,12 @@ fn build_font(font_file: &[u8], font_name: &str, dest_path: &Path) {
             "    kernings: {kernings},\n",
             "\n",
             "    source: {source},\n",
-            "    source_name: \"{name}.ttf\",\n",
+            "    source_name: \"{source_name}\",\n",
             "}}\n"
         ),
         name = font_name,
+        style = if font.head().mac_style_italic() { "Italic" } else { "Normal" },
+        weight = if font.head().mac_style_bold() { "Bold" } else { "Normal" },
         ascender = font.hhea().ascender(),
         descender = font.hhea().descender(),
         line_gap = font.hhea().line_gap(),
@@ -175,7 +186,9 @@ fn build_font(font_file: &[u8], font_name: &str, dest_path: &Path) {
             out.push_str("\n    ]");
             out
         },
+        source_name = font_file_name,
     );
+    // Render font glyphs.
 
     // Write font glyphs to new file at destination path.
     File::create(&dest_path)

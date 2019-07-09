@@ -1,13 +1,34 @@
-use crate::spec;
+use arspec::spec::Record;
+use crate::Font;
+use super::{Element, Write};
 
-pub trait WriteSVG {
-    fn write_svg(&self, target: &mut String);
-    fn size(&self) -> (f32, f32);
+fn calculate_record_height(record: &Record) -> f32 {
+    record.entries.len() as f32 * Font::sans().line_height() * 16.0 + 71.0
 }
 
-impl<'a> WriteSVG for spec::Record<'a> {
-    fn write_svg(&self, target: &mut String) {
-        let (width, height) = self.size();
+fn calculate_record_width(record: &Record) -> f32 {
+    let colon_space_width = Font::sans().line_width_of(": ");
+    let width = record.entries.iter()
+        .map(|entry| (Font::sans_italic().line_width_of(entry.name.as_str())
+            + colon_space_width
+            + Font::sans_bold().line_width_of(entry.type_ref.as_str())) as usize)
+        .max()
+        .unwrap_or(0) * 16 + 20;
+    width as f32
+}
+
+impl<'a> From<&'a Record<'a>> for Element<'a> {
+    fn from(source: &'a Record<'a>) -> Self {
+        Element {
+            source,
+            width: calculate_record_width(source),
+            height: calculate_record_height(source),
+        }
+    }
+}
+
+impl<'a> Write for Record<'a> {
+    fn write(&self, width: f32, height: f32, target: &mut String) {
         let mut offset = 78;
         target.push_str(&format!(
             concat!(
@@ -17,7 +38,7 @@ impl<'a> WriteSVG for spec::Record<'a> {
                 " rx=\"7\" ry=\"7\" fill=\"#fff\" />",
                 "<rect x=\"3\" y=\"53\" width=\"{width1}\" height=\"1\" fill=\"#ccc\" />",
                 "",
-                "<g font-family=\"Cousine, Courier New, monospaced\">",
+                "<g font-family=\"Noto Sans\">",
                 "",
                 "<g text-anchor=\"middle\">",
                 "<text x=\"50%\" y=\"24\" fill=\"#444\" font-size=\"15\">«record»</text>",
@@ -57,33 +78,4 @@ impl<'a> WriteSVG for spec::Record<'a> {
                 }),
         ));
     }
-
-    fn size(&self) -> (f32, f32) {
-        let width = {
-            let width_entries = self.entries.iter()
-                .map(|entry| ((entry.name.as_str().len() + entry.type_ref.as_str().len() + 2) as f64 * (8.8203125 + 1.2)) as usize)
-                .max()
-                .map(|len| len + 20)
-                .unwrap_or(0);
-
-            let width_name = (self.name.as_str().len() as f64 * (9.9228515625 + 1.2) + 20.0) as usize;
-
-            width_name.max(width_entries).max(20)
-        };
-        let height = 71 + self.entries.len() * 20;
-
-        (width as f32, height as f32)
-    }
-}
-
-pub fn render(element: &dyn WriteSVG) -> String {
-    let (width, height) = element.size();
-    let mut target = format!(concat!(
-        "<?xml version=\"1.0\" standalone=\"no\"?>\n",
-        "<svg width=\"{0}px\" height=\"{1}px\" viewBox=\"0 0 {0} {1}\"",
-        " xmlns=\"http://www.w3.org/2000/svg\" version=\"1.1\">\n",
-    ), width, height);
-    element.write_svg(&mut target);
-    target.push_str("\n</svg>\n");
-    target
 }

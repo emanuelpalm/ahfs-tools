@@ -2,6 +2,14 @@
 
 use super::Region;
 
+const MAC_STYLE_FLAG_BOLD: u16 = (1 << 0);
+const MAC_STYLE_FLAG_ITALIC: u16 = (1 << 1);
+const MAC_STYLE_FLAG_UNDERLINE: u16 = (1 << 2);
+const MAC_STYLE_FLAG_OUTLINE: u16 = (1 << 3);
+const MAC_STYLE_FLAG_SHADOW: u16 = (1 << 4);
+const MAC_STYLE_FLAG_CONDENSED: u16 = (1 << 5);
+const MAC_STYLE_FLAG_EXTENDED: u16 = (1 << 6);
+
 pub struct FontHeaderTable<'a> {
     region: Region<'a>
 }
@@ -166,6 +174,18 @@ impl<'a> FontHeaderTable<'a> {
     #[inline]
     pub fn mac_style(&self) -> u16 {
         self.region.read_u16_at(44).unwrap_or(0)
+    }
+
+    /// Whether Mac style BOLD flag is set.
+    #[inline]
+    pub fn mac_style_bold(&self) -> bool {
+        self.mac_style() & MAC_STYLE_FLAG_BOLD != 0
+    }
+
+    /// Whether Mac style ITALIC flag is set.
+    #[inline]
+    pub fn mac_style_italic(&self) -> bool {
+        self.mac_style() & MAC_STYLE_FLAG_ITALIC != 0
     }
 
     /// Smallest readable size in pixels.

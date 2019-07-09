@@ -6,5 +6,6 @@ edition = "2018"
 
 [dependencies]
 arspec = { path = "../arspec" }
+arspec_doc = { path = "../arspec_doc" }
 arspec_macro = { path = "../arspec_macro" }
 arspec_parser = { path = "../arspec_parser" }
