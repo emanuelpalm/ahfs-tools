@@ -23,10 +23,10 @@ pub fn render<E>(element: &E) -> String
 
     // Render XML version specifier and outer SVG element.
     let mut target = format!(concat!(
-            "<?xml version=\"1.0\" standalone=\"no\"?>\n",
-            "<svg width=\"{0}px\" height=\"{1}px\" viewBox=\"0 0 {0} {1}\"",
-            " xmlns=\"http://www.w3.org/2000/svg\" version=\"1.1\">\n",
-        ), width, height);
+        "<?xml version=\"1.0\" standalone=\"no\"?>\n",
+        "<svg width=\"{0}px\" height=\"{1}px\" viewBox=\"0 0 {0} {1}\"",
+        " xmlns=\"http://www.w3.org/2000/svg\" version=\"1.1\">\n",
+    ), width, height);
 
     // Render CSS style definitions.
     target.push_str("<defs><style type=\"text/css\">");

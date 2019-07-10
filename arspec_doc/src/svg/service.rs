@@ -5,14 +5,13 @@ use super::Element;
 impl<'a> Element for Service<'a> {
     fn encode(&self, measurement: (f32, f32), target: &mut String) {
         let (width, height) = measurement;
-        let mut offset: f32 = 78.0;
+        let mut offset: f32 = 53.0;
         target.push_str(&format!(
             concat!(
                 "<rect x=\"0\" y=\"0\" width=\"{width0}\" height=\"{height0}\"",
                 " rx=\"9\" ry=\"9\" fill=\"#aaa\" />",
                 "<rect x=\"3\" y=\"3\" width=\"{width1}\" height=\"{height1}\"",
                 " rx=\"7\" ry=\"7\" fill=\"#fff\" />",
-                "<rect x=\"3\" y=\"53\" width=\"{width1}\" height=\"1\" fill=\"#ccc\" />",
                 "",
                 "<g font-family=\"Noto Sans\">",
                 "",
@@ -37,6 +36,7 @@ impl<'a> Element for Service<'a> {
                 .fold(String::new(), |mut acc, interface| {
                     acc.push_str(&format!(
                         concat!(
+                            "<rect x=\"3\" y=\"{}\" width=\"{}\" height=\"1\" fill=\"#ccc\" />",
                             "<text x=\"10\" y=\"{}\" font-size=\"14\">",
                             "<tspan>interface </tspan>",
                             "<tspan font-size=\"17\" fill=\"#3E7EFF\"",
@@ -45,9 +45,11 @@ impl<'a> Element for Service<'a> {
                             "</text>",
                         ),
                         offset.round(),
+                        width - 6.0,
+                        offset.round() + 25.0,
                         interface.name.as_str(),
                     ));
-                    offset += Font::sans().line_height() * 17.0;
+                    offset += Font::sans().line_height() * 17.0 + 25.0;
                     for method in &interface.methods {
                         let input = method.input.as_ref().map(|input| input.as_str());
                         let output = method.output.as_ref().map(|output| output.as_str());
@@ -68,9 +70,6 @@ impl<'a> Element for Service<'a> {
                             output.unwrap_or(""),
                         ));
                         offset += Font::sans().line_height() * 16.0;
-                    }
-                    if acc.len() > 0 {
-                        offset += 15.0;
                     }
                     acc
                 }),
@@ -116,13 +115,9 @@ impl<'a> Element for Service<'a> {
             // Height.
             {
                 let line_height = Font::sans().line_height();
-                self.interfaces.iter().fold(71.0, |acc, interface| {
+                self.interfaces.iter().fold(53.0, |acc, interface| {
                     acc + line_height * 17.0 + interface.methods.len() as f32 * line_height * 16.0
-                }) + if self.interfaces.len() > 0 {
-                    (self.interfaces.len() - 1) as f32 * 15.0
-                } else {
-                    0.0
-                }
+                }) + self.interfaces.len() as f32 * 25.0
             }
         )
     }
