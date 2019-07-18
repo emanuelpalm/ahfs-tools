@@ -1,7 +1,7 @@
 use arspec::spec::Record;
 use crate::Font;
 use std::io;
-use super::{Encode, Size};
+use super::{color, Encode, Size};
 
 impl<'a> Encode for Record<'a> {
     fn encode<W>(&self, size: Size, w: &mut W) -> io::Result<()>
@@ -12,19 +12,23 @@ impl<'a> Encode for Record<'a> {
             w,
             concat!(
                 "<rect x=\"0\" y=\"0\" width=\"{width0}\" height=\"{height0}\"",
-                " rx=\"9\" ry=\"9\" fill=\"#aaa\" />",
+                " rx=\"9\" ry=\"9\" fill=\"{color_ruler}\" />",
                 "<rect x=\"3\" y=\"3\" width=\"{width1}\" height=\"{height1}\"",
                 " rx=\"7\" ry=\"7\" fill=\"#fff\" />",
-                "<rect x=\"3\" y=\"53\" width=\"{width1}\" height=\"1\" fill=\"#ccc\" />",
+                "<rect x=\"3\" y=\"53\" width=\"{width1}\" height=\"1\" fill=\"{color_ruler}\" />",
                 "",
                 "<g text-anchor=\"middle\">",
-                "<text x=\"50%\" y=\"24\" fill=\"#444\" font-size=\"15\">«record»</text>",
-                "<text x=\"50%\" y=\"43\" fill=\"#3E7EFF\" font-size=\"18\"",
+                "<text x=\"50%\" y=\"24\" fill=\"{color_meta}\" font-size=\"15\">«record»</text>",
+                "<text x=\"50%\" y=\"43\" fill=\"{color_gamma}\" font-size=\"18\"",
                 " font-weight=\"bold\">{name}</text>",
                 "</g>",
                 "",
-                "<g fill=\"#333\" font-size=\"16\">",
+                "<g fill=\"{color_text}\" font-size=\"16\">",
             ),
+            color_gamma = color::GAMMA,
+            color_meta = color::META,
+            color_ruler = color::RULER,
+            color_text = color::TEXT,
             width0 = size.width,
             height0 = size.height,
             width1 = size.width - 6.0,
@@ -36,13 +40,13 @@ impl<'a> Encode for Record<'a> {
                 w,
                 concat!(
                     "<text x=\"10\" y=\"{}\">",
-                    "<tspan font-style=\"italic\">{}</tspan>",
-                    "<tspan>: </tspan>",
-                    "<tspan fill=\"#170591\" font-weight=\"bold\">{}</tspan>",
+                    "<tspan>{}: </tspan>",
+                    "<tspan fill=\"{}\" font-weight=\"bold\">{}</tspan>",
                     "</text>",
                 ),
                 offset as usize,
                 entry.name.as_str(),
+                color::GAMMA,
                 entry.type_ref.as_str()
                     .chars()
                     .fold(String::new(), |mut acc, ch| {
@@ -65,7 +69,7 @@ impl<'a> Encode for Record<'a> {
                 let colon_space_width = Font::sans().line_width_of(": ");
                 let entry_width_max = self.entries.iter()
                     .map(|entry| {
-                        let name_width = Font::sans_italic()
+                        let name_width = Font::sans()
                             .line_width_of(entry.name.as_str());
                         let type_ref_width = Font::sans_bold()
                             .line_width_of(entry.type_ref.as_str());

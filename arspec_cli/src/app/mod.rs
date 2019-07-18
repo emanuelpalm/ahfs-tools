@@ -44,6 +44,15 @@ pub fn doc(args: &[&str]) -> arspec::Result {
 
             fs::write(target_path, &mut buffer)?;
         }
+
+        for system in tree.systems {
+            buffer.clear();
+            svg::render(&system, &mut buffer)?;
+            let target_path = project.target()
+                .join(format!("system-{}.svg", system.name.as_str()));
+
+            fs::write(target_path, &mut buffer)?;
+        }
     }
 
     for font in Font::all() {

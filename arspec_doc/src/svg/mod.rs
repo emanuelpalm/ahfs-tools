@@ -1,5 +1,6 @@
 pub mod record;
 pub mod service;
+pub mod system;
 
 use crate::Font;
 use std::io;
@@ -33,4 +34,13 @@ pub fn render<E, W>(element: &E, w: &mut W) -> io::Result<()>
     element.encode(size, w)?;
 
     write!(w, "</g></svg>")
+}
+
+mod color {
+    pub const ALPHA: &'static str = "#004676";
+    pub const BETA: &'static str = "#006f99";
+    pub const GAMMA: &'static str = "#8f3165";
+    pub const RULER: &'static str = "#d0d0d0";
+    pub const META: &'static str = "#666666";
+    pub const TEXT: &'static str = "#333333";
 }
