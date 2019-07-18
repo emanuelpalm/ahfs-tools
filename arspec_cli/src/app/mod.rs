@@ -10,8 +10,8 @@ use arspec_parser::Text;
 use crate::log;
 use std::fs;
 use std::io;
-use std::path::PathBuf;
 use std::io::Write;
+use std::path::PathBuf;
 
 /// Prints list of all project source files and exits.
 pub fn doc(args: &[&str]) -> arspec::Result {
@@ -21,24 +21,28 @@ pub fn doc(args: &[&str]) -> arspec::Result {
     let project = Project::locate(".")?;
     fs::create_dir_all(&project.target())?;
 
+    let mut buffer = Vec::<u8>::new();
+
     for path in project.files()?.iter() {
         let source = Text::read_at(path)?;
         let tree = parser::parse(&source)?;
 
         for record in tree.records {
-            let target = svg::render(&record);
+            buffer.clear();
+            svg::render(&record,  &mut buffer)?;
             let target_path = project.target()
                 .join(format!("record-{}.svg", record.name.as_str()));
 
-            fs::write(target_path, target)?;
+            fs::write(target_path, &mut buffer)?;
         }
 
         for service in tree.services {
-            let target = svg::render(&service);
+            buffer.clear();
+            svg::render(&service, &mut buffer)?;
             let target_path = project.target()
                 .join(format!("service-{}.svg", service.name.as_str()));
 
-            fs::write(target_path, target)?;
+            fs::write(target_path, &mut buffer)?;
         }
     }
 
