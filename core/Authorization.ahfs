@@ -1,4 +1,6 @@
 system Authorization {
+    consumes ServiceRegistry;
+
     produces AuthorizationControl;
     produces TokenGeneration;
 }

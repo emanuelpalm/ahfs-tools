@@ -1,50 +1,62 @@
 use arspec::spec::Record;
 use crate::Font;
 use std::io;
-use super::{color, Encode, Size};
+use super::{color, Encode, Vector};
 
 impl<'a> Encode for Record<'a> {
-    fn encode<W>(&self, size: Size, w: &mut W) -> io::Result<()>
+    fn encode<W>(&self, offset: Vector, size: Vector, w: &mut W) -> io::Result<()>
         where W: io::Write
     {
-        let mut offset = 78.0;
+        let mut offset_y = offset.y + 78.0;
         write!(
             w,
             concat!(
-                "<rect x=\"0\" y=\"0\" width=\"{width0}\" height=\"{height0}\"",
+                "<rect x=\"{x_rect0}\" y=\"{y_rect0}\" width=\"{width0}\" height=\"{height0}\"",
                 " rx=\"9\" ry=\"9\" fill=\"{color_ruler}\" />",
-                "<rect x=\"3\" y=\"3\" width=\"{width1}\" height=\"{height1}\"",
+                "<rect x=\"{x_rect1}\" y=\"{y_rect1}\" width=\"{width1}\" height=\"{height1}\"",
                 " rx=\"7\" ry=\"7\" fill=\"#fff\" />",
-                "<rect x=\"3\" y=\"53\" width=\"{width1}\" height=\"1\" fill=\"{color_ruler}\" />",
+                "<rect x=\"{x_rect2}\" y=\"{y_rect2}\" width=\"{width1}\" height=\"1\"",
+                " fill=\"{color_ruler}\" />",
                 "",
                 "<g text-anchor=\"middle\">",
-                "<text x=\"50%\" y=\"24\" fill=\"{color_meta}\" font-size=\"15\">«record»</text>",
-                "<text x=\"50%\" y=\"43\" fill=\"{color_gamma}\" font-size=\"18\"",
+                "<text x=\"{x_middle}\" y=\"{y_meta}\" fill=\"{color_meta}\"",
+                " font-size=\"15\">«record»</text>",
+                "<text x=\"{x_middle}\" y=\"{y_name}\" fill=\"{color_name}\" font-size=\"18\"",
                 " font-weight=\"bold\">{name}</text>",
                 "</g>",
                 "",
                 "<g fill=\"{color_text}\" font-size=\"16\">",
             ),
-            color_gamma = color::GAMMA,
             color_meta = color::META,
+            color_name = color::GAMMA,
             color_ruler = color::RULER,
             color_text = color::TEXT,
-            width0 = size.width,
-            height0 = size.height,
-            width1 = size.width - 6.0,
-            height1 = size.height - 6.0,
+            height0 = size.y,
+            height1 = size.y - 6.0,
             name = self.name.as_str(),
+            width0 = size.x,
+            width1 = size.x - 6.0,
+            x_middle = offset.x + size.x / 2.0,
+            x_rect0 = offset.x,
+            x_rect1 = offset.x + 3.0,
+            x_rect2 = offset.x + 3.0,
+            y_meta = offset.y + 24.0,
+            y_name = offset.y + 43.0,
+            y_rect0 = offset.y,
+            y_rect1 = offset.y + 3.0,
+            y_rect2 = offset.y + 53.0,
         )?;
         for entry in &self.entries {
             write!(
                 w,
                 concat!(
-                    "<text x=\"10\" y=\"{}\">",
+                    "<text x=\"{}\" y=\"{}\">",
                     "<tspan>{}: </tspan>",
                     "<tspan fill=\"{}\" font-weight=\"bold\">{}</tspan>",
                     "</text>",
                 ),
-                offset as usize,
+                offset.x + 10.0,
+                offset_y as usize,
                 entry.name.as_str(),
                 color::GAMMA,
                 entry.type_ref.as_str()
@@ -58,14 +70,14 @@ impl<'a> Encode for Record<'a> {
                         acc
                     }),
             )?;
-            offset += Font::sans().line_height() * 16.0;
+            offset_y += Font::sans().line_height() * 16.0;
         }
         write!(w, "</g>")
     }
 
-    fn measure(&self) -> Size {
-        Size {
-            width: {
+    fn measure(&self) -> Vector {
+        Vector {
+            x: {
                 let colon_space_width = Font::sans().line_width_of(": ");
                 let entry_width_max = self.entries.iter()
                     .map(|entry| {
@@ -85,7 +97,7 @@ impl<'a> Encode for Record<'a> {
 
                 (entry_width_max.max(name_width) + 20.0).round()
             },
-            height: (self.entries.len() as f32 * Font::sans()
+            y: (self.entries.len() as f32 * Font::sans()
                 .line_height() * 16.0 + 71.0).round(),
         }
     }
