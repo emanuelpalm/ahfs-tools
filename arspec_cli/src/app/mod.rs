@@ -26,6 +26,7 @@ pub fn doc(args: &[&str]) -> arspec::Result {
     for path in project.files()?.iter() {
         let source = Text::read_at(path)?;
         let tree = parser::parse(&source)?;
+        tree.verify()?;
 
         for enum_ in tree.enums {
             buffer.clear();

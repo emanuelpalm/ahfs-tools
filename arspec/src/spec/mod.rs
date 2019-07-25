@@ -20,6 +20,9 @@ pub use self::system::System;
 pub use self::type_ref::TypeRef;
 pub use self::value::Value;
 
+use arspec_parser::Excerpt;
+use std::fmt;
+
 /// An Arrowhead Framework specification collection.
 #[derive(Debug, Default)]
 pub struct Specification<'a> {
@@ -40,4 +43,31 @@ pub struct Specification<'a> {
 
     /// System definitions.
     pub systems: Vec<System<'a>>,
+}
+
+impl<'a> Specification<'a> {
+    pub fn verify(&self) -> Result<(), VerificationError> {
+        for enum_ in &self.enums {
+            enum_.verify()?;
+        }
+        Ok(())
+    }
+}
+
+#[derive(Debug)]
+pub enum VerificationError {
+    EnumVariantDuplicate {
+        name: String,
+        variant: Excerpt,
+    }
+}
+
+impl<'a> fmt::Display for VerificationError {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        match self {
+            &VerificationError::EnumVariantDuplicate { ref name, ref variant } => {
+                write!(f, "Duplicate variant in enum {}.\n{}", name, variant)
+            }
+        }
+    }
 }

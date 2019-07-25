@@ -100,3 +100,11 @@ impl<'a> fmt::Display for Span<'a> {
         Ok(())
     }
 }
+
+impl<'a> Eq for Span<'a> {}
+
+impl<'a> PartialEq for Span<'a> {
+    fn eq(&self, other: &Span<'a>) -> bool {
+        self.as_str() == other.as_str()
+    }
+}
