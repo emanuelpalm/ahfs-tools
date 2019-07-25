@@ -39,7 +39,7 @@ impl<'a> Encode<SystemMeasurements> for System<'a> {
                 "",
                 "<g text-anchor=\"middle\">",
                 "<text x=\"{x_middle}\" y=\"{y_meta}\" fill=\"{color_meta}\"",
-                " font-size=\"15\">«record»</text>",
+                " font-size=\"15\">«system»</text>",
                 "<text x=\"{x_middle}\" y=\"{y_name}\" fill=\"{color_name}\" font-size=\"18\"",
                 " font-weight=\"bold\">{name}</text>",
                 "</g>",

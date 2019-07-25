@@ -17,7 +17,6 @@ service AuthorizationControl {
 
 implement AuthorizationControl using HTTP/JSON {
     property BasePath: "/authorization";
-    property RequireTLS: true;
 
     interface IntraCloud {
         method VerifyAccess {
@@ -59,4 +58,57 @@ record InterCloudAuthRequest {
 
 record InterCloudAuthResponse {
     Authorized: Boolean,
+}
+
+service TokenGeneration {
+    interface Generation {
+        method Generate(TokenGenerationRequest): TokenGenerationResponse;
+    }
+}
+
+implement TokenGeneration using HTTP/JSON {
+    property BasePath: "/authorization";
+
+    interface Generation {
+        method Generate {
+            Method: "PUT",
+            Path: "/token",
+        }
+    }
+}
+
+record TokenGenerationRequest {
+    /// ArrowheadSystem that will try to access the Service instance.
+    Consumer: ArrowheadSystem,
+
+    /// The ArrowheadCloud where the consumer System is located. If not defined, the Local Cloud is assumed.
+    ConsumerCloud: ArrowheadCloud,
+
+    /// List of possible Application Systems that can provide the Service.
+    Providers: List<ArrowheadSystem>,
+
+    /// The ArrowheadService that will be consumed.
+    Service: ArrowheadService,
+
+    /// The duration until the Service exchange can happen.
+    Duration: i32,
+
+}
+
+record TokenGenerationResponse {
+    TokenData: List<TokenData>,
+}
+
+record TokenData {
+    /// ArrowheadSystem object of the Provider.
+    System: ArrowheadSystem,
+
+    /// The ArrowheadService to be consumed.
+    Service: ArrowheadService,
+
+    /// The actual token for that Provider-Consumer-Service combination.
+    Token: String,
+
+    /// Message digest from the Authorization System.
+    Signature: String,
 }

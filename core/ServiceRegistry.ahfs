@@ -1,0 +1,78 @@
+system ServiceRegistry {
+    produces ServiceDiscovery;
+}
+
+service ServiceDiscovery {
+    interface Discovery {
+        method Register(ServiceRegistryEntry);
+        method Unregister(ServiceRegistryEntry);
+        method Query(ServiceQueryForm): ServiceQueryResult;
+    }
+}
+
+implement ServiceDiscovery using HTTP/JSON {
+    property BasePath: "/serviceregistry";
+
+    interface Discovery {
+        method Register {
+            Method: "POST",
+            Path: "/register",
+        }
+
+        method Unregister {
+            Method: "PUT",
+            Path: "/remove",
+        }
+
+        method Query {
+            Method: "PUT",
+            Path: "/query",
+        }
+    }
+}
+
+record ServiceRegistryEntry {
+    /// The Arrowhead Service object that is provided.
+    ProvidedService: ArrowheadService,
+
+    /// ArrowheadSystem that is providing the Service.
+    Provider: ArrowheadSystem,
+
+    /// The port where the provided service can be consumed.
+    Port: u16,
+
+    /// The subpath of the Service within the host (address:port) of the
+    /// Provider. This can be a REST URL or MQTT topic name for example.
+    ServiceURI: String,
+
+    /// The version numbering of the Service provided.
+    Version: Integer,
+
+    /// True, if the service is provided via UDP. By default, it is false.
+    UDP: Boolean,
+
+    /// Service validity time period expressed in seconds. This gets converted
+    /// to a date-time, and stored in the database.
+    TTL: u32,
+
+    /// Metadata belonging to a service/provider pair.
+    Metadata: String,
+}
+
+record ServiceQueryForm {
+    /// The Arrowhead Service object that is looked for.
+    Service: ArrowheadService,
+
+    /// True, if service metadata shall be taken into account during query.
+    MetadataSearch: Boolean,
+
+    /// True, if the selected (query fitting) Application Systems shall be pinged to see if they’re alive.
+    PingProviders: Boolean,
+
+    /// The minimum version of the Service we are looking for.
+    Version: u32,
+}
+
+record ServiceQueryResult {
+    ServiceQueryData: List<ServiceRegistryEntry>,
+}
