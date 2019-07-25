@@ -1,5 +1,5 @@
 use arspec_parser::Span;
-use super::VerificationError;
+use super::{VerificationError, verify};
 
 /// An enumerator type definition.
 #[derive(Debug)]
@@ -27,21 +27,20 @@ impl<'a> Enum<'a> {
 
     /// Asserts that this enum has no internal inconsistencies.
     pub fn verify(&self) -> Result<(), VerificationError> {
-        for v0 in &self.variants {
-            let mut count = 0;
-            for v1 in &self.variants {
-                if v0.name == v1.name {
-                    count += 1;
-                    if count > 1 {
-                        return Err(VerificationError::EnumVariantDuplicate {
-                            name: self.name.as_str().into(),
-                            variant: v1.name.to_excerpt(),
-                        });
-                    }
-                }
-            }
-        }
-        Ok(())
+        verify::find_duplicate(&self.variants)
+            .map(|dup| Err(VerificationError::NameDuplicate {
+                name_type: "enum variant",
+                original: dup.original.name.to_excerpt(),
+                duplicate: dup.duplicate.name.to_excerpt(),
+            }))
+            .unwrap_or(Ok(()))
+    }
+}
+
+impl<'a> AsRef<str> for Enum<'a> {
+    #[inline]
+    fn as_ref(&self) -> &str {
+        self.name.as_str()
     }
 }
 
@@ -53,4 +52,11 @@ pub struct EnumVariant<'a> {
 
     /// Any documentation comment.
     pub comment: Option<Span<'a>>,
+}
+
+impl<'a> AsRef<str> for EnumVariant<'a> {
+    #[inline]
+    fn as_ref(&self) -> &str {
+        self.name.as_str()
+    }
 }

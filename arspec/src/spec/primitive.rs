@@ -25,3 +25,10 @@ impl<'a> Primitive<'a> {
         }
     }
 }
+
+impl<'a> AsRef<str> for Primitive<'a> {
+    #[inline]
+    fn as_ref(&self) -> &str {
+        self.definition.name.as_str()
+    }
+}

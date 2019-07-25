@@ -39,7 +39,7 @@ impl Error for arspec_parser::Error<spec::parser::Class> {
 impl<'a> Error for spec::VerificationError {
     fn code(&self) -> &'static str {
         match self {
-            &spec::VerificationError::EnumVariantDuplicate { .. } => "VE01",
+            &spec::VerificationError::NameDuplicate { .. } => "VE01",
         }
     }
 }

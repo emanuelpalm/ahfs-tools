@@ -9,6 +9,7 @@ mod service;
 mod system;
 mod type_ref;
 mod value;
+mod verify;
 
 pub use self::enum_::{Enum, EnumVariant};
 pub use self::implement::{Implement, ImplementInterface, ImplementMethod};
@@ -50,23 +51,77 @@ impl<'a> Specification<'a> {
         for enum_ in &self.enums {
             enum_.verify()?;
         }
+        verify::find_duplicate(&self.enums)
+            .map(|dup| Err(VerificationError::NameDuplicate {
+                name_type: "enum",
+                duplicate: dup.duplicate.name.to_excerpt(),
+                original: dup.original.name.to_excerpt(),
+            }))
+            .unwrap_or(Ok(()))?;
+
+        verify::find_duplicate(&self.primitives)
+            .map(|dup| Err(VerificationError::NameDuplicate {
+                name_type: "primitive",
+                duplicate: dup.duplicate.definition.name.to_excerpt(),
+                original: dup.original.definition.name.to_excerpt(),
+            }))
+            .unwrap_or(Ok(()))?;
+
+        verify::find_duplicate(&self.records)
+            .map(|dup| Err(VerificationError::NameDuplicate {
+                name_type: "record",
+                duplicate: dup.duplicate.name.to_excerpt(),
+                original: dup.original.name.to_excerpt(),
+            }))
+            .unwrap_or(Ok(()))?;
+
+        verify::find_duplicate(&self.services)
+            .map(|dup| Err(VerificationError::NameDuplicate {
+                name_type: "service",
+                duplicate: dup.duplicate.name.to_excerpt(),
+                original: dup.original.name.to_excerpt(),
+            }))
+            .unwrap_or(Ok(()))?;
+
+        verify::find_duplicate(&self.systems)
+            .map(|dup| Err(VerificationError::NameDuplicate {
+                name_type: "system",
+                duplicate: dup.duplicate.name.to_excerpt(),
+                original: dup.original.name.to_excerpt(),
+            }))
+            .unwrap_or(Ok(()))?;
+
         Ok(())
     }
 }
 
 #[derive(Debug)]
 pub enum VerificationError {
-    EnumVariantDuplicate {
-        name: String,
-        variant: Excerpt,
-    }
+    NameDuplicate {
+        name_type: &'static str,
+        duplicate: Excerpt,
+        original: Excerpt,
+    },
 }
 
 impl<'a> fmt::Display for VerificationError {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match self {
-            &VerificationError::EnumVariantDuplicate { ref name, ref variant } => {
-                write!(f, "Duplicate variant in enum {}.\n{}", name, variant)
+            &VerificationError::NameDuplicate { ref name_type, ref duplicate, ref original } => {
+                write!(
+                    f,
+                    concat!(
+                        "`{}` specification with the name `{}` already exists.\n",
+                        "Duplicate located at:\n",
+                        "{}",
+                        "Originally defined at:\n",
+                        "{}",
+                    ),
+                    name_type,
+                    original.as_str(),
+                    duplicate,
+                    original
+                )
             }
         }
     }

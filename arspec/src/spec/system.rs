@@ -33,3 +33,10 @@ impl<'a> System<'a> {
         }
     }
 }
+
+impl<'a> AsRef<str> for System<'a> {
+    #[inline]
+    fn as_ref(&self) -> &str {
+        self.name.as_str()
+    }
+}

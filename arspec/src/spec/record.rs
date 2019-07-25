@@ -26,6 +26,13 @@ impl<'a> Record<'a> {
     }
 }
 
+impl<'a> AsRef<str> for Record<'a> {
+    #[inline]
+    fn as_ref(&self) -> &str {
+        self.name.as_str()
+    }
+}
+
 /// A record type definition field.
 #[derive(Debug)]
 pub struct RecordEntry<'a> {

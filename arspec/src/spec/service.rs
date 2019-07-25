@@ -26,6 +26,13 @@ impl<'a> Service<'a> {
     }
 }
 
+impl<'a> AsRef<str> for Service<'a> {
+    #[inline]
+    fn as_ref(&self) -> &str {
+        self.name.as_str()
+    }
+}
+
 /// Abstract service interface definition.
 #[derive(Debug)]
 pub struct ServiceInterface<'a> {
