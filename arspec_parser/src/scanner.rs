@@ -88,7 +88,7 @@ impl<'a> Scanner<'a> {
         where Kind: Copy + Clone + fmt::Debug,
     {
         let token = Token {
-            kind,
+            class: kind,
             span: Span {
                 source: self.source,
                 range: (self.start..self.end).into()
@@ -135,7 +135,7 @@ mod tests {
         assert_eq!(Some('b'), reader.next());
         let token = reader.collect(0);
         assert_eq!("bb", token.span.as_str());
-        assert_eq!(0, token.kind);
+        assert_eq!(0, token.class);
 
         // Take Cs.
         assert_eq!(Some('c'), reader.next());

@@ -254,6 +254,7 @@ fn scan_symbol(scanner: &mut Scanner, mut ch: char) -> Option<Class> {
         "implement" => Class::Implement,
         "interface" => Class::Interface,
         "method" => Class::Method,
+        "primitive" => Class::Primitive,
         "produces" => Class::Produces,
         "property" => Class::Property,
         "record" => Class::Record,
@@ -362,7 +363,7 @@ mod tests {
                 Class::InvalidSymbolChar, Class::InvalidSymbolChar, Class::InvalidSymbolChar,
                 Class::Comment, Class::Comment,
             ],
-            tokens.iter().map(|item| item.kind).collect::<Vec<_>>(),
+            tokens.iter().map(|item| item.class).collect::<Vec<_>>(),
         );
     }
 
@@ -413,7 +414,7 @@ mod tests {
                 Class::BraceRight,
                 Class::BraceRight,
             ],
-            tokens.iter().map(|item| item.kind).collect::<Vec<_>>(),
+            tokens.iter().map(|item| item.class).collect::<Vec<_>>(),
         );
     }
 }

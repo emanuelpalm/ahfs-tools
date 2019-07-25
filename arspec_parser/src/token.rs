@@ -7,7 +7,7 @@ use crate::Span;
 #[derive(Clone, Debug)]
 pub struct Token<'a, Kind> {
     /// Token enumeration.
-    pub kind: Kind,
+    pub class: Kind,
 
     /// Location of token in some source text.
     pub span: Span<'a>,

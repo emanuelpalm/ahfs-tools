@@ -2,6 +2,7 @@ use arspec_parser::{Error, Matcher, Span};
 use crate::spec::{
     Enum, EnumVariant,
     Implement, ImplementInterface, ImplementMethod,
+    Primitive,
     Property,
     Record, RecordEntry,
     Service, ServiceMethod, ServiceInterface, ServiceRef,
@@ -30,14 +31,16 @@ pub fn root<'a>(mut m: &mut M<'a>) -> R<Specification<'a>> {
             Class::Comment,
             Class::Enum,
             Class::Implement,
+            Class::Primitive,
             Class::Record,
             Class::Service,
             Class::System,
         ])?;
-        match token.kind {
+        match token.class {
             Class::Comment => entry(m, t, Some(token.span.clone()))?,
             Class::Enum => enum_(m, t, c)?,
             Class::Implement => implement(m, t, c)?,
+            Class::Primitive => primitive(m, t, c)?,
             Class::Record => record(m, t, c)?,
             Class::Service => service(m, t, c)?,
             Class::System => system(m, t, c)?,
@@ -69,7 +72,7 @@ fn enum_<'a>(m: &mut M<'a>, t: &mut Specification<'a>, c: Option<Span<'a>>) -> R
                 Class::Identifier,
                 Class::BraceRight,
             ])?;
-            match token.kind {
+            match token.class {
                 Class::Comment => { return entry(m, t, Some(token.span.clone())); }
                 Class::Identifier => token.span.clone(),
                 Class::BraceRight => { return Ok(()); }
@@ -83,7 +86,7 @@ fn enum_<'a>(m: &mut M<'a>, t: &mut Specification<'a>, c: Option<Span<'a>>) -> R
             Class::Comma,
             Class::BraceRight,
         ])?;
-        match token.kind {
+        match token.class {
             Class::Comma => entry(m, t, None),
             Class::BraceRight => Ok(()),
             _ => unreachable!(),
@@ -121,7 +124,7 @@ fn implement<'a>(m: &mut M<'a>, t: &mut Specification<'a>, c: Option<Span<'a>>) 
             Class::Property,
             Class::BraceRight,
         ])?;
-        match token.kind {
+        match token.class {
             Class::Comment => { return entry(m, t, Some(token.span.clone())); }
             Class::Interface => implement_interface(m, t, c)?,
             Class::Property => property(m, &mut t.properties, c)?,
@@ -149,7 +152,7 @@ fn implement_interface<'a>(m: &mut M<'a>, t: &mut Implement<'a>, c: Option<Span<
             Class::Property,
             Class::BraceRight,
         ])?;
-        match token.kind {
+        match token.class {
             Class::Comment => { return entry(m, s, Some(token.span.clone())); }
             Class::Method => implement_method(m, &mut s.methods, c)?,
             Class::Property => property(m, &mut s.properties, c)?,
@@ -157,6 +160,57 @@ fn implement_interface<'a>(m: &mut M<'a>, t: &mut Implement<'a>, c: Option<Span<
             _ => unreachable!(),
         }
         entry(m, s, None)
+    }
+}
+
+fn primitive<'a>(m: &mut M<'a>, t: &mut Specification<'a>, c: Option<Span<'a>>) -> R<()> {
+    let mut generic_parameters = Vec::new();
+
+    let token = m.any(&[
+        Class::AngleLeft,
+        Class::Identifier,
+    ])?;
+    let token = match token.class {
+        Class::AngleLeft => {
+            parameters(m, &mut generic_parameters)?;
+            m.one(Class::Identifier)?
+        }
+        Class::Identifier => token,
+        _ => unreachable!(),
+    };
+    let mut type_ref = TypeRef::new(token.span.clone());
+    type_params(m, &mut type_ref.params)?;
+
+    t.primitives.push(Primitive {
+        generic_parameters,
+        definition: type_ref,
+        comment: c,
+    });
+
+    return m.one(Class::Semicolon)
+        .map(|_token| ());
+
+    fn parameters<'a>(m: &mut M<'a>, t: &mut Vec<Span<'a>>) -> R<()> {
+        let token = m.any(&[
+            Class::Identifier,
+            Class::AngleRight,
+        ])?;
+        match token.class {
+            Class::Identifier => {
+                t.push(token.span.clone());
+                let token = m.any(&[
+                    Class::Comma,
+                    Class::AngleRight,
+                ])?;
+                match token.class {
+                    Class::Comma => parameters(m, t),
+                    Class::AngleRight => Ok(()),
+                    _ => unreachable!(),
+                }
+            }
+            Class::AngleRight => Ok(()),
+            _ => unreachable!(),
+        }
     }
 }
 
@@ -185,7 +239,7 @@ fn list<'a>(m: &mut M<'a>, t: &mut Vec<Value<'a>>) -> R<()> {
         Class::Comma,
         Class::SquareRight,
     ])?;
-    match token.kind {
+    match token.class {
         Class::Comma => list(m, t),
         Class::SquareRight => Ok(()),
         _ => unreachable!(),
@@ -198,7 +252,7 @@ fn map<'a>(m: &mut M<'a>, t: &mut Vec<(Span<'a>, Value<'a>)>) -> R<()> {
             Class::Identifier,
             Class::BraceRight,
         ])?;
-        match token.kind {
+        match token.class {
             Class::Identifier => token.span.clone(),
             Class::BraceRight => { return Ok(()); }
             _ => unreachable!(),
@@ -213,7 +267,7 @@ fn map<'a>(m: &mut M<'a>, t: &mut Vec<(Span<'a>, Value<'a>)>) -> R<()> {
         Class::Comma,
         Class::BraceRight,
     ])?;
-    match token.kind {
+    match token.class {
         Class::Comma => map(m, t),
         Class::BraceRight => Ok(()),
         _ => unreachable!(),
@@ -257,7 +311,7 @@ fn record<'a>(m: &mut M<'a>, t: &mut Specification<'a>, c: Option<Span<'a>>) -> 
                 Class::Identifier,
                 Class::BraceRight,
             ])?;
-            match token.kind {
+            match token.class {
                 Class::Comment => { return entry(m, t, Some(token.span.clone())); }
                 Class::Identifier => token.span.clone(),
                 Class::BraceRight => { return Ok(()); }
@@ -281,7 +335,7 @@ fn record<'a>(m: &mut M<'a>, t: &mut Specification<'a>, c: Option<Span<'a>>) -> 
             Class::Comma,
             Class::BraceRight,
         ])?;
-        match token.kind {
+        match token.class {
             Class::Comma => entry(m, t, None),
             Class::BraceRight => Ok(()),
             _ => unreachable!(),
@@ -306,7 +360,7 @@ fn system<'a>(m: &mut M<'a>, t: &mut Specification<'a>, c: Option<Span<'a>>) -> 
             Class::Produces,
             Class::BraceRight,
         ])?;
-        match token.kind {
+        match token.class {
             Class::Comment => { return entry(m, t, Some(token.span.clone())); }
             Class::Consumes => service_ref(m, &mut t.consumes, c)?,
             Class::Produces => service_ref(m, &mut t.produces, c)?,
@@ -333,7 +387,7 @@ fn service<'a>(m: &mut M<'a>, t: &mut Specification<'a>, c: Option<Span<'a>>) ->
             Class::Interface,
             Class::BraceRight,
         ])?;
-        match token.kind {
+        match token.class {
             Class::Comment => entry(m, t, Some(token.span.clone())),
             Class::Interface => {
                 service_interface(m, t, c)?;
@@ -361,7 +415,7 @@ fn service_interface<'a>(m: &mut M<'a>, t: &mut Service<'a>, c: Option<Span<'a>>
             Class::Method,
             Class::BraceRight,
         ])?;
-        match token.kind {
+        match token.class {
             Class::Comment => entry(m, s, Some(token.span.clone())),
             Class::Method => {
                 service_method(m, &mut s.methods, c)?;
@@ -379,7 +433,7 @@ fn service_method<'a>(m: &mut M<'a>, t: &mut Vec<ServiceMethod<'a>>, c: Option<S
         .map(|tokens| ServiceMethod::new(tokens[0].span.clone(), c))?;
 
     let token = m.any(&[Class::Identifier, Class::ParenRight])?;
-    match token.kind {
+    match token.class {
         Class::Identifier => {
             let mut type_ref = TypeRef::new(token.span.clone());
             type_params(m, &mut type_ref.params)?;
@@ -398,7 +452,7 @@ fn service_method<'a>(m: &mut M<'a>, t: &mut Vec<ServiceMethod<'a>>, c: Option<S
     }
 
     let token = m.any(&[Class::Colon, Class::Semicolon])?;
-    match token.kind {
+    match token.class {
         Class::Colon => {
             let token = m.one(Class::Identifier)?;
 
@@ -450,7 +504,7 @@ fn type_params<'a>(m: &mut M<'a>, t: &mut Vec<TypeRef<'a>>) -> R<()> {
             Class::Comma,
             Class::AngleRight,
         ])?;
-        match token.kind {
+        match token.class {
             Class::Comma => entry(m, t)?,
             Class::AngleRight => {}
             _ => unreachable!(),
@@ -472,7 +526,7 @@ fn value<'a>(m: &mut M<'a>) -> R<Value<'a>> {
         Class::SquareLeft,
         Class::BraceLeft,
     ])?;
-    Ok(match token.kind {
+    Ok(match token.class {
         Class::Null => Value::Null,
         Class::Boolean => Value::Boolean(token.span.clone()),
         Class::Integer => Value::Integer(token.span.clone()),

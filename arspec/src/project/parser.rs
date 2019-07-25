@@ -91,7 +91,7 @@ impl<'a> Parser<'a> for ConfigurationParser {
                 Class::ProjectName,
                 Class::ProjectVersion,
             ])?;
-            let target = match token.kind {
+            let target = match token.class {
                 Class::ProjectDescription => &mut description,
                 Class::ProjectName => &mut name,
                 Class::ProjectVersion => &mut version,

@@ -40,7 +40,7 @@ impl<'a, K: Copy + Eq + fmt::Debug> Matcher<'a, K> {
                     return Err(Error::unexpected_source_end(self.tokens.last(), vec![*kind]));
                 }
             };
-            if kind != &token.kind {
+            if kind != &token.class {
                 return Err(Error::unexpected_token(&token, vec![*kind]));
             }
             offset += 1;
@@ -62,7 +62,7 @@ impl<'a, K: Copy + Eq + fmt::Debug> Matcher<'a, K> {
                 return Err(Error::unexpected_source_end(self.tokens.last(), alternatives));
             }
         };
-        if !alternatives.contains(&token.kind) {
+        if !alternatives.contains(&token.class) {
             return Err(Error::unexpected_token(token, alternatives));
         }
         self.offset += 1;
@@ -74,7 +74,7 @@ impl<'a, K: Copy + Eq + fmt::Debug> Matcher<'a, K> {
     /// [tok]: struct.Token.html
     pub fn one(&mut self, kind: K) -> Result<Token<'a, K>, Error<K>> {
         match self.tokens.get(self.offset) {
-            Some(token) if kind == token.kind => {
+            Some(token) if kind == token.class => {
                 self.offset += 1;
                 Ok(token.clone())
             }
@@ -90,7 +90,7 @@ impl<'a, K: Copy + Eq + fmt::Debug> Matcher<'a, K> {
     pub fn one_optional(&mut self, kind: K) -> Option<Token<'a, K>> {
         let token = self.tokens.get(self.offset);
         match token {
-            Some(token) if kind == token.kind => {
+            Some(token) if kind == token.class => {
                 self.offset += 1;
                 Some(token.clone())
             }

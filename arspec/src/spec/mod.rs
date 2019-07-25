@@ -2,6 +2,7 @@ pub mod parser;
 
 mod enum_;
 mod implement;
+mod primitive;
 mod property;
 mod record;
 mod service;
@@ -11,6 +12,7 @@ mod value;
 
 pub use self::enum_::{Enum, EnumVariant};
 pub use self::implement::{Implement, ImplementInterface, ImplementMethod};
+pub use self::primitive::Primitive;
 pub use self::property::Property;
 pub use self::record::{Record, RecordEntry};
 pub use self::service::{Service, ServiceInterface, ServiceMethod, ServiceRef};
@@ -26,6 +28,9 @@ pub struct Specification<'a> {
 
     /// Service implementation definitions.
     pub implementations: Vec<Implement<'a>>,
+
+    /// Primitive type definitions.
+    pub primitives: Vec<Primitive<'a>>,
 
     /// Record type definitions.
     pub records: Vec<Record<'a>>,

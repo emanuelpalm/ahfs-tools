@@ -48,7 +48,7 @@ impl<Kind: Copy + fmt::Debug> Error<Kind> {
         where E: Into<Vec<Kind>>,
     {
         Error {
-            actual: Some(actual.kind),
+            actual: Some(actual.class),
             expected: expected.into(),
             excerpt: Some(actual.span.to_excerpt()),
         }
