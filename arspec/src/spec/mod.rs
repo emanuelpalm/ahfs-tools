@@ -113,8 +113,8 @@ impl<'a> fmt::Display for VerificationError {
                     concat!(
                         "`{}` specification with the name `{}` already exists.\n",
                         "Duplicate located at:\n",
-                        "{}",
-                        "Originally defined at:\n",
+                        "{}\n",
+                        "Original located at:\n",
                         "{}",
                     ),
                     name_type,

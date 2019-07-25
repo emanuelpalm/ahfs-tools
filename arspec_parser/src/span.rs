@@ -28,21 +28,33 @@ impl<'a> Span<'a> {
     pub fn lines(&self) -> Lines {
         let body = &self.source.body;
 
-        let start = body[..self.range.start]
-            .rfind('\n')
-            .map(|start| start + 1)
-            .unwrap_or(0);
+        let start = {
+            let mut count = 0;
+            body[..self.range.start]
+                .rfind(|c: char| if c == '\n' {
+                    count += 1;
+                    count > 1
+                } else { false })
+                .map(|start| start + 1)
+                .unwrap_or(0)
+        };
 
-        let end = body[self.range.end..]
-            .find('\n')
-            .map(|mut end| {
-                end += self.range.end;
-                if end > 0 && body.as_bytes()[end - 1] == b'\r' {
-                    end -= 1;
-                }
-                end
-            })
-            .unwrap_or(self.range.end);
+        let end = {
+            let mut count = 0;
+            body[self.range.end..]
+                .find(|c: char| if c == '\n' {
+                    count += 1;
+                    count > 1
+                } else { false })
+                .map(|mut end| {
+                    end += self.range.end;
+                    if end > 0 && body.as_bytes()[end - 1] == b'\r' {
+                        end -= 1;
+                    }
+                    end
+                })
+                .unwrap_or(self.range.end)
+        };
 
         let source = &body[start..end];
         let number = body[..start]
