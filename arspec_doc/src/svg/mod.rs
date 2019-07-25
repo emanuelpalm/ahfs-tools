@@ -1,3 +1,4 @@
+pub mod enum_;
 pub mod record;
 pub mod service;
 pub mod system;

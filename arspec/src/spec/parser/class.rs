@@ -29,6 +29,7 @@ pub enum Class {
 
     // Keywords.
     Consumes,
+    Enum,
     Implement,
     Interface,
     Method,
@@ -72,6 +73,7 @@ impl fmt::Display for Class {
             Class::String => "String",
 
             Class::Consumes => "consumes",
+            Class::Enum => "enum",
             Class::Implement => "implement",
             Class::Interface => "interface",
             Class::Method => "method",

@@ -27,6 +27,15 @@ pub fn doc(args: &[&str]) -> arspec::Result {
         let source = Text::read_at(path)?;
         let tree = parser::parse(&source)?;
 
+        for enum_ in tree.enums {
+            buffer.clear();
+            svg::render(&enum_, &mut buffer)?;
+            let target_path = project.target()
+                .join(format!("enum-{}.svg", enum_.name.as_str()));
+
+            fs::write(target_path, &mut buffer)?;
+        }
+
         for record in tree.records {
             buffer.clear();
             svg::render(&record,  &mut buffer)?;

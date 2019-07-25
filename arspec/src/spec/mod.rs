@@ -1,5 +1,6 @@
 pub mod parser;
 
+mod enum_;
 mod implement;
 mod property;
 mod record;
@@ -8,6 +9,7 @@ mod system;
 mod type_ref;
 mod value;
 
+pub use self::enum_::{Enum, EnumVariant};
 pub use self::implement::{Implement, ImplementInterface, ImplementMethod};
 pub use self::property::Property;
 pub use self::record::{Record, RecordEntry};
@@ -19,6 +21,9 @@ pub use self::value::Value;
 /// An Arrowhead Framework specification collection.
 #[derive(Debug, Default)]
 pub struct Specification<'a> {
+    /// Enumerator type definitions.
+    pub enums: Vec<Enum<'a>>,
+
     /// Service implementation definitions.
     pub implementations: Vec<Implement<'a>>,
 

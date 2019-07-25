@@ -1,5 +1,6 @@
 use arspec_parser::{Error, Matcher, Span};
 use crate::spec::{
+    Enum, EnumVariant,
     Implement, ImplementInterface, ImplementMethod,
     Property,
     Record, RecordEntry,
@@ -27,6 +28,7 @@ pub fn root<'a>(mut m: &mut M<'a>) -> R<Specification<'a>> {
     fn entry<'a>(m: &mut M<'a>, t: &mut Specification<'a>, c: Option<Span<'a>>) -> R<()> {
         let token = m.any(&[
             Class::Comment,
+            Class::Enum,
             Class::Implement,
             Class::Record,
             Class::Service,
@@ -34,6 +36,7 @@ pub fn root<'a>(mut m: &mut M<'a>) -> R<Specification<'a>> {
         ])?;
         match token.kind {
             Class::Comment => entry(m, t, Some(token.span.clone()))?,
+            Class::Enum => enum_(m, t, c)?,
             Class::Implement => implement(m, t, c)?,
             Class::Record => record(m, t, c)?,
             Class::Service => service(m, t, c)?,
@@ -44,6 +47,47 @@ pub fn root<'a>(mut m: &mut M<'a>) -> R<Specification<'a>> {
             return Ok(());
         }
         entry(m, t, None)
+    }
+}
+
+fn enum_<'a>(m: &mut M<'a>, t: &mut Specification<'a>, c: Option<Span<'a>>) -> R<()> {
+    let name = m
+        .all(&[Class::Identifier, Class::BraceLeft])
+        .map(|tokens| tokens[0].span.clone())?;
+
+    let mut enum_ = Enum::new(name, c);
+
+    entry(m, &mut enum_, None)?;
+    t.enums.push(enum_);
+
+    return Ok(());
+
+    fn entry<'a>(m: &mut M<'a>, t: &mut Enum<'a>, c: Option<Span<'a>>) -> R<()> {
+        let name = {
+            let token = m.any(&[
+                Class::Comment,
+                Class::Identifier,
+                Class::BraceRight,
+            ])?;
+            match token.kind {
+                Class::Comment => { return entry(m, t, Some(token.span.clone())); }
+                Class::Identifier => token.span.clone(),
+                Class::BraceRight => { return Ok(()); }
+                _ => unreachable!(),
+            }
+        };
+
+        t.variants.push(EnumVariant { name, comment: c });
+
+        let token = m.any(&[
+            Class::Comma,
+            Class::BraceRight,
+        ])?;
+        match token.kind {
+            Class::Comma => entry(m, t, None),
+            Class::BraceRight => Ok(()),
+            _ => unreachable!(),
+        }
     }
 }
 

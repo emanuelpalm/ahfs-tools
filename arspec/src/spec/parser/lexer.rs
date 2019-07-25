@@ -250,6 +250,7 @@ fn scan_symbol(scanner: &mut Scanner, mut ch: char) -> Option<Class> {
     Some(match scanner.review() {
         // Keywords.
         "consumes" => Class::Consumes,
+        "enum" => Class::Enum,
         "implement" => Class::Implement,
         "interface" => Class::Interface,
         "method" => Class::Method,

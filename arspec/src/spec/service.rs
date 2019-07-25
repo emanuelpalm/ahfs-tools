@@ -1,4 +1,4 @@
-use arspec_parser::{Range, Span};
+use arspec_parser::Span;
 use crate::spec::TypeRef;
 
 /// An abstract service definition.
