@@ -1,4 +1,4 @@
-use arspec_parser::{Error, Matcher, Parser, Scanner, Span, Text, Token};
+use arspec_parser::{Corpus, Error, Matcher, Parser, Scanner, Span, Token};
 use std::fmt;
 use super::Configuration;
 
@@ -7,8 +7,8 @@ use super::Configuration;
 /// [cnf]: ../struct.Configuration.html
 /// [txt]: ../../../arspec_parser/struct.Text.html
 #[inline]
-pub fn parse(text: &Text) -> Result<Configuration, Error<Class>> {
-    ConfigurationParser::parse(text)
+pub fn parse(corpus: &Corpus) -> Result<Configuration, Error<Class>> {
+    ConfigurationParser::parse(corpus)
 }
 
 struct ConfigurationParser;
@@ -80,7 +80,7 @@ impl<'a> Parser<'a> for ConfigurationParser {
     }
 
     #[inline]
-    fn combine(mut matcher: Matcher<'a, Class>) -> Result<Configuration, Error<Class>> {
+    fn combine(config: &mut Configuration, mut matcher: Matcher<'a, Class>) -> Result<(), Error<Class>> {
         let mut name: Option<Span<'a>> = None;
         let mut description: Option<Span<'a>> = None;
         let mut version: Option<Span<'a>> = None;
@@ -103,7 +103,7 @@ impl<'a> Parser<'a> for ConfigurationParser {
             *target = Some(token.span);
         }
 
-        return Ok(Configuration {
+        *config = Configuration {
             name: name.map_or_else(
                 || "New Project".to_string(),
                 span_to_string,
@@ -115,7 +115,9 @@ impl<'a> Parser<'a> for ConfigurationParser {
                 || "0.1.0".to_string(),
                 span_to_string,
             ),
-        });
+        };
+
+        return Ok(());
 
         fn span_to_string(span: Span) -> String {
             let input = span.as_str();

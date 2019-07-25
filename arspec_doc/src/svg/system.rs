@@ -24,7 +24,7 @@ impl Size for SystemMeasurements {
     }
 }
 
-impl<'a> Encode<SystemMeasurements> for System<'a> {
+impl<'a: 'b, 'b> Encode<SystemMeasurements> for &'b System<'a> {
     fn encode<W>(&self, offset: Vector, measurements: SystemMeasurements, w: &mut W) -> io::Result<()>
         where W: io::Write
     {

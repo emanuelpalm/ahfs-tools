@@ -3,7 +3,7 @@ use crate::Font;
 use std::io;
 use super::{color, Encode, Vector};
 
-impl<'a> Encode for Enum<'a> {
+impl<'a: 'b, 'b> Encode for &'b Enum<'a> {
     fn encode<W>(&self, offset: Vector, size: Vector, w: &mut W) -> io::Result<()>
         where W: io::Write
     {

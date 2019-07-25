@@ -19,12 +19,8 @@ type M<'a> = Matcher<'a, Class>;
 /// Attempt to consume all tokens in `m` and produce a [`Specification`][spc].
 ///
 /// [spc]: ../struct.Specification.html
-pub fn root<'a>(mut m: &mut M<'a>) -> R<Specification<'a>> {
-    let mut spec = Specification::default();
-
-    entry(&mut m, &mut spec, None)?;
-
-    return Ok(spec);
+pub fn root<'a>(spec: &mut Specification<'a>, mut m: &mut M<'a>) -> R<()> {
+    return entry(&mut m, spec, None);
 
     fn entry<'a>(m: &mut M<'a>, t: &mut Specification<'a>, c: Option<Span<'a>>) -> R<()> {
         let token = m.any(&[

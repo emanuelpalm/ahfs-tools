@@ -6,7 +6,7 @@ use arspec::spec::parser;
 use arspec::project::Project;
 use arspec_doc::Font;
 use arspec_doc::svg;
-use arspec_parser::Text;
+use arspec_parser::Corpus;
 use crate::log;
 use std::fs;
 use std::io;
@@ -23,46 +23,45 @@ pub fn doc(args: &[&str]) -> arspec::Result {
 
     let mut buffer = Vec::<u8>::new();
 
-    for path in project.files()?.iter() {
-        let source = Text::read_at(path)?;
-        let tree = parser::parse(&source)?;
-        tree.verify()?;
+    let corpus = Corpus::read_from(project.files()?.iter())?;
+    let spec = parser::parse(&corpus)?;
 
-        for enum_ in tree.enums {
-            buffer.clear();
-            svg::render(&enum_, &mut buffer)?;
-            let target_path = project.target()
-                .join(format!("enum-{}.svg", enum_.name.as_str()));
+    &spec.verify()?;
 
-            fs::write(target_path, &mut buffer)?;
-        }
+    for enum_ in &spec.enums {
+        buffer.clear();
+        svg::render(&enum_, &mut buffer)?;
+        let target_path = project.target()
+            .join(format!("enum-{}.svg", enum_.name.as_str()));
 
-        for record in tree.records {
-            buffer.clear();
-            svg::render(&record,  &mut buffer)?;
-            let target_path = project.target()
-                .join(format!("record-{}.svg", record.name.as_str()));
+        fs::write(target_path, &mut buffer)?;
+    }
 
-            fs::write(target_path, &mut buffer)?;
-        }
+    for record in &spec.records {
+        buffer.clear();
+        svg::render(&record,  &mut buffer)?;
+        let target_path = project.target()
+            .join(format!("record-{}.svg", record.name.as_str()));
 
-        for service in tree.services {
-            buffer.clear();
-            svg::render(&service, &mut buffer)?;
-            let target_path = project.target()
-                .join(format!("service-{}.svg", service.name.as_str()));
+        fs::write(target_path, &mut buffer)?;
+    }
 
-            fs::write(target_path, &mut buffer)?;
-        }
+    for service in &spec.services {
+        buffer.clear();
+        svg::render(&service, &mut buffer)?;
+        let target_path = project.target()
+            .join(format!("service-{}.svg", service.name.as_str()));
 
-        for system in tree.systems {
-            buffer.clear();
-            svg::render(&system, &mut buffer)?;
-            let target_path = project.target()
-                .join(format!("system-{}.svg", system.name.as_str()));
+        fs::write(target_path, &mut buffer)?;
+    }
 
-            fs::write(target_path, &mut buffer)?;
-        }
+    for system in &spec.systems {
+        buffer.clear();
+        svg::render(&system, &mut buffer)?;
+        let target_path = project.target()
+            .join(format!("system-{}.svg", system.name.as_str()));
+
+        fs::write(target_path, &mut buffer)?;
     }
 
     for font in Font::all() {

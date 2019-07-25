@@ -2,6 +2,7 @@
 //! parsers. The most straightforward way to use the package is to implement
 //! the [`Parser`](trait.Parser.html) trait.
 
+mod corpus;
 mod error;
 mod excerpt;
 mod lines;
@@ -12,6 +13,7 @@ mod span;
 mod text;
 mod token;
 
+pub use self::corpus::Corpus;
 pub use self::error::Error;
 pub use self::excerpt::Excerpt;
 pub use self::lines::{Line, Lines};
@@ -32,15 +34,19 @@ pub trait Parser<'a> {
     /// Whatever type is produced by a successful [`parse()`][par] invocation.
     ///
     /// [par]: trait.Parser.html#method.parse
-    type Output: 'a;
+    type Output: Default + 'a;
 
     /// Attempts to parse referenced [`text`](struct.Text.html) text.
     #[inline]
-    fn parse(text: &'a Text) -> Result<Self::Output, Error<Self::Class>> {
-        let scanner = Scanner::new(text);
-        let tokens = Self::analyze(scanner);
-        let matcher = Matcher::new(tokens);
-        Self::combine(matcher)
+    fn parse(corpus: &'a Corpus) -> Result<Self::Output, Error<Self::Class>> {
+        let mut output = Self::Output::default();
+        for text in &corpus.texts {
+            let scanner = Scanner::new(text);
+            let tokens = Self::analyze(scanner);
+            let matcher = Matcher::new(tokens);
+            Self::combine(&mut output, matcher)?;
+        }
+        Ok(output)
     }
 
     /// Produces vector of [`tokens`][tok] from [`Text`][txt] referenced by
@@ -57,5 +63,5 @@ pub trait Parser<'a> {
     /// [err]: struct.Error.html
     /// [mtc]: struct.Matcher.html
     /// [tok]: struct.Token.html
-    fn combine(matcher: Matcher<'a, Self::Class>) -> Result<Self::Output, Error<Self::Class>>;
+    fn combine(output: &mut Self::Output, matcher: Matcher<'a, Self::Class>) -> Result<(), Error<Self::Class>>;
 }

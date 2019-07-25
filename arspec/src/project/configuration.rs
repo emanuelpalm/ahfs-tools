@@ -6,7 +6,7 @@ use std::path::Path;
 use super::parser;
 
 /// Arrowhead Framework project configuration.
-#[derive(Debug)]
+#[derive(Debug, Default)]
 pub struct Configuration {
     /// Project name.
     pub name: String,
@@ -37,7 +37,7 @@ impl Configuration {
         where P: AsRef<Path>,
     {
         let text = Text::read_at(path)?;
-        let conf = parser::parse(&text)?;
+        let conf = parser::parse(&text.into())?;
         Ok(conf)
     }
 

@@ -4,7 +4,7 @@ mod lexer;
 
 pub use self::class::Class;
 
-use arspec_parser::{Error, Matcher, Parser, Scanner, Text, Token};
+use arspec_parser::{Corpus, Error, Matcher, Parser, Scanner, Token};
 use crate::spec::Specification;
 
 /// Attempt to create [`Specification`][spc] from given source [`text`][txt].
@@ -12,8 +12,8 @@ use crate::spec::Specification;
 /// [spc]: ../struct.Specification.html
 /// [txt]: ../../../arspec_parser/struct.Text.html
 #[inline]
-pub fn parse(text: &Text) -> Result<Specification, Error<Class>> {
-    SpecParser::parse(text)
+pub fn parse(corpus: &Corpus) -> Result<Specification, Error<Class>> {
+    SpecParser::parse(corpus)
 }
 
 struct SpecParser;
@@ -28,18 +28,18 @@ impl<'a> Parser<'a> for SpecParser {
     }
 
     #[inline]
-    fn combine(mut matcher: Matcher<'a, Class>) -> Result<Specification<'a>, Error<Class>> {
-        parser::root(&mut matcher)
+    fn combine(spec: &mut Specification<'a>, mut matcher: Matcher<'a, Class>) -> Result<(), Error<Class>> {
+        parser::root(spec, &mut matcher)
     }
 }
 
 #[cfg(test)]
 mod tests {
-    use arspec_parser::Text;
+    use arspec_parser::{Text, Corpus};
 
     #[test]
     fn example1() {
-        let source = Text {
+        let corpus: Corpus = Text {
             name: "alpha.ahfs".into(),
             body: concat!(
                 "/// Comment A.\n",
@@ -51,8 +51,8 @@ mod tests {
                 "    }\n",
                 "}\n",
             ).into(),
-        };
-        let tree = match super::parse(&source) {
+        }.into();
+        let tree = match super::parse(&corpus) {
             Ok(tree) => tree,
             Err(err) => {
                 println!("{}", err);
@@ -84,7 +84,7 @@ mod tests {
 
     #[test]
     fn example2() {
-        let source = Text {
+        let corpus: Corpus = Text {
             name: "alpha.ahfs".into(),
             body: concat!(
                 "// This comment is ignored.\n",
@@ -131,8 +131,8 @@ mod tests {
                 "    X: Integer,\n",
                 "}\n",
             ).into()
-        };
-        if let Err(error) = super::parse(&source) {
+        }.into();
+        if let Err(error) = super::parse(&corpus) {
             panic!("{}", error);
         }
     }
