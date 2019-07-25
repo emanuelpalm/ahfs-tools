@@ -1,0 +1,72 @@
+%YAML 1.2
+---
+# .ahfs file syntax highligtning for Sublime Text 3.
+
+name: AHFS
+file_extensions:
+  - ahfs
+scope: source.ahfs
+
+contexts:
+  prototype:
+    - include: comments
+
+  main:
+    - include: keywords
+    - include: numbers
+    - include: strings
+    - include: delimiters
+
+  keywords:
+    - match: '\b(consumes|enum|implement|interface|method|primitive|produces|property|record|service|system|using)\b'
+      scope: keyword.control.ahfs
+
+  numbers:
+    - match: '\b[+-]?[0-9.]+([eE][+-]?[0-9]+)?\b'
+      scope: constant.numeric.ahfs
+
+  strings:
+    - match: '"'
+      scope: punctuation.definition.string.begin.ahfs
+      push: strings-inner
+
+  strings-inner:
+    - meta_include_prototype: false
+    - meta_scope: string.quoted.double.ahfs
+    - match: '\.'
+      scope: constant.character.escape.ahfs
+    - match: '"'
+      scope: punctuation.definition.string.end.ahfs
+      pop: true
+
+  delimiters:
+    - include: delimiters-begin
+    - include: delimiters-end
+
+  delimiters-begin:
+    - match: '<|{|\(|\[|:|/'
+      scope: punctuation.definition.parameters.begin.ahfs
+
+  delimiters-end:
+    - match: '>|}|\)|\]|,|;'
+      scope: punctuation.definition.parameters.end.ahfs
+
+  comments:
+    - match: /\*\*/
+      scope: comment.block.empty.ahfs punctuation.definition.comment.ahfs
+    - include: comments-inline
+
+  comments-inline:
+    - match: /\*
+      scope: punctuation.definition.comment.ahfs
+      push:
+        - meta_scope: comment.block.ahfs
+        - match: \*/
+          scope: punctuation.definition.comment.ahfs
+          pop: true
+    - match: //
+      scope: punctuation.definition.comment.ahfs
+      push:
+        - meta_scope: comment.line.double-slash.ahfs
+        - match: $\n?
+          pop: true
