@@ -32,6 +32,7 @@ pub type Result<T> = result::Result<T, Error>;
 /// only guaranteed to support reading the fonts that come bundled with this
 /// package.
 pub struct FontFile<'a> {
+    file: Region<'a>,
     cmap: CharacterToGlyphIndexMappingTable<'a>,
     glyf: GlyphDataTable<'a>,
     head: FontHeaderTable<'a>,
@@ -104,6 +105,7 @@ impl<'a> FontFile<'a> {
         ).ok_or(Error::HMTX)?;
 
         Ok(FontFile {
+            file,
             cmap,
             glyf,
             head,
@@ -112,6 +114,12 @@ impl<'a> FontFile<'a> {
             kern,
             maxp,
         })
+    }
+
+    /// Get font file as slice of bytes.
+    #[inline]
+    pub fn as_bytes(&self) -> &'a [u8] {
+        self.file.bytes()
     }
 
     /// Character to glyph mapping.

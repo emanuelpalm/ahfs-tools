@@ -4,69 +4,154 @@ pub use self::error::Error;
 
 use arspec::spec::parser;
 use arspec::project::Project;
-use arspec_doc::Font;
-use arspec_doc::svg;
+use arspec_doc::{Font, FontStyle, FontWeight, html, scripts, styles, svg};
 use arspec_parser::Corpus;
 use crate::log;
 use std::fs;
 use std::io;
 use std::io::Write;
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 
-/// Prints list of all project source files and exits.
-pub fn doc(args: &[&str]) -> arspec::Result {
+/// Generates documentation files.
+pub fn doc(args: &[&str], skip_verification: bool) -> arspec::Result {
     if args.len() != 0 {
-        return Err(Error::ListArgCountNot0.into());
+        return Err(Error::DocArgCountNot0.into());
     }
+
+    // Load project.
     let project = Project::locate(".")?;
-    fs::create_dir_all(&project.target())?;
+    let target_path = &project.target();
+    fs::create_dir_all(&target_path)?;
 
-    let mut buffer = Vec::<u8>::new();
-
+    // Load project specification.
     let corpus = Corpus::read_from(project.files()?.iter())?;
     let spec = parser::parse(&corpus)?;
 
-    &spec.verify()?;
-
-    for enum_ in &spec.enums {
-        buffer.clear();
-        svg::render(&enum_, &mut buffer)?;
-        let target_path = project.target()
-            .join(format!("enum-{}.svg", enum_.name.as_str()));
-
-        fs::write(target_path, &mut buffer)?;
+    // Verify specification correctness.
+    if !skip_verification {
+        &spec.verify()?;
     }
 
-    for record in &spec.records {
-        buffer.clear();
-        svg::render(&record,  &mut buffer)?;
-        let target_path = project.target()
-            .join(format!("record-{}.svg", record.name.as_str()));
+    let mut buffer = Vec::<u8>::new();
 
-        fs::write(target_path, &mut buffer)?;
+    // Generate figures.
+    {
+        let figures_path = &target_path.join("figures");
+        fs::create_dir_all(figures_path)?;
+
+        for enum_ in &spec.enums {
+            buffer.clear();
+            svg::render(&enum_, false, &mut buffer)?;
+            let target_path = figures_path
+                .join(format!("enum-{}.svg", enum_.name.as_str()));
+
+            fs::write(target_path, &mut buffer)?;
+        }
+
+        for record in &spec.records {
+            buffer.clear();
+            svg::render(&record, false, &mut buffer)?;
+            let target_path = figures_path
+                .join(format!("record-{}.svg", record.name.as_str()));
+
+            fs::write(target_path, &mut buffer)?;
+        }
+
+        for service in &spec.services {
+            buffer.clear();
+            svg::render(&service, false, &mut buffer)?;
+            let target_path = figures_path
+                .join(format!("service-{}.svg", service.name.as_str()));
+
+            fs::write(target_path, &mut buffer)?;
+        }
+
+        for system in &spec.systems {
+            buffer.clear();
+            svg::render(&system, false, &mut buffer)?;
+            let target_path = figures_path
+                .join(format!("system-{}.svg", system.name.as_str()));
+
+            fs::write(target_path, &mut buffer)?;
+        }
     }
 
-    for service in &spec.services {
-        buffer.clear();
-        svg::render(&service, &mut buffer)?;
-        let target_path = project.target()
-            .join(format!("service-{}.svg", service.name.as_str()));
+    // Create font files.
+    {
+        let fonts_path = &target_path.join("fonts");
+        fs::create_dir_all(fonts_path)?;
 
-        fs::write(target_path, &mut buffer)?;
+        for font in Font::all() {
+            fs::File::create(fonts_path.join(font.source_name()))
+                .and_then(|mut file| file.write_all(font.source()))?;
+        }
     }
 
-    for system in &spec.systems {
-        buffer.clear();
-        svg::render(&system, &mut buffer)?;
-        let target_path = project.target()
-            .join(format!("system-{}.svg", system.name.as_str()));
+    // Create script files.
+    {
+        let scripts_path = &target_path.join("scripts");
+        fs::create_dir_all(scripts_path)?;
 
-        fs::write(target_path, &mut buffer)?;
+        fs::File::create(scripts_path.join("main.js"))
+            .and_then(|mut file| file.write_all(scripts::MAIN))?;
     }
 
-    for font in Font::all() {
-        fs::File::create(project.target().join(font.source_name()))
-            .and_then(|mut file| file.write_all(font.source()))?;
+    // Create style files.
+    {
+        let styles_path = &target_path.join("styles");
+        fs::create_dir_all(styles_path)?;
+
+        fs::File::create(styles_path.join("fonts.css"))
+            .and_then(|mut file| {
+                for font in Font::all() {
+                    write!(
+                        file,
+                        concat!(
+                            "@font-face {{\n",
+                            "  font-family: \"{}\";\n",
+                            "  src: \"../fonts/{}\" format('truetype');\n",
+                        ),
+                        font.name(), font.source_name(),
+                    )?;
+                    let style = font.style();
+                    if *style != FontStyle::Normal {
+                        write!(file, "  font-style: \"{}\";\n", style)?;
+                    }
+                    let weight = font.weight();
+                    if *weight != FontWeight::Normal {
+                        write!(file, "  font-weight: \"{}\";\n", weight)?;
+                    }
+                    write!(file, "}}\n\n")?;
+                }
+                Ok(())
+            })?;
+
+        fs::File::create(styles_path.join("print.css"))
+            .and_then(|mut file| file.write_all(styles::PRINT))?;
+
+        fs::File::create(styles_path.join("screen.css"))
+            .and_then(|mut file| file.write_all(styles::SCREEN))?;
+    }
+
+    // Generate HTML files.
+    {
+        let scripts = &[
+            Path::new("scripts/main.js"),
+        ];
+        let styles = &[
+            html::Style { path: Path::new("styles/fonts.css"), media: html::StyleMedia::ALL },
+            html::Style { path: Path::new("styles/print.css"), media: html::StyleMedia::PRINT },
+            html::Style { path: Path::new("styles/screen.css"), media: html::StyleMedia::SCREEN },
+        ];
+
+        for system in &spec.systems {
+            buffer.clear();
+            html::render(&system, scripts, styles, &mut buffer)?;
+            let target_path = target_path
+                .join(format!("{}-SysD.html", system.name.as_str()));
+
+            fs::write(target_path, &mut buffer)?;
+        }
     }
 
     Ok(())

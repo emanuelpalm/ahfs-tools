@@ -8,6 +8,7 @@ use std::env;
 use std::process;
 
 fn main() {
+    let doc_s = cliargs::FlagCell::new();
     let help = cliargs::FlagCell::new();
     let new_i = cliargs::FlagCell::new();
     let new_n = cliargs::FlagCell::new();
@@ -21,8 +22,15 @@ fn main() {
                 name: "doc",
                 name_details: "",
                 description: "Generate project documentation files.",
-                flags: &[],
-                callback: &|args| app::doc(args),
+                flags: &[
+                    cliargs::Flag {
+                        short: Some("s"),
+                        long: "skip-verifications",
+                        description: "Skip some source file verifications.",
+                        out: cliargs::FlagOut::new_bool(&doc_s),
+                    },
+                ],
+                callback: &|args| app::doc(args, doc_s.take_or(false)),
             },
             cliargs::Rule {
                 name: "help",

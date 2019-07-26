@@ -33,7 +33,7 @@ impl Size for Vector {
 }
 
 /// Creates complete XML/SVG file for given SVG element.
-pub fn render<E, M, W>(element: &E, w: &mut W) -> io::Result<()>
+pub fn render<E, M, W>(element: &E, inline: bool, w: &mut W) -> io::Result<()>
     where E: Encode<M>,
           M: Size,
           W: io::Write,
@@ -41,15 +41,26 @@ pub fn render<E, M, W>(element: &E, w: &mut W) -> io::Result<()>
     let measurements = element.measure();
     let size = measurements.size();
 
+    if !inline {
+        write!(w, "<?xml version=\"1.0\" ?>")?;
+    }
+
     write!(w, concat!(
         "<svg width=\"{}px\" height=\"{}px\"",
         " xmlns=\"http://www.w3.org/2000/svg\" version=\"1.1\">",
-        "<g font-family=\"{}\">",
-    ), size.x, size.y, Font::sans().name())?;
+    ), size.x, size.y)?;
+
+    if !inline {
+        write!(w, "<g font-family=\"{}\">", Font::sans().name())?;
+    }
 
     element.encode(Vector::default(), measurements, w)?;
 
-    write!(w, "</g></svg>")
+    if !inline {
+        write!(w, "</g>")?;
+    }
+
+    write!(w, "</svg>")
 }
 
 mod color {

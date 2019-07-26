@@ -4,49 +4,8 @@ use std::collections::HashMap;
 use std::env;
 use std::fs::File;
 use std::path::Path;
-use std::io::Write;
-
-macro_rules! include_font {
-    ($path:tt) => (include_bytes!(concat!(env!("CARGO_MANIFEST_DIR"), "/assets/fonts/", $path)));
-}
-
-fn main() {
-    let out_dir = env::var("OUT_DIR").unwrap();
-
-    build_font(
-        include_font!("noto/NotoSansMono-Regular-European.ttf"),
-        "NotoSansMono-Regular-European.ttf",
-        "Noto Sans Mono",
-        &Path::new(&out_dir).join("font_mono.rs"),
-    );
-    build_font(
-        include_font!("noto/NotoSans-Regular-European.ttf"),
-        "NotoSans-Regular-European.ttf",
-        "Noto Sans",
-        &Path::new(&out_dir).join("font_sans.rs"),
-    );
-    build_font(
-        include_font!("noto/NotoSans-Bold-European.ttf"),
-        "NotoSans-Bold-European.ttf",
-        "Noto Sans",
-        &Path::new(&out_dir).join("font_sans_bold.rs"),
-    );
-    build_font(
-        include_font!("noto/NotoSans-Italic-European.ttf"),
-        "NotoSans-Italic-European.ttf",
-        "Noto Sans",
-        &Path::new(&out_dir).join("font_sans_italic.rs"),
-    );
-}
-
 /// Generates `Font` from referenced `font_file` and writes it to `dest_path`.
-fn build_font(
-    font_file: &[u8],
-    font_file_name: &str,
-    font_name: &str,
-    dest_path: &Path) {
-    let font = otf::FontFile::try_new(font_file).unwrap();
-
+fn build_font<'a>(font: &otf::FontFile<'a>, file_name: &str, name: &str, dest: &Path) {
     // Prepare font glyphs.
     let glyphs = {
         // Create one glyph per font glyph index.
@@ -97,6 +56,7 @@ fn build_font(
         glyphs
     };
 
+    // Render font glyphs.
     let out = format!(
         concat!(
             "Font {{\n",
@@ -117,7 +77,7 @@ fn build_font(
             "    source_name: \"{source_name}\",\n",
             "}}\n"
         ),
-        name = font_name,
+        name = name,
         style = if font.head().mac_style_italic() { "Italic" } else { "Normal" },
         weight = if font.head().mac_style_bold() { "Bold" } else { "Normal" },
         ascender = font.hhea().ascender(),
@@ -175,7 +135,7 @@ fn build_font(
         source = {
             let mut out = "&[".to_string();
             let mut column = 14;
-            for b in font_file.iter() {
+            for b in font.as_bytes().iter() {
                 if column == 14 {
                     out.push_str("\n        ");
                     column = 0;
@@ -186,15 +146,57 @@ fn build_font(
             out.push_str("\n    ]");
             out
         },
-        source_name = font_file_name,
+        source_name = file_name,
     );
-    // Render font glyphs.
 
     // Write font glyphs to new file at destination path.
-    File::create(&dest_path)
+    File::create(&dest)
         .unwrap()
         .write_all(out.as_bytes())
         .unwrap();
+}
+
+use std::io::Write;
+
+macro_rules! load_font_file {
+    ($path:tt) => {
+        $crate::otf::FontFile::try_new(
+            include_bytes!(concat!(env!("CARGO_MANIFEST_DIR"), "/assets/fonts/", $path))
+        ).unwrap()
+    }
+}
+
+fn main() {
+    let out_dir = env::var("OUT_DIR").unwrap();
+    let out_dir = Path::new(&out_dir);
+
+    build_font(
+        &load_font_file!("NotoSansMono-Regular-European.ttf"),
+        "NotoSansMono-Regular-European.ttf",
+        "Noto Sans Mono",
+        &out_dir.join("font_mono.rs"),
+    );
+
+    build_font(
+        &load_font_file!("NotoSans-Regular-European.ttf"),
+        "NotoSans-Regular-European.ttf",
+        "Noto Sans",
+        &out_dir.join("font_sans.rs"),
+    );
+
+    build_font(
+        &load_font_file!("NotoSans-Bold-European.ttf"),
+        "NotoSans-Bold-European.ttf",
+        "Noto Sans",
+        &out_dir.join("font_sans_bold.rs"),
+    );
+
+    build_font(
+        &load_font_file!("NotoSans-Italic-European.ttf"),
+        "NotoSans-Italic-European.ttf",
+        "Noto Sans",
+        &out_dir.join("font_sans_italic.rs"),
+    );
 }
 
 #[derive(Clone, Default)]

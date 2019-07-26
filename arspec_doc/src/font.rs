@@ -175,6 +175,7 @@ impl<'a> Font<'a> {
     }
 }
 
+#[derive(Eq, PartialEq)]
 pub enum FontStyle {
     Normal,
     Italic,
@@ -189,6 +190,7 @@ impl fmt::Display for FontStyle {
     }
 }
 
+#[derive(Eq, PartialEq)]
 pub enum FontWeight {
     Normal,
     Bold,

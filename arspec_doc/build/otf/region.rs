@@ -64,6 +64,11 @@ impl<'a> Region<'a> {
     }
 
     #[inline]
+    pub fn bytes(&self) -> &'a [u8] {
+        self.bytes
+    }
+
+    #[inline]
     pub fn get<I>(&self, index: I) -> Option<&I::Output>
         where I: slice::SliceIndex<[u8]>
     {
