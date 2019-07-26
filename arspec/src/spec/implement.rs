@@ -1,5 +1,5 @@
 use arspec_parser::Span;
-use crate::spec::{Property, Value};
+use super::{Property, Specification, Value, VerificationError};
 
 /// Specifies how to implement a named [`Service`][srv].
 ///
@@ -41,6 +41,52 @@ impl<'a> Implement<'a> {
             properties: Vec::new(),
             interfaces: Vec::new(),
             comment,
+        }
+    }
+
+    pub fn verify(&self, spec: &Specification) -> Result<(), VerificationError> {
+        let service = spec.services.iter()
+            .find(|service| self.name == service.name)
+            .ok_or_else(|| VerificationError::NoSuchServiceToImplement {
+                service: self.name.to_excerpt(),
+            })?;
+
+        'outer0: for interface0 in &self.interfaces {
+            for interface1 in &service.interfaces {
+                if interface0.name == interface1.name {
+                    continue 'outer0;
+                }
+            }
+            return Err(VerificationError::NoSuchInterfaceToImplement {
+                service: service.name.to_excerpt(),
+                interface: interface0.name.to_excerpt(),
+            });
+        }
+
+        'outer1: for interface0 in &service.interfaces {
+            for interface1 in &self.interfaces {
+                if interface0.name == interface1.name {
+                    continue 'outer1;
+                }
+            }
+            return Err(VerificationError::InterfaceNotImplemented {
+                interface: interface0.name.to_excerpt(),
+                implementation: self.name.to_excerpt(),
+            });
+        }
+
+        match self.protocol.as_str() {
+            "COAP" | "HTTP" | "MQTT" => Ok(()),
+            _ => Err(VerificationError::UnknownServiceProtocol {
+                protocol: self.protocol.to_excerpt(),
+            })
+        }?;
+
+        match self.encoding.as_str() {
+            "CBOR" | "JSON" | "XML" => Ok(()),
+            _ => Err(VerificationError::UnknownServiceEncoding {
+                encoding: self.encoding.to_excerpt(),
+            })
         }
     }
 }

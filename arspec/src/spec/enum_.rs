@@ -28,8 +28,7 @@ impl<'a> Enum<'a> {
     /// Asserts that this enum has no internal inconsistencies.
     pub fn verify(&self) -> Result<(), VerificationError> {
         verify::find_duplicate(&self.variants)
-            .map(|dup| Err(VerificationError::NameDuplicate {
-                name_type: "enum variant",
+            .map(|dup| Err(VerificationError::EnumVariantDuplicate {
                 original: dup.original.name.to_excerpt(),
                 duplicate: dup.duplicate.name.to_excerpt(),
             }))

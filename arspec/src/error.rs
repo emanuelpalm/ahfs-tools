@@ -5,7 +5,7 @@ use std::io;
 use std::result;
 
 /// A generic ARSPEC result.
-pub type Result<T = ()> = result::Result<T, Box<Error>>;
+pub type Result<T = ()> = result::Result<T, Box<dyn Error>>;
 
 /// Error trait to be implemented by most ARSPEC error types.
 pub trait Error: fmt::Debug + fmt::Display {
@@ -39,7 +39,17 @@ impl Error for arspec_parser::Error<spec::parser::Class> {
 impl<'a> Error for spec::VerificationError {
     fn code(&self) -> &'static str {
         match self {
-            &spec::VerificationError::NameDuplicate { .. } => "VE01",
+            &spec::VerificationError::EnumNameDuplicate { .. } => "VE01",
+            &spec::VerificationError::EnumVariantDuplicate { .. } => "VE02",
+            &spec::VerificationError::InterfaceNotImplemented { .. } => "VE03",
+            &spec::VerificationError::NoSuchInterfaceToImplement { .. } => "VE04",
+            &spec::VerificationError::NoSuchServiceToImplement { .. } => "VE05",
+            &spec::VerificationError::UnknownServiceEncoding { .. } => "VE06",
+            &spec::VerificationError::UnknownServiceProtocol { .. } => "VE07",
+            &spec::VerificationError::PrimitiveNameDuplicate { .. } => "VE08",
+            &spec::VerificationError::RecordNameDuplicate { .. } => "VE09",
+            &spec::VerificationError::ServiceNameDuplicate { .. } => "VE10",
+            &spec::VerificationError::SystemNameDuplicate { .. } => "VE11",
         }
     }
 }
@@ -80,9 +90,9 @@ impl Error for io::Error {
     }
 }
 
-impl<E: Error + 'static> From<E> for Box<Error> {
+impl<E: Error + 'static> From<E> for Box<dyn Error> {
     #[inline]
     fn from(err: E) -> Self {
-        Box::new(err) as Box<Error>
+        Box::new(err) as Box<dyn Error>
     }
 }
