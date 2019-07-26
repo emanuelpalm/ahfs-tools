@@ -7,7 +7,7 @@ impl<'a: 'b, 'b> Encode for &'b System<'a> {
     fn encode<W>(&self, w: &mut W) -> io::Result<()>
         where W: io::Write
     {
-        svg::render(self, true, w)
+        svg::render(self, w)
     }
 
     #[inline]

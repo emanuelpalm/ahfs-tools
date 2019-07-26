@@ -41,7 +41,7 @@ pub fn doc(args: &[&str], skip_verification: bool) -> arspec::Result {
 
         for enum_ in &spec.enums {
             buffer.clear();
-            svg::render(&enum_, false, &mut buffer)?;
+            svg::render(&enum_, &mut buffer)?;
             let target_path = figures_path
                 .join(format!("enum-{}.svg", enum_.name.as_str()));
 
@@ -50,7 +50,7 @@ pub fn doc(args: &[&str], skip_verification: bool) -> arspec::Result {
 
         for record in &spec.records {
             buffer.clear();
-            svg::render(&record, false, &mut buffer)?;
+            svg::render(&record, &mut buffer)?;
             let target_path = figures_path
                 .join(format!("record-{}.svg", record.name.as_str()));
 
@@ -59,7 +59,7 @@ pub fn doc(args: &[&str], skip_verification: bool) -> arspec::Result {
 
         for service in &spec.services {
             buffer.clear();
-            svg::render(&service, false, &mut buffer)?;
+            svg::render(&service, &mut buffer)?;
             let target_path = figures_path
                 .join(format!("service-{}.svg", service.name.as_str()));
 
@@ -68,7 +68,7 @@ pub fn doc(args: &[&str], skip_verification: bool) -> arspec::Result {
 
         for system in &spec.systems {
             buffer.clear();
-            svg::render(&system, false, &mut buffer)?;
+            svg::render(&system, &mut buffer)?;
             let target_path = figures_path
                 .join(format!("system-{}.svg", system.name.as_str()));
 

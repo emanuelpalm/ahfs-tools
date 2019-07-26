@@ -22,7 +22,7 @@ impl<'a: 'b, 'b> Encode for &'b Enum<'a> {
                 "<text x=\"{x_middle}\" y=\"{y_meta}\" fill=\"{color_meta}\"",
                 " font-size=\"15\">«enum»</text>",
                 "<text x=\"{x_middle}\" y=\"{y_name}\" fill=\"{color_name}\" font-size=\"18\"",
-                " font-weight=\"bold\">{name}</text>",
+                " font-weight=\"bold\" class=\"enum-name\">{name}</text>",
                 "</g>",
                 "",
                 "<g fill=\"{color_name}\" font-size=\"16\" font-style=\"italic\">",
@@ -48,7 +48,7 @@ impl<'a: 'b, 'b> Encode for &'b Enum<'a> {
         for variant in &self.variants {
             write!(
                 w,
-                "<text x=\"{}\" y=\"{}\">{}</text>",
+                "<text x=\"{}\" y=\"{}\" class=\"enum-variant\">{}</text>",
                 offset.x + 10.0,
                 offset_y as usize,
                 variant.name.as_str(),
