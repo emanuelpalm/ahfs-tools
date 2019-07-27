@@ -289,7 +289,7 @@ mod tests {
         let source = Text {
             name: "alpha.ahfs".into(),
             body: concat!(
-                "consumes implement interface method\n",
+                "consumes enum implement interface method\n",
                 "produces property record service system using\n",
                 "\n",
                 "<>{}:,()/[];\n",
@@ -316,7 +316,7 @@ mod tests {
         // Check token strings.
         assert_eq!(
             vec![
-                "consumes", "implement", "interface", "method",
+                "consumes", "enum", "implement", "interface", "method",
                 "produces", "property", "record", "service",
                 "system", "using",
                 "<", ">", "{", "}", ":", ",", "(", ")", "/", "[", "]", ";",
@@ -338,7 +338,7 @@ mod tests {
         // Check token classes.
         assert_eq!(
             vec![
-                Class::Consumes, Class::Implement, Class::Interface, Class::Method,
+                Class::Consumes, Class::Enum, Class::Implement, Class::Interface, Class::Method,
                 Class::Produces, Class::Property, Class::Record, Class::Service,
                 Class::System, Class::Using,
                 Class::AngleLeft, Class::AngleRight,

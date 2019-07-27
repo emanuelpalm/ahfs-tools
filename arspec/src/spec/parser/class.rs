@@ -67,11 +67,11 @@ impl fmt::Display for Class {
             Class::SquareRight => "]",
             Class::Semicolon => ";",
 
-            Class::Null => "Null",
-            Class::Boolean => "Boolean",
-            Class::Integer => "Integer",
-            Class::Float => "Float",
-            Class::String => "String",
+            Class::Null => "null",
+            Class::Boolean => "{Boolean}",
+            Class::Integer => "{Integer}",
+            Class::Float => "{Float}",
+            Class::String => "{String}",
 
             Class::Consumes => "consumes",
             Class::Enum => "enum",
@@ -86,12 +86,12 @@ impl fmt::Display for Class {
             Class::System => "system",
             Class::Using => "using",
 
-            Class::Identifier => "Identifier",
-            Class::Comment => "Comment",
+            Class::Identifier => "{Identifier}",
+            Class::Comment => "{Comment}",
 
-            Class::InvalidStringEscape => "<InvalidStringEscape>",
-            Class::InvalidStringChar => "<InvalidStringChar>",
-            Class::InvalidSymbolChar => "<InvalidSymbolChar>",
+            Class::InvalidStringEscape => "{InvalidStringEscape}",
+            Class::InvalidStringChar => "{InvalidStringChar}",
+            Class::InvalidSymbolChar => "{InvalidSymbolChar}",
         })
     }
 }

@@ -61,7 +61,7 @@ impl<'a: 'b, 'b> Encode<SystemMeasurements> for &'b System<'a> {
             y_rect1 = offset.y + 3.0,
         )?;
 
-        let y_name_offset = fonts::SANS_BOLD.line_height() * 16.0 / 2.0
+        let y_name_offset = -(fonts::SANS_BOLD.line_height() * 16.0 / 2.0)
             + fonts::SANS_BOLD.ascender() * 16.0;
 
         // Encode consumed services.
@@ -91,7 +91,7 @@ impl<'a: 'b, 'b> Encode<SystemMeasurements> for &'b System<'a> {
                     x_origin = x0,
                     y_base = y - 6.0,
                     y_grip = y,
-                    y_name = y - y_name_offset,
+                    y_name = y + y_name_offset,
                     y_origin = y,
                 )?;
                 y += 24.0;
@@ -130,7 +130,7 @@ impl<'a: 'b, 'b> Encode<SystemMeasurements> for &'b System<'a> {
                     x_origin = x,
                     y_base = y0 - 7.0,
                     y_line0 = y - y0,
-                    y_name = y - y_name_offset,
+                    y_name = y + y_name_offset,
                     y_origin = y0,
                 )?;
             }
