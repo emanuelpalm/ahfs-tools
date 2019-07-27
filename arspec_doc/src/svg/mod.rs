@@ -3,7 +3,7 @@ pub mod record;
 pub mod service;
 pub mod system;
 
-use crate::Font;
+use crate::fonts;
 use std::io;
 
 pub trait Encode<M = Vector>
@@ -45,7 +45,7 @@ pub fn render<E, M, W>(element: &E, w: &mut W) -> io::Result<()>
         "<svg width=\"{}px\" height=\"{}px\"",
         " xmlns=\"http://www.w3.org/2000/svg\" version=\"1.1\">",
         "<g font-family=\"{}\">",
-    ), size.x, size.y, Font::sans().name())?;
+    ), size.x, size.y, fonts::SANS.name)?;
 
     element.encode(Vector::default(), measurements, w)?;
 

@@ -1,5 +1,5 @@
 use arspec::spec::Enum;
-use crate::Font;
+use crate::fonts;
 use std::io;
 use super::{color, Encode, Vector};
 
@@ -45,6 +45,7 @@ impl<'a: 'b, 'b> Encode for &'b Enum<'a> {
             y_rect1 = offset.y + 3.0,
             y_rect2 = offset.y + 53.0,
         )?;
+        let variant_height = fonts::SANS.line_height() * 16.0;
         for variant in &self.variants {
             write!(
                 w,
@@ -53,7 +54,7 @@ impl<'a: 'b, 'b> Encode for &'b Enum<'a> {
                 offset_y as usize,
                 variant.name.as_str(),
             )?;
-            offset_y += Font::sans().line_height() * 16.0;
+            offset_y += variant_height;
         }
         write!(w, "</g>")
     }
@@ -63,17 +64,17 @@ impl<'a: 'b, 'b> Encode for &'b Enum<'a> {
             x: {
                 let variant_width_max = self.variants.iter()
                     .map(|variant| {
-                        Font::sans_italic().line_width_of(variant.name.as_str()) * 16.0 * 1000.0
+                        fonts::SANS_ITALIC.line_width_of(variant.name.as_str()) * 16.0 * 1000.0
                     } as usize)
                     .max()
                     .unwrap_or(0) as f32 / 1000.0;
 
-                let name_width = Font::sans_bold()
+                let name_width = fonts::SANS_BOLD
                     .line_width_of(self.name.as_str()) * 18.0;
 
                 (variant_width_max.max(name_width) + 20.0).round()
             },
-            y: (self.variants.len() as f32 * Font::sans_italic()
+            y: (self.variants.len() as f32 * fonts::SANS_ITALIC
                 .line_height() * 16.0 + 71.0).round(),
         }
     }

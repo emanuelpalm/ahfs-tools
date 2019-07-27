@@ -1,5 +1,5 @@
 use arspec::spec::Record;
-use crate::Font;
+use crate::fonts;
 use std::io;
 use super::{color, Encode, Vector};
 
@@ -46,6 +46,7 @@ impl<'a: 'b, 'b> Encode for &'b Record<'a> {
             y_rect1 = offset.y + 3.0,
             y_rect2 = offset.y + 53.0,
         )?;
+        let entry_height = fonts::SANS.line_height() * 16.0;
         for entry in &self.entries {
             write!(
                 w,
@@ -71,7 +72,7 @@ impl<'a: 'b, 'b> Encode for &'b Record<'a> {
                         acc
                     }),
             )?;
-            offset_y += Font::sans().line_height() * 16.0;
+            offset_y += entry_height;
         }
         write!(w, "</g>")
     }
@@ -79,12 +80,12 @@ impl<'a: 'b, 'b> Encode for &'b Record<'a> {
     fn measure(&self) -> Vector {
         Vector {
             x: {
-                let colon_space_width = Font::sans().line_width_of(": ");
+                let colon_space_width = fonts::SANS.line_width_of(": ");
                 let entry_width_max = self.entries.iter()
                     .map(|entry| {
-                        let name_width = Font::sans()
+                        let name_width = fonts::SANS
                             .line_width_of(entry.name.as_str());
-                        let type_ref_width = Font::sans_bold()
+                        let type_ref_width = fonts::SANS_BOLD
                             .line_width_of(entry.type_ref.as_str());
 
                         (name_width + colon_space_width + type_ref_width)
@@ -93,12 +94,12 @@ impl<'a: 'b, 'b> Encode for &'b Record<'a> {
                     .max()
                     .unwrap_or(0) as f32 / 1000.0;
 
-                let name_width = Font::sans_bold()
+                let name_width = fonts::SANS_BOLD
                     .line_width_of(self.name.as_str()) * 18.0;
 
                 (entry_width_max.max(name_width) + 20.0).round()
             },
-            y: (self.entries.len() as f32 * Font::sans()
+            y: (self.entries.len() as f32 * fonts::SANS
                 .line_height() * 16.0 + 71.0).round(),
         }
     }

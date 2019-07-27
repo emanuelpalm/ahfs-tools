@@ -1,5 +1,5 @@
 use arspec::spec::System;
-use crate::Font;
+use crate::fonts;
 use std::io;
 use super::{color, Encode, Size, Vector};
 
@@ -61,6 +61,9 @@ impl<'a: 'b, 'b> Encode<SystemMeasurements> for &'b System<'a> {
             y_rect1 = offset.y + 3.0,
         )?;
 
+        let y_name_offset = fonts::SANS_BOLD.line_height() * 16.0 / 2.0
+            + fonts::SANS_BOLD.ascender() * 16.0;
+
         // Encode consumed services.
         {
             let x0 = offset.x + measurements.system.x;
@@ -88,8 +91,7 @@ impl<'a: 'b, 'b> Encode<SystemMeasurements> for &'b System<'a> {
                     x_origin = x0,
                     y_base = y - 6.0,
                     y_grip = y,
-                    y_name = y - Font::sans_bold().line_height() * 16.0 / 2.0
-                        + Font::sans_bold().ascender() * 16.0,
+                    y_name = y - y_name_offset,
                     y_origin = y,
                 )?;
                 y += 24.0;
@@ -128,8 +130,7 @@ impl<'a: 'b, 'b> Encode<SystemMeasurements> for &'b System<'a> {
                     x_origin = x,
                     y_base = y0 - 7.0,
                     y_line0 = y - y0,
-                    y_name = y - Font::sans_bold().line_height() * 16.0 / 2.0
-                        + Font::sans_bold().ascender() * 16.0,
+                    y_name = y - y_name_offset,
                     y_origin = y0,
                 )?;
             }
@@ -141,15 +142,15 @@ impl<'a: 'b, 'b> Encode<SystemMeasurements> for &'b System<'a> {
     fn measure(&self) -> SystemMeasurements {
         SystemMeasurements {
             system: Vector {
-                x: (Font::sans_bold().line_width_of(self.name.as_str()) * 18.0 + 60.0)
+                x: (fonts::SANS_BOLD.line_width_of(self.name.as_str()) * 18.0 + 60.0)
                     .max(self.produces.len() as f32 * 24.0 + 10.0),
                 y: (self.consumes.len() as f32 * 24.0 + 6.0).max(90.0),
             },
             consumed_services: self.consumes.iter()
-                .map(|s| Font::sans_bold().line_width_of(s.name.as_str()) * 16.0)
+                .map(|s| fonts::SANS_BOLD.line_width_of(s.name.as_str()) * 16.0)
                 .collect(),
             produced_services: self.produces.iter()
-                .map(|service| Font::sans_bold().line_width_of(service.name.as_str()) * 16.0)
+                .map(|service| fonts::SANS_BOLD.line_width_of(service.name.as_str()) * 16.0)
                 .collect(),
             produced_service_name_x: self.produces.len() as f32 * 24.0 + 12.0,
         }

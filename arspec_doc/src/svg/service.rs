@@ -1,5 +1,5 @@
 use arspec::spec::Service;
-use crate::Font;
+use crate::fonts;
 use std::io;
 use super::{color, Encode, Vector};
 
@@ -45,6 +45,9 @@ impl<'a: 'b, 'b> Encode for &'b Service<'a> {
             y_rect1 = offset.y + 3.0,
             y_rect2 = offset.y + 53.0,
         )?;
+        let line_height = fonts::SANS.line_height();
+        let interface_height = line_height * 17.0 + 25.0;
+        let method_height = line_height * 16.0;
         for interface in &self.interfaces {
             write!(
                 w,
@@ -68,7 +71,7 @@ impl<'a: 'b, 'b> Encode for &'b Service<'a> {
                 y_text = offset_y.round() + 25.0,
                 y_rect = offset_y.round(),
             )?;
-            offset_y += Font::sans().line_height() * 17.0 + 25.0;
+            offset_y += interface_height;
             for method in &interface.methods {
                 let input = method.input.as_ref().map(|input| input.as_str());
                 let output = method.output.as_ref().map(|output| output.as_str());
@@ -92,7 +95,7 @@ impl<'a: 'b, 'b> Encode for &'b Service<'a> {
                     x_text = offset.x + 20.0,
                     y_text = offset_y.round(),
                 )?;
-                offset_y += Font::sans().line_height() * 16.0;
+                offset_y += method_height;
             }
         }
         write!(w, "</g>")
@@ -101,28 +104,28 @@ impl<'a: 'b, 'b> Encode for &'b Service<'a> {
     fn measure(&self) -> Vector {
         Vector {
             x: {
-                let label_width = Font::sans()
+                let label_width = fonts::SANS
                     .line_width_of("interface :") * 14.0;
                 let interface_width_max = self.interfaces.iter()
                     .map(|interface| {
-                        let name_width = label_width + Font::sans_italic()
+                        let name_width = label_width + fonts::SANS_ITALIC
                             .line_width_of(interface.name.as_str()) * 17.0;
 
                         let method_width_max = interface.methods.iter()
                             .map(|method| {
                                 let mut width = 0.0;
 
-                                width += Font::sans()
+                                width += fonts::SANS
                                     .line_width_of(method.name.as_str());
-                                width += Font::sans().line_width_of("(");
+                                width += fonts::SANS.line_width_of("(");
                                 width += method.input.as_ref()
-                                    .map(|input| Font::sans_bold()
+                                    .map(|input| fonts::SANS_BOLD
                                         .line_width_of(input.as_str()))
                                     .unwrap_or(0.0);
-                                width += Font::sans().line_width_of(")");
+                                width += fonts::SANS.line_width_of(")");
                                 width += method.output.as_ref()
-                                    .map(|output| Font::sans()
-                                        .line_width_of(": ") + Font::sans_bold()
+                                    .map(|output| fonts::SANS
+                                        .line_width_of(": ") + fonts::SANS_BOLD
                                         .line_width_of(output.as_str()))
                                     .unwrap_or(0.0);
 
@@ -136,13 +139,13 @@ impl<'a: 'b, 'b> Encode for &'b Service<'a> {
                     .max()
                     .unwrap_or(0) as f32 / 1000.0;
 
-                let name_width = Font::sans_bold()
+                let name_width = fonts::SANS_BOLD
                     .line_width_of(self.name.as_str()) * 18.0;
 
                 interface_width_max.max(name_width) + 20.0
             },
             y: {
-                let line_height = Font::sans().line_height();
+                let line_height = fonts::SANS.line_height();
                 self.interfaces.iter().fold(53.0, |acc, interface| {
                     acc + line_height * 17.0
                         + interface.methods.len() as f32 * line_height * 16.0

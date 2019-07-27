@@ -4,7 +4,7 @@ pub use self::error::Error;
 
 use arspec::spec::parser;
 use arspec::project::Project;
-use arspec_doc::{Font, FontStyle, FontWeight, html, scripts, styles, svg};
+use arspec_doc::{fonts, FontStyle, FontWeight, html, scripts, styles, svg};
 use arspec_parser::Corpus;
 use crate::log;
 use std::fs;
@@ -81,9 +81,9 @@ pub fn doc(args: &[&str], skip_verification: bool) -> arspec::Result {
         let fonts_path = &target_path.join("fonts");
         fs::create_dir_all(fonts_path)?;
 
-        for font in Font::all() {
-            fs::File::create(fonts_path.join(font.source_name()))
-                .and_then(|mut file| file.write_all(font.source()))?;
+        for font in fonts::ALL {
+            fs::File::create(fonts_path.join(font.source_name))
+                .and_then(|mut file| file.write_all(font.source))?;
         }
     }
 
@@ -103,7 +103,7 @@ pub fn doc(args: &[&str], skip_verification: bool) -> arspec::Result {
 
         fs::File::create(styles_path.join("fonts.css"))
             .and_then(|mut file| {
-                for font in Font::all() {
+                for font in fonts::ALL {
                     write!(
                         file,
                         concat!(
@@ -111,14 +111,14 @@ pub fn doc(args: &[&str], skip_verification: bool) -> arspec::Result {
                             "  font-family: \"{}\";\n",
                             "  src: \"../fonts/{}\" format('truetype');\n",
                         ),
-                        font.name(), font.source_name(),
+                        font.name, font.source_name,
                     )?;
-                    let style = font.style();
-                    if *style != FontStyle::Normal {
+                    let style = font.style;
+                    if style != FontStyle::Normal {
                         write!(file, "  font-style: \"{}\";\n", style)?;
                     }
-                    let weight = font.weight();
-                    if *weight != FontWeight::Normal {
+                    let weight = font.weight;
+                    if weight != FontWeight::Normal {
                         write!(file, "  font-weight: \"{}\";\n", weight)?;
                     }
                     write!(file, "}}\n\n")?;
