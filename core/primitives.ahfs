@@ -6,52 +6,52 @@ primitive Boolean;
 /**
  * A 32-bit IEEE 754 binary floating point number.
  */
-primitive f32;
+primitive Float32;
 
 /**
  * A 64-bit IEEE 754 binary floating point number.
  */
-primitive f64;
+primitive Float64;
 
 /**
  * A signed 8-bit byte.
  */
-primitive i8;
+primitive I8;
 
 /**
  * A signed 16-bit word.
  */
-primitive i16;
+primitive I16;
 
 /**
  * A signed 32-bit word.
  */
-primitive i32;
+primitive I32;
 
 /**
  * A signed 64-bit word.
  */
-primitive i64;
+primitive I64;
 
 /**
  * An unsigned 8-bit byte.
  */
-primitive u8;
+primitive U8;
 
 /**
  * An unsigned 16-bit word.
  */
-primitive u16;
+primitive U16;
 
 /**
  * An unsigned 32-bit word.
  */
-primitive u32;
+primitive U32;
 
 /**
  * An unsigned 64-bit word.
  */
-primitive u64;
+primitive U64;
 
 /**
  * A string of bytes, supposedly encoded in UTF-8.
@@ -70,6 +70,6 @@ primitive<Item> List<Item>;
 primitive<Item> Set<Item>;
 
 /**
- * An associated map where values of type `Key` map to values of type `Value`.
+ * A dictionary in which keys of type `Key` refer to values of type `Value`.
  */
 primitive<Key, Value> Map<Key, Value>;

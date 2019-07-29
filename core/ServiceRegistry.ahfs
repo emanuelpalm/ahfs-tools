@@ -45,7 +45,7 @@ record ServiceRegistryEntry {
     /**
      * The port where the provided service can be consumed.
      */
-    Port: u16,
+    Port: U16,
 
     /**
      * The subpath of the Service within the host (address:port) of the
@@ -67,7 +67,7 @@ record ServiceRegistryEntry {
      * Service validity time period expressed in seconds. This gets converted
      * to a date-time, and stored in the database.
      */
-    TTL: u32,
+    TTL: U32,
 
     /**
      * Metadata belonging to a service/provider pair.
@@ -95,7 +95,7 @@ record ServiceQueryForm {
     /**
      * The minimum version of the Service we are looking for.
      */
-    Version: u32,
+    Version: U32,
 }
 
 record ServiceQueryResult {

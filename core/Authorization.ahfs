@@ -112,7 +112,7 @@ record TokenGenerationRequest {
     /**
      * The duration until the Service exchange can happen.
      */
-    Duration: i32,
+    Duration: I32,
 
 }
 

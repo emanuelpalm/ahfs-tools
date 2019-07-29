@@ -1,7 +1,7 @@
 record ArrowheadSystem {
     SystemName: String,
     Address: String,
-    Port: u16,
+    Port: U16,
     AuthenticationInfo: Option<String>,
 }
 
@@ -15,7 +15,7 @@ record ArrowheadCloud {
     Operator: String,
     CloudName: String,
     Address: String,
-    Port: u16,
+    Port: U16,
     GatekeeperServiceURI: String,
     AuthenticationInfo: Option<String>,
     IsSecure: Boolean,
