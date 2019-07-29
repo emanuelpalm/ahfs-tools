@@ -56,7 +56,7 @@ record ServiceRegistryEntry {
     @Doc("
         The version numbering of the Service provided.
     ")
-    Version: Integer,
+    Version: U32,
 
     @Doc("
         True, if the service is provided via UDP. By default, it is false.
