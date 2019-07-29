@@ -1,5 +1,5 @@
 use arspec_parser::Span;
-use super::{Property, Specification, Value, VerificationError};
+use super::{Attribute, Property, Specification, Value, VerificationError};
 
 /// Specifies how to implement a named [`Service`][srv].
 ///
@@ -21,8 +21,8 @@ pub struct Implement<'a> {
     /// Any interface implementation definitions.
     pub interfaces: Vec<ImplementInterface<'a>>,
 
-    /// Any documentation comment.
-    pub comment: Option<Span<'a>>,
+    /// Any attributes.
+    pub attributes: Vec<Attribute<'a>>,
 }
 
 impl<'a> Implement<'a> {
@@ -32,7 +32,7 @@ impl<'a> Implement<'a> {
         name: Span<'a>,
         protocol: Span<'a>,
         encoding: Span<'a>,
-        comment: Option<Span<'a>>,
+        attributes: Vec<Attribute<'a>>,
     ) -> Self {
         Implement {
             name,
@@ -40,7 +40,7 @@ impl<'a> Implement<'a> {
             encoding,
             properties: Vec::new(),
             interfaces: Vec::new(),
-            comment,
+            attributes,
         }
     }
 
@@ -105,8 +105,8 @@ pub struct ImplementInterface<'a> {
     /// Any interface properties.
     pub properties: Vec<Property<'a>>,
 
-    /// Any documentation comment.
-    pub comment: Option<Span<'a>>,
+    /// Any attributes.
+    pub attributes: Vec<Attribute<'a>>,
 }
 
 impl<'a> ImplementInterface<'a> {
@@ -114,12 +114,12 @@ impl<'a> ImplementInterface<'a> {
     ///
     /// [irf]: struct.ServiceInterface.html
     #[inline]
-    pub fn new(name: Span<'a>, comment: Option<Span<'a>>) -> Self {
+    pub fn new(name: Span<'a>, attributes: Vec<Attribute<'a>>) -> Self {
         ImplementInterface {
             name,
             methods: Vec::new(),
             properties: Vec::new(),
-            comment,
+            attributes,
         }
     }
 }
@@ -135,8 +135,8 @@ pub struct ImplementMethod<'a> {
     /// Table of method specification data.
     pub data: Vec<(Span<'a>, Value<'a>)>,
 
-    /// Any documentation comment.
-    pub comment: Option<Span<'a>>,
+    /// Any attributes.
+    pub attributes: Vec<Attribute<'a>>,
 }
 
 impl<'a> ImplementMethod<'a> {
@@ -144,11 +144,11 @@ impl<'a> ImplementMethod<'a> {
     ///
     /// [irf]: struct.ServiceMethod.html
     #[inline]
-    pub fn new(name: Span<'a>, comment: Option<Span<'a>>) -> Self {
+    pub fn new(name: Span<'a>, attributes: Vec<Attribute<'a>>) -> Self {
         ImplementMethod {
             name,
             data: Vec::new(),
-            comment,
+            attributes,
         }
     }
 }

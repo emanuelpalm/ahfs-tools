@@ -1,5 +1,5 @@
 use arspec_parser::Span;
-use crate::spec::ServiceRef;
+use crate::spec::{Attribute, ServiceRef};
 
 /// System definition.
 #[derive(Debug)]
@@ -17,19 +17,19 @@ pub struct System<'a> {
     /// [srv]: struct.Service.html
     pub produces: Vec<ServiceRef<'a>>,
 
-    /// Any documentation comment.
-    pub comment: Option<Span<'a>>,
+    /// Any attributes.
+    pub attributes: Vec<Attribute<'a>>,
 }
 
 impl<'a> System<'a> {
     /// Create new system definition.
     #[inline]
-    pub fn new(name: Span<'a>, comment: Option<Span<'a>>) -> Self {
+    pub fn new(name: Span<'a>, attributes: Vec<Attribute<'a>>) -> Self {
         System {
             name,
             consumes: Vec::new(),
             produces: Vec::new(),
-            comment,
+            attributes,
         }
     }
 }

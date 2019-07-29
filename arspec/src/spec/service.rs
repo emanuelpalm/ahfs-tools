@@ -1,5 +1,5 @@
 use arspec_parser::Span;
-use crate::spec::TypeRef;
+use crate::spec::{Attribute, TypeRef};
 
 /// An abstract service definition.
 #[derive(Debug)]
@@ -10,18 +10,18 @@ pub struct Service<'a> {
     /// Any service interface definitions.
     pub interfaces: Vec<ServiceInterface<'a>>,
 
-    /// Any documentation comments.
-    pub comment: Option<Span<'a>>,
+    /// Any attributes.
+    pub attributes: Vec<Attribute<'a>>,
 }
 
 impl<'a> Service<'a> {
     /// Create new abstract service definition.
     #[inline]
-    pub fn new(name: Span<'a>, comment: Option<Span<'a>>) -> Self {
+    pub fn new(name: Span<'a>, attributes: Vec<Attribute<'a>>) -> Self {
         Service {
             name,
             interfaces: Vec::new(),
-            comment,
+            attributes,
         }
     }
 }
@@ -42,18 +42,18 @@ pub struct ServiceInterface<'a> {
     /// Interface method definitions.
     pub methods: Vec<ServiceMethod<'a>>,
 
-    /// Any documentation comments.
-    pub comment: Option<Span<'a>>,
+    /// Any attributes.
+    pub attributes: Vec<Attribute<'a>>,
 }
 
 impl<'a> ServiceInterface<'a> {
     /// Create new abstract service interface definition.
     #[inline]
-    pub fn new(name: Span<'a>, comment: Option<Span<'a>>) -> Self {
+    pub fn new(name: Span<'a>, attributes: Vec<Attribute<'a>>) -> Self {
         ServiceInterface {
             name,
             methods: Vec::new(),
-            comment,
+            attributes,
         }
     }
 }
@@ -70,19 +70,19 @@ pub struct ServiceMethod<'a> {
     /// Method output type, unless no output is provided.
     pub output: Option<TypeRef<'a>>,
 
-    /// Any documentation comment.
-    pub comment: Option<Span<'a>>,
+    /// Any attributes.
+    pub attributes: Vec<Attribute<'a>>,
 }
 
 impl<'a> ServiceMethod<'a> {
     /// Create new abstract service interface method definition.
     #[inline]
-    pub fn new(name: Span<'a>, comment: Option<Span<'a>>) -> Self {
+    pub fn new(name: Span<'a>, attributes: Vec<Attribute<'a>>) -> Self {
         ServiceMethod {
             name,
             input: None,
             output: None,
-            comment,
+            attributes,
         }
     }
 }
@@ -95,6 +95,6 @@ pub struct ServiceRef<'a> {
     /// Name of referred [`Service`](struct.Service.html).
     pub name: Span<'a>,
 
-    /// Any documentation comment.
-    pub comment: Option<Span<'a>>,
+    /// Any attributes.
+    pub attributes: Vec<Attribute<'a>>,
 }

@@ -1,5 +1,5 @@
 use arspec_parser::Span;
-use crate::spec::TypeRef;
+use crate::spec::{Attribute, TypeRef};
 
 /// A record type definition.
 #[derive(Debug)]
@@ -10,18 +10,18 @@ pub struct Record<'a> {
     /// Field definitions.
     pub entries: Vec<RecordEntry<'a>>,
 
-    /// Any documentation comment.
-    pub comment: Option<Span<'a>>,
+    /// Any attributes.
+    pub attributes: Vec<Attribute<'a>>,
 }
 
 impl<'a> Record<'a> {
     /// Create new record type definition.
     #[inline]
-    pub fn new(name: Span<'a>, comment: Option<Span<'a>>) -> Self {
+    pub fn new(name: Span<'a>, attributes: Vec<Attribute<'a>>) -> Self {
         Record {
             name,
             entries: Vec::new(),
-            comment,
+            attributes,
         }
     }
 }
@@ -42,6 +42,6 @@ pub struct RecordEntry<'a> {
     /// Field type reference.
     pub type_ref: TypeRef<'a>,
 
-    /// Any documentation comment.
-    pub comment: Option<Span<'a>>,
+    /// Any attributes.
+    pub attributes: Vec<Attribute<'a>>,
 }

@@ -1,5 +1,5 @@
 use arspec_parser::Span;
-use super::{VerificationError, verify};
+use super::{Attribute, VerificationError, verify};
 
 /// An enumerator type definition.
 #[derive(Debug)]
@@ -10,18 +10,18 @@ pub struct Enum<'a> {
     /// Variant names.
     pub variants: Vec<EnumVariant<'a>>,
 
-    /// Any documentation comment.
-    pub comment: Option<Span<'a>>,
+    /// Any attributes.
+    pub attributes: Vec<Attribute<'a>>,
 }
 
 impl<'a> Enum<'a> {
     /// Create new enum type definition.
     #[inline]
-    pub fn new(name: Span<'a>, comment: Option<Span<'a>>) -> Self {
+    pub fn new(name: Span<'a>, attributes: Vec<Attribute<'a>>) -> Self {
         Enum {
             name,
             variants: Vec::new(),
-            comment,
+            attributes,
         }
     }
 
@@ -49,8 +49,19 @@ pub struct EnumVariant<'a> {
     /// Name of enum variant.
     pub name: Span<'a>,
 
-    /// Any documentation comment.
-    pub comment: Option<Span<'a>>,
+    /// Any attributes.
+    pub attributes: Vec<Attribute<'a>>,
+}
+
+impl<'a> EnumVariant<'a> {
+    /// Create new enum type definition.
+    #[inline]
+    pub fn new(name: Span<'a>, attributes: Vec<Attribute<'a>>) -> Self {
+        EnumVariant {
+            name,
+            attributes,
+        }
+    }
 }
 
 impl<'a> AsRef<str> for EnumVariant<'a> {

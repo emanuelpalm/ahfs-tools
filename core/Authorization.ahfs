@@ -34,19 +34,19 @@ implement AuthorizationControl using HTTP/JSON {
 }
 
 record IntraCloudAuthRequest {
-    /**
-     * The System which requested Service.
-     */
+    @Doc("
+        The System which requested Service.
+    ")
     Consumer: ArrowheadSystem,
 
-    /**
-     * A list of provider Systems who can provide Service.
-     */
+    @Doc("
+        A list of provider Systems who can provide Service.
+    ")
     Providers: Set<ArrowheadSystem>,
 
-    /**
-     * The requested Service.
-     */
+    @Doc("
+        The requested Service.
+    ")
     Service: ArrowheadService,
 }
 
@@ -55,14 +55,14 @@ record IntraCloudAuthResponse {
 }
 
 record InterCloudAuthRequest {
-    /**
-     * The Cloud requesting a Service from the Local Cloud.
-     */
+    @Doc("
+        The Cloud requesting a Service from the Local Cloud.
+    ")
     Cloud: ArrowheadCloud,
 
-    /**
-     * The requested Service.
-     */
+    @Doc("
+        The requested Service.
+    ")
     Service: ArrowheadService,
 }
 
@@ -88,30 +88,30 @@ implement TokenGeneration using HTTP/JSON {
 }
 
 record TokenGenerationRequest {
-    /**
-     * ArrowheadSystem that will try to access the Service instance.
-     */
+    @Doc("
+        ArrowheadSystem that will try to access the Service instance.
+    ")
     Consumer: ArrowheadSystem,
 
-    /**
-     * The ArrowheadCloud where the consumer System is located. If not defined,
-     * the Local Cloud is assumed.
-     */
+    @Doc("
+        The ArrowheadCloud where the consumer System is located. If not
+        defined, the Local Cloud is assumed.
+    ")
     ConsumerCloud: ArrowheadCloud,
 
-    /**
-     * List of possible Application Systems that can provide the Service.
-     */
+    @Doc("
+        List of possible Application Systems that can provide the Service.
+    ")
     Providers: List<ArrowheadSystem>,
 
-    /**
-     * The ArrowheadService that will be consumed.
-     */
+    @Doc("
+        The ArrowheadService that will be consumed.
+    ")
     Service: ArrowheadService,
 
-    /**
-     * The duration until the Service exchange can happen.
-     */
+    @Doc("
+        The duration until the Service exchange can happen.
+    ")
     Duration: I32,
 
 }
@@ -121,23 +121,23 @@ record TokenGenerationResponse {
 }
 
 record TokenData {
-    /**
-     * ArrowheadSystem object of the Provider.
-     */
+    @Doc("
+        ArrowheadSystem object of the Provider.
+    ")
     System: ArrowheadSystem,
 
-    /**
-     * The ArrowheadService to be consumed.
-     */
+    @Doc("
+        The ArrowheadService to be consumed.
+    ")
     Service: ArrowheadService,
 
-    /**
-     * The actual token for that Provider-Consumer-Service combination.
-     */
+    @Doc("
+        The actual token for that Provider-Consumer-Service combination.
+    ")
     Token: String,
 
-    /**
-     * Message digest from the Authorization System.
-     */
+    @Doc("
+        Message digest from the Authorization System.
+    ")
     Signature: String,
 }

@@ -35,18 +35,20 @@ impl<'a> Parser<'a> for SpecParser {
 
 #[cfg(test)]
 mod tests {
-    use arspec_parser::{Text, Corpus};
+    use arspec_parser::{Corpus, Text};
+    use crate::spec::Value;
 
     #[test]
     fn example1() {
         let corpus: Corpus = Text {
             name: "alpha.ahfs".into(),
             body: concat!(
-                "/// Comment A.\n",
+                "@Doc(\"Comment A.\")\n",
+                "@Author(\"Author Name\")\n",
                 "service MyService {\n",
-                "    /// Comment B.\n",
+                "    @Doc(\"Comment B.\")\n",
                 "    interface MyInterface {\n",
-                "        /// Comment C.\n",
+                "        @Doc(\"Comment C.\")\n",
                 "        method MyMethod(Argument): Result;\n",
                 "    }\n",
                 "}\n",
@@ -68,18 +70,31 @@ mod tests {
         let service = &tree.services[0];
         assert_eq!(service.name.as_str(), "MyService");
         assert_eq!(service.interfaces.len(), 1);
-        assert_eq!(service.comment.as_ref().unwrap().as_str(), "/// Comment A.");
+        assert_eq!(service.attributes.len(), 2);
+        assert_eq!(service.attributes[0].name.as_str(), "Doc");
+        assert_value_eq_str(&service.attributes[0].value, "\"Comment A.\"");
+        assert_eq!(service.attributes[1].name.as_str(), "Author");
+        assert_value_eq_str(&service.attributes[1].value, "\"Author Name\"");
 
         let interface = &service.interfaces[0];
         assert_eq!(interface.name.as_str(), "MyInterface");
         assert_eq!(interface.methods.len(), 1);
-        assert_eq!(interface.comment.as_ref().unwrap().as_str(), "/// Comment B.");
+        assert_eq!(interface.attributes.len(), 1);
+        assert_value_eq_str(&interface.attributes[0].value, "\"Comment B.\"");
 
         let method = &interface.methods[0];
         assert_eq!(method.name.as_str(), "MyMethod");
         assert_eq!(method.input.as_ref().unwrap().name.as_str(), "Argument");
         assert_eq!(method.output.as_ref().unwrap().name.as_str(), "Result");
-        assert_eq!(method.comment.as_ref().unwrap().as_str(), "/// Comment C.");
+        assert_eq!(method.attributes.len(), 1);
+        assert_value_eq_str(&method.attributes[0].value, "\"Comment C.\"");
+
+        fn assert_value_eq_str(actual: &Value<'_>, expected: &str) {
+            match actual {
+                Value::String(span) => assert_eq!(span.as_str(), expected),
+                other => panic!("Expected Value::String(_), got: {:?}", other),
+            }
+        }
     }
 
     #[test]
@@ -87,37 +102,35 @@ mod tests {
         let corpus: Corpus = Text {
             name: "alpha.ahfs".into(),
             body: concat!(
-                "// This comment is ignored.\n",
-                "/* This one too! */\n",
-                "/**\n",
+                "/*\n",
                 " * Comment A.\n",
                 " * More comment A.\n",
                 " */\n",
                 "system TestSystem {\n",
-                "    /// Comment B.\n",
+                "    // Comment B.\n",
                 "    consumes TestServiceX;\n",
                 "\n",
                 "    /** Comment C. */\n",
                 "    produces TestServiceA;\n",
                 "}\n",
                 "\n",
-                "/// Comment D.\n",
+                "// Comment D.\n",
                 "service TestServiceX {\n",
-                "    /// Comment E.\n",
+                "    // Comment E.\n",
                 "    interface X1 {\n",
-                "        /// Comment F.\n",
+                "        // Comment F.\n",
                 "        method FireMissiles(Set<Target>);\n",
                 "    }\n",
                 "}\n",
                 "\n",
-                "/// Comment G.\n",
+                "// Comment G.\n",
                 "implement TestServiceX using HTTP/JSON {\n",
-                "    /// Comment H.\n",
+                "    // Comment H.\n",
                 "    interface X1 {\n",
-                "        /// Comment I.\n",
+                "        // Comment I.\n",
                 "        property BasePath: \"/x\";\n",
                 "\n",
-                "        /// Comment J.\n",
+                "        // Comment J.\n",
                 "        method FireMissiles {\n",
                 "            Method: \"POST\",\n",
                 "            Path: \"/missile-launches\",\n",
@@ -125,9 +138,9 @@ mod tests {
                 "    }\n",
                 "}\n",
                 "\n",
-                "/// Comment K.\n",
+                "// Comment K.\n",
                 "record Target {\n",
-                "    /// Comment L.\n",
+                "    // Comment L.\n",
                 "    X: Integer,\n",
                 "}\n",
             ).into()

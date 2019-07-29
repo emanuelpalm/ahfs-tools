@@ -1,5 +1,6 @@
 pub mod parser;
 
+mod attribute;
 mod enum_;
 mod implement;
 mod primitive;
@@ -11,6 +12,7 @@ mod type_ref;
 mod value;
 mod verify;
 
+pub use self::attribute::Attribute;
 pub use self::enum_::{Enum, EnumVariant};
 pub use self::implement::{Implement, ImplementInterface, ImplementMethod};
 pub use self::primitive::Primitive;

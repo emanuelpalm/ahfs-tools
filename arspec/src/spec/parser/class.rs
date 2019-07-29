@@ -9,6 +9,7 @@ pub enum Class {
     // Delimiters.
     AngleLeft,
     AngleRight,
+    At,
     BraceLeft,
     BraceRight,
     Colon,
@@ -43,7 +44,6 @@ pub enum Class {
 
     // Other.
     Identifier,
-    Comment,
 
     // Errors.
     InvalidStringEscape,
@@ -56,6 +56,7 @@ impl fmt::Display for Class {
         f.write_str(match *self {
             Class::AngleLeft => "<",
             Class::AngleRight => ">",
+            Class::At => "@",
             Class::BraceLeft => "{",
             Class::BraceRight => "}",
             Class::Colon => ":",
@@ -87,7 +88,6 @@ impl fmt::Display for Class {
             Class::Using => "using",
 
             Class::Identifier => "{Identifier}",
-            Class::Comment => "{Comment}",
 
             Class::InvalidStringEscape => "{InvalidStringEscape}",
             Class::InvalidStringChar => "{InvalidStringChar}",

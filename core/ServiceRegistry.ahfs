@@ -32,69 +32,69 @@ implement ServiceDiscovery using HTTP/JSON {
 }
 
 record ServiceRegistryEntry {
-    /**
-     * The Arrowhead Service object that is provided.
-     */
+    @Doc("
+        The Arrowhead Service object that is provided.
+    ")
     ProvidedService: ArrowheadService,
 
-    /**
-     * ArrowheadSystem that is providing the Service.
-     */
+    @Doc("
+        ArrowheadSystem that is providing the Service.
+    ")
     Provider: ArrowheadSystem,
 
-    /**
-     * The port where the provided service can be consumed.
-     */
+    @Doc("
+        The port where the provided service can be consumed.
+    ")
     Port: U16,
 
-    /**
-     * The subpath of the Service within the host (address:port) of the
-     * Provider. This can be a REST URL or MQTT topic name for example.
-     */
+    @Doc("
+        The subpath of the Service within the host (address:port) of the
+        Provider. This can be a REST URL or MQTT topic name for example.
+    ")
     ServiceURI: String,
 
-    /**
-     * The version numbering of the Service provided.
-     */
+    @Doc("
+        The version numbering of the Service provided.
+    ")
     Version: Integer,
 
-    /**
-     * True, if the service is provided via UDP. By default, it is false.
-     */
+    @Doc("
+        True, if the service is provided via UDP. By default, it is false.
+    ")
     UDP: Boolean,
 
-    /**
-     * Service validity time period expressed in seconds. This gets converted
-     * to a date-time, and stored in the database.
-     */
+    @Doc("
+        Service validity time period expressed in seconds. This gets converted
+        to a date-time, and stored in the database.
+    ")
     TTL: U32,
 
-    /**
-     * Metadata belonging to a service/provider pair.
-     */
+    @Doc("
+        Metadata belonging to a service/provider pair.
+    ")
     Metadata: String,
 }
 
 record ServiceQueryForm {
-    /**
-     * The Arrowhead Service object that is looked for.
-     */
+    @Doc("
+        The Arrowhead Service object that is looked for.
+    ")
     Service: ArrowheadService,
 
-    /**
-     * True, if service metadata shall be taken into account during query.
-     */
+    @Doc("
+        True, if service metadata shall be taken into account during query.
+    ")
     MetadataSearch: Boolean,
 
-    /**
-     * True, if the selected (query fitting) Application Systems shall be
-     * pinged to see if they’re alive.
-     */
+    @Doc("
+        True, if the selected (query fitting) Application Systems shall be
+        pinged to see if they’re alive.
+    ")
     PingProviders: Boolean,
 
-    /**
-     * The minimum version of the Service we are looking for.
-     */
+    @Doc("
+        The minimum version of the Service we are looking for.
+    ")
     Version: U32,
 }
 

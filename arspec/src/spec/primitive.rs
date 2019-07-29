@@ -1,5 +1,5 @@
 use arspec_parser::Span;
-use super::TypeRef;
+use super::{Attribute, TypeRef};
 
 /// An enumerator type definition.
 #[derive(Debug)]
@@ -10,18 +10,18 @@ pub struct Primitive<'a> {
     /// Type definition.
     pub definition: TypeRef<'a>,
 
-    /// Any documentation comment.
-    pub comment: Option<Span<'a>>,
+    /// Any attributes.
+    pub attributes: Vec<Attribute<'a>>,
 }
 
 impl<'a> Primitive<'a> {
     /// Create new enum type definition.
     #[inline]
-    pub fn new(type_ref: TypeRef<'a>, comment: Option<Span<'a>>) -> Self {
+    pub fn new(type_ref: TypeRef<'a>, attributes: Vec<Attribute<'a>>) -> Self {
         Primitive {
             generic_parameters: Vec::new(),
             definition: type_ref,
-            comment,
+            attributes,
         }
     }
 }

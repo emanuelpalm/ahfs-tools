@@ -24,43 +24,43 @@ implement OrchestrationService using HTTP/JSON {
 }
 
 record ServiceRequestForm {
-    /**
-     * The ArrowheadSystem identifier that is requesting the orchestration.
-     * Mandatory field.
-     */
+    @Doc("
+        The ArrowheadSystem identifier that is requesting the orchestration.
+        Mandatory field.
+    ")
     RequesterSystem: ArrowheadSystem,
 
-    /**
-     * Not to be used by Application Systems. This field is only used when
-     * there is an inbound request from another Cloud. This can only be
-     * submitted by the Gatekeeper.
-     */
+    @Doc("
+        Not to be used by Application Systems. This field is only used when
+        there is an inbound request from another Cloud. This can only be
+        submitted by the Gatekeeper.
+    ")
     RequesterCloud: ArrowheadCloud,
 
-    /**
-     * Not mandatory. When not filled out, the Orchestrator operate in the
-     * ”default configuration” mode. When filled out, other fields will affect
-     * how the orchestration will work – but the Service will be specified by
-     * the Consumer in advance then.
-     */
+    @Doc("
+        Not mandatory. When not filled out, the Orchestrator operate in the
+        ”default configuration” mode. When filled out, other fields will affect
+        how the orchestration will work – but the Service will be specified by
+        the Consumer in advance then.
+    ")
     RequestedService: ArrowheadService,
 
-    /**
-     * These flags can be set to tailor the orchestration process.
-     */
+    @Doc("
+        These flags can be set to tailor the orchestration process.
+    ")
     OrchestrationFlags: Map<String, Boolean>,
 
-    /**
-     * There can be a list from the Consumer stating which other Application
-     * Systems (even from other Clouds) it wishes to connect. If this field is
-     * filled out, the Orchestrator will try to facilitate these preferences.
-     */
+    @Doc("
+        There can be a list from the Consumer stating which other Application
+        Systems (even from other Clouds) it wishes to connect. If this field is
+        filled out, the Orchestrator will try to facilitate these preferences.
+    ")
     PreferredProviders: List<PreferredProvider>,
 
-    /**
-     * This object will be presenting the Consumer’s selected QoS level. Not
-     * implemented.
-     */
+    @Doc("
+        This object will be presenting the Consumer’s selected QoS level. Not
+        implemented.
+    ")
     RequestedQoS: Map<String, String>,
 }
 
@@ -74,46 +74,46 @@ record OrchestrationResponse {
 }
 
 record OrchestrationForm {
-    /**
-     * The exact Service that needs to be consumed. This response matches the
-     * ServiceRequestForm’s (if that was filled out), but it comes from the
-     * exact Service instance with proper metadata and interface identifier
-     * (only one).
-     */
+    @Doc("
+        The exact Service that needs to be consumed. This response matches the
+        ServiceRequestForm’s (if that was filled out), but it comes from the
+        exact Service instance with proper metadata and interface identifier
+        (only one).
+    ")
     Service: ArrowheadService,
 
-    /**
-     * The Application System description that will provide the Service.
-     */
+    @Doc("
+        The Application System description that will provide the Service.
+    ")
     Provider: ArrowheadSystem,
 
-    /**
-     * The base URL within the Service Provider that will contain the seeked
-     * Service.
-     */
+    @Doc("
+        The base URL within the Service Provider that will contain the seeked
+        Service.
+    ")
     ServiceURI: String,
 
-    /**
-     * Optional additional data from the orchestration.
-     */
+    @Doc("
+        Optional additional data from the orchestration.
+    ")
     Instruction: String,
 
-    /**
-     * The encrypted authorization token.
-     */
+    @Doc("
+        The encrypted authorization token.
+    ")
     AuthorizationToken: String,
 
-    /**
-     * The signature from the Authorization System for the token (verifying the
-     * token issuing).
-     */
+    @Doc("
+        The signature from the Authorization System for the token (verifying the
+        token issuing).
+    ")
     Signature: String,
 
-    /**
-     * Enumeration with values that signal certain things, such as the provider
-     * is from another Cloud, or the service offering might have expired
-     * already.
-     */
+    @Doc("
+        Enumeration with values that signal certain things, such as the provider
+        is from another Cloud, or the service offering might have expired
+        already.
+    ")
     Warnings: List<OrchestratorWarnings>,
 }
 

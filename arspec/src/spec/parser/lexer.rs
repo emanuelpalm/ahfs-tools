@@ -28,6 +28,7 @@ fn scan_all<'a>(scanner: &mut Scanner<'a>, out: &mut Vec<Token<'a, Class>>) -> O
         let class = match ch {
             '<' => Class::AngleLeft,
             '>' => Class::AngleRight,
+            '@' => Class::At,
             '{' => Class::BraceLeft,
             '}' => Class::BraceRight,
             ':' => Class::Colon,
@@ -41,8 +42,8 @@ fn scan_all<'a>(scanner: &mut Scanner<'a>, out: &mut Vec<Token<'a, Class>>) -> O
             '1'...'9' => scan_number(scanner)?,
             '+' | '-' => scan_number_or_symbol(scanner)?,
             '"' => scan_string(scanner)?,
-            '/' => match scan_comment(scanner) {
-                Some(name) => name,
+            '/' => match scan_comment_or_slash(scanner) {
+                Some(slash) => slash,
                 None => continue,
             },
             _ => scan_symbol(scanner, ch)?,
@@ -190,12 +191,11 @@ fn scan_string(scanner: &mut Scanner) -> Option<Class> {
 }
 
 #[inline]
-fn scan_comment(scanner: &mut Scanner) -> Option<Class> {
+fn scan_comment_or_slash(scanner: &mut Scanner) -> Option<Class> {
     let mut ch = scanner.next()?;
     match ch {
         '/' => {
             ch = scanner.next()?;
-            let keep = ch == '/';
             loop {
                 if ch == '\r' || ch == '\n' {
                     scanner.unwind();
@@ -203,16 +203,9 @@ fn scan_comment(scanner: &mut Scanner) -> Option<Class> {
                 }
                 ch = scanner.next()?;
             }
-            if keep {
-                Some(Class::Comment)
-            } else {
-                scanner.discard();
-                return None;
-            }
         }
         '*' => {
             ch = scanner.next()?;
-            let keep = ch == '*';
             loop {
                 if ch == '*' {
                     ch = scanner.next()?;
@@ -222,18 +215,14 @@ fn scan_comment(scanner: &mut Scanner) -> Option<Class> {
                 }
                 ch = scanner.next()?;
             }
-            if keep {
-                Some(Class::Comment)
-            } else {
-                scanner.discard();
-                return None;
-            }
         }
         _ => {
             scanner.unwind();
-            Some(Class::Slash)
+            return Some(Class::Slash);
         }
     }
+    scanner.discard();
+    None
 }
 
 fn scan_symbol(scanner: &mut Scanner, mut ch: char) -> Option<Class> {
@@ -304,9 +293,9 @@ mod tests {
                 "\n",
                 "IdentifierName smallCaps _underscore\n",
                 "+ - * # ! ^ ~ ..\n",
-                "/// This is a doc comment.\n",
+                "/// This is an ignored doc comment.\n",
                 "/** This too! */\n",
-                "// This is an ignored comment.\n",
+                "// This is an ignored plain comment.\n",
                 "/* This too! */\n",
             ).into(),
         };
@@ -329,8 +318,6 @@ mod tests {
                 "\"123\\uXYZ456\"",
                 "IdentifierName", "smallCaps", "_underscore",
                 "+", "-", "*", "#", "!", "^", "~", ".", ".",
-                "/// This is a doc comment.",
-                "/** This too! */",
             ],
             tokens.iter().map(|item| item.span.as_str()).collect::<Vec<_>>()
         );
@@ -361,7 +348,6 @@ mod tests {
                 Class::InvalidSymbolChar, Class::InvalidSymbolChar, Class::InvalidSymbolChar,
                 Class::InvalidSymbolChar, Class::InvalidSymbolChar, Class::InvalidSymbolChar,
                 Class::InvalidSymbolChar, Class::InvalidSymbolChar, Class::InvalidSymbolChar,
-                Class::Comment, Class::Comment,
             ],
             tokens.iter().map(|item| item.class).collect::<Vec<_>>(),
         );
@@ -388,11 +374,8 @@ mod tests {
         // Check token strings.
         assert_eq!(
             vec![
-                "/// Comment A.",
                 "service", "MyService", "{",
-                "/// Comment B.",
                 "interface", "MyInterface", "{",
-                "/// Comment C.",
                 "method", "MyMethod", "(", "Argument", ")", ":", "Result", ";",
                 "}",
                 "}",
@@ -403,11 +386,8 @@ mod tests {
         // Check token classes.
         assert_eq!(
             vec![
-                Class::Comment,
                 Class::Service, Class::Identifier, Class::BraceLeft,
-                Class::Comment,
                 Class::Interface, Class::Identifier, Class::BraceLeft,
-                Class::Comment,
                 Class::Method, Class::Identifier, Class::ParenLeft,
                 Class::Identifier, Class::ParenRight, Class::Colon,
                 Class::Identifier, Class::Semicolon,

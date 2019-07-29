@@ -1,5 +1,5 @@
 use arspec_parser::Span;
-use crate::spec::Value;
+use crate::spec::{Attribute, Value};
 
 /// A named property [`Value`][val], with an optional documentation comment.
 ///
@@ -12,6 +12,6 @@ pub struct Property<'a> {
     /// Property values.
     pub value: Value<'a>,
 
-    /// Any documentation comment.
-    pub comment: Option<Span<'a>>,
+    /// Any attributes.
+    pub attributes: Vec<Attribute<'a>>,
 }

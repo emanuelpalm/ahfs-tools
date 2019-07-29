@@ -1,75 +1,75 @@
-/**
- * A boolean value, being either true or false.
- */
+@Doc("
+    A boolean value, being either true or false.
+")
 primitive Boolean;
 
-/**
- * A 32-bit IEEE 754 binary floating point number.
- */
+@Doc("
+    A 32-bit IEEE 754 binary floating point number.
+")
 primitive Float32;
 
-/**
- * A 64-bit IEEE 754 binary floating point number.
- */
+@Doc("
+    A 64-bit IEEE 754 binary floating point number.
+")
 primitive Float64;
 
-/**
- * A signed 8-bit byte.
- */
+@Doc("
+    A signed 8-bit byte.
+")
 primitive I8;
 
-/**
- * A signed 16-bit word.
- */
+@Doc("
+    A signed 16-bit word.
+")
 primitive I16;
 
-/**
- * A signed 32-bit word.
- */
+@Doc("
+    A signed 32-bit word.
+")
 primitive I32;
 
-/**
- * A signed 64-bit word.
- */
+@Doc("
+    A signed 64-bit word.
+")
 primitive I64;
 
-/**
- * An unsigned 8-bit byte.
- */
+@Doc("
+    An unsigned 8-bit byte.
+")
 primitive U8;
 
-/**
- * An unsigned 16-bit word.
- */
+@Doc("
+    An unsigned 16-bit word.
+")
 primitive U16;
 
-/**
- * An unsigned 32-bit word.
- */
+@Doc("
+    An unsigned 32-bit word.
+")
 primitive U32;
 
-/**
- * An unsigned 64-bit word.
- */
+@Doc("
+    An unsigned 64-bit word.
+")
 primitive U64;
 
-/**
- * A string of bytes, supposedly encoded in UTF-8.
- */
+@Doc("
+    A string of bytes, supposedly encoded in UTF-8.
+")
 primitive String;
 
-/**
- * A list of elements of the type `Item`.
- */
+@Doc("
+    A list of elements of the type `Item`.
+")
 primitive<Item> List<Item>;
 
-/**
- * A set of elements of the type `Item`, in which no element is supposed to
- * occur more than once.
- */
+@Doc("
+    A set of elements of the type `Item`, in which no element is supposed to
+    occur more than once.
+")
 primitive<Item> Set<Item>;
 
-/**
- * A dictionary in which keys of type `Key` refer to values of type `Value`.
- */
+@Doc("
+    A dictionary in which keys of type `Key` refer to values of type `Value`.
+")
 primitive<Key, Value> Map<Key, Value>;
