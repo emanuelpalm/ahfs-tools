@@ -39,7 +39,7 @@ fn scan_all<'a>(scanner: &mut Scanner<'a>, out: &mut Vec<Token<'a, Class>>) -> O
             ']' => Class::SquareRight,
             ';' => Class::Semicolon,
             '0' => scan_radix_number(scanner)?,
-            '1'...'9' => scan_number(scanner)?,
+            '1'..='9' => scan_number(scanner)?,
             '+' | '-' => scan_number_or_symbol(scanner)?,
             '"' => scan_string(scanner)?,
             '/' => match scan_comment_or_slash(scanner) {
@@ -60,25 +60,25 @@ fn scan_radix_number(scanner: &mut Scanner) -> Option<Class> {
         'b' => loop {
             ch = scanner.next()?;
             match ch {
-                '0'...'1' => continue,
+                '0'..='1' => continue,
                 _ => break,
             }
         }
         'c' => loop {
             ch = scanner.next()?;
             match ch {
-                '0'...'7' => continue,
+                '0'..='7' => continue,
                 _ => break,
             }
         },
         'x' => loop {
             ch = scanner.next()?;
             match ch {
-                '0'...'9' | 'A'...'F' | 'a'...'f' => continue,
+                '0'..='9' | 'A'..='F' | 'a'..='f' => continue,
                 _ => break,
             }
         },
-        '0'...'9' => {
+        '0'..='9' => {
             return scan_number(scanner);
         }
         _ => {}
@@ -95,7 +95,7 @@ fn scan_number(scanner: &mut Scanner) -> Option<Class> {
     loop {
         ch = scanner.next()?;
         match ch {
-            '0'...'9' => continue,
+            '0'..='9' => continue,
             _ => break,
         }
     }
@@ -105,7 +105,7 @@ fn scan_number(scanner: &mut Scanner) -> Option<Class> {
         loop {
             ch = scanner.next()?;
             match ch {
-                '0'...'9' => continue,
+                '0'..='9' => continue,
                 _ => break,
             }
         }
@@ -120,7 +120,7 @@ fn scan_number(scanner: &mut Scanner) -> Option<Class> {
         }
         loop {
             match ch {
-                '0'...'9' => {
+                '0'..='9' => {
                     ch = scanner.next()?;
                     continue;
                 }
@@ -168,9 +168,9 @@ fn scan_string(scanner: &mut Scanner) -> Option<Class> {
                             ch = scanner.next()?;
                             i -= 1;
                             match ch {
-                                '0'...'9' |
-                                'A'...'F' |
-                                'a'...'f' => continue,
+                                '0'..='9' |
+                                'A'..='F' |
+                                'a'..='f' => continue,
                                 _ => {
                                     if ch == '"' {
                                         scanner.unwind();

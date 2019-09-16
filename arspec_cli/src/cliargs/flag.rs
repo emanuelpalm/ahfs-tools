@@ -71,7 +71,7 @@ impl<T: FromStr> FlagCell<T> {
 /// A reference to a [`FlagCell`](struct.FlagCell.html).
 pub struct FlagOut {
     name: Option<&'static str>,
-    out: Box<Fn(&str) -> result::Result<(), Box<error::Error>>>,
+    out: Box<dyn Fn(&str) -> result::Result<(), Box<dyn error::Error>>>,
 }
 
 impl FlagOut {

@@ -18,7 +18,7 @@ pub struct Rule<'a> {
     pub flags: &'a [Flag],
 
     /// Function called if rule is invoked.
-    pub callback: &'a Fn(&[&str]) -> result::Result<(), Box<arspec::Error>>,
+    pub callback: &'a dyn Fn(&[&str]) -> result::Result<(), Box<dyn arspec::Error>>,
 }
 
 impl<'a> Rule<'a> {

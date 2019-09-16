@@ -47,10 +47,7 @@ mod tests {
                 "@Author(\"Author Name\")\n",
                 "service MyService {\n",
                 "    @Doc(\"Comment B.\")\n",
-                "    interface MyInterface {\n",
-                "        @Doc(\"Comment C.\")\n",
-                "        method MyMethod(Argument): Result;\n",
-                "    }\n",
+                "    method MyMethod(Argument): Result;\n",
                 "}\n",
             ).into(),
         }.into();
@@ -69,25 +66,19 @@ mod tests {
 
         let service = &tree.services[0];
         assert_eq!(service.name.as_str(), "MyService");
-        assert_eq!(service.interfaces.len(), 1);
+        assert_eq!(service.methods.len(), 1);
         assert_eq!(service.attributes.len(), 2);
         assert_eq!(service.attributes[0].name.as_str(), "Doc");
         assert_value_eq_str(&service.attributes[0].value, "\"Comment A.\"");
         assert_eq!(service.attributes[1].name.as_str(), "Author");
         assert_value_eq_str(&service.attributes[1].value, "\"Author Name\"");
 
-        let interface = &service.interfaces[0];
-        assert_eq!(interface.name.as_str(), "MyInterface");
-        assert_eq!(interface.methods.len(), 1);
-        assert_eq!(interface.attributes.len(), 1);
-        assert_value_eq_str(&interface.attributes[0].value, "\"Comment B.\"");
-
-        let method = &interface.methods[0];
+        let method = &service.methods[0];
         assert_eq!(method.name.as_str(), "MyMethod");
         assert_eq!(method.input.as_ref().unwrap().name.as_str(), "Argument");
         assert_eq!(method.output.as_ref().unwrap().name.as_str(), "Result");
         assert_eq!(method.attributes.len(), 1);
-        assert_value_eq_str(&method.attributes[0].value, "\"Comment C.\"");
+        assert_value_eq_str(&method.attributes[0].value, "\"Comment B.\"");
 
         fn assert_value_eq_str(actual: &Value<'_>, expected: &str) {
             match actual {
@@ -117,30 +108,24 @@ mod tests {
                 "// Comment D.\n",
                 "service TestServiceX {\n",
                 "    // Comment E.\n",
-                "    interface X1 {\n",
-                "        // Comment F.\n",
-                "        method FireMissiles(Set<Target>);\n",
-                "    }\n",
+                "    method FireMissiles(Set<Target>);\n",
                 "}\n",
                 "\n",
-                "// Comment G.\n",
+                "// Comment E.\n",
                 "implement TestServiceX using HTTP/JSON {\n",
-                "    // Comment H.\n",
-                "    interface X1 {\n",
-                "        // Comment I.\n",
-                "        property BasePath: \"/x\";\n",
+                "    // Comment F.\n",
+                "    property BasePath: \"/x\";\n",
                 "\n",
-                "        // Comment J.\n",
-                "        method FireMissiles {\n",
-                "            Method: \"POST\",\n",
-                "            Path: \"/missile-launches\",\n",
-                "         }\n",
-                "    }\n",
+                "    // Comment G.\n",
+                "    method FireMissiles {\n",
+                "        Method: \"POST\",\n",
+                "        Path: \"/missile-launches\",\n",
+                "     }\n",
                 "}\n",
                 "\n",
-                "// Comment K.\n",
+                "// Comment H.\n",
                 "record Target {\n",
-                "    // Comment L.\n",
+                "    // Comment I.\n",
                 "    X: Integer,\n",
                 "}\n",
             ).into()

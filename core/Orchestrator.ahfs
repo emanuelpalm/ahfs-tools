@@ -7,19 +7,15 @@ system Orchestrator {
 }
 
 service OrchestrationService {
-    interface Orchestration {
-        method RequestService(ServiceRequestForm): OrchestrationResponse;
-    }
+    method RequestService(ServiceRequestForm): OrchestrationResponse;
 }
 
 implement OrchestrationService using HTTP/JSON {
     property BasePath: "/orchestrator";
 
-    interface Orchestration {
-        method RequestService {
-            Method: "POST",
-            Path: "/orchestration",
-        }
+    method RequestService {
+        Method: "POST",
+        Path: "/orchestration",
     }
 }
 
@@ -125,7 +121,5 @@ enum OrchestratorWarnings {
 }
 
 service OrchestrationStoreManagement {
-    interface Management {
-        // TODO
-    }
+    // TODO
 }

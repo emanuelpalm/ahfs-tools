@@ -96,7 +96,7 @@ fn main() {
     }
 }
 
-fn failure(error: &Error) -> ! {
+fn failure(error: &dyn Error) -> ! {
     log::failure(error);
     log::suggestion(&"Run `arspec help` to see a list of available commands.");
     process::exit(1)

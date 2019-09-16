@@ -13,11 +13,11 @@ pub enum Error {
     /// [`Flag`](struct.Flag.html) value could not be parsed.
     FlagValueInvalid {
         flag: String,
-        cause: Box<error::Error>,
+        cause: Box<dyn error::Error>,
     },
 
     /// A command line rule failed to complete.
-    RuleFailed(Box<arspec::Error>),
+    RuleFailed(Box<dyn arspec::Error>),
 }
 
 impl arspec::Error for Error {

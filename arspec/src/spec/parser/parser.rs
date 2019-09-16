@@ -2,11 +2,11 @@ use arspec_parser::{Error, Matcher, Span};
 use crate::spec::{
     Attribute,
     Enum, EnumVariant,
-    Implement, ImplementInterface, ImplementMethod,
+    Implement, ImplementMethod,
     Primitive,
     Property,
     Record, RecordEntry,
-    Service, ServiceMethod, ServiceInterface, ServiceRef,
+    Service, ServiceMethod, ServiceRef,
     Specification,
     System,
     TypeRef,
@@ -137,7 +137,7 @@ fn implement<'a>(m: &mut M<'a>, t: &mut Specification<'a>, a: Vec<Attribute<'a>>
     fn entry<'a>(m: &mut M<'a>, t: &mut Implement<'a>, a: Vec<Attribute<'a>>) -> R<()> {
         let token = m.any(&[
             Class::At,
-            Class::Interface,
+            Class::Method,
             Class::Property,
             Class::BraceRight,
         ])?;
@@ -146,7 +146,7 @@ fn implement<'a>(m: &mut M<'a>, t: &mut Specification<'a>, a: Vec<Attribute<'a>>
                 let a = attribute(m, a)?;
                 return entry(m, t, a);
             }
-            Class::Interface => implement_interface(m, t, a)?,
+            Class::Method => implement_method(m, &mut t.methods, a)?,
             Class::Property => property(m, &mut t.properties, a)?,
             Class::BraceRight => { return Ok(()); }
             _ => unreachable!(),
@@ -155,35 +155,15 @@ fn implement<'a>(m: &mut M<'a>, t: &mut Specification<'a>, a: Vec<Attribute<'a>>
     }
 }
 
-fn implement_interface<'a>(m: &mut M<'a>, t: &mut Implement<'a>, a: Vec<Attribute<'a>>) -> R<()> {
-    let mut interface = m
+fn implement_method<'a>(m: &mut M<'a>, t: &mut Vec<ImplementMethod<'a>>, a: Vec<Attribute<'a>>) -> R<()> {
+    let mut method = m
         .all(&[Class::Identifier, Class::BraceLeft])
-        .map(|tokens| ImplementInterface::new(tokens[0].span.clone(), a))?;
+        .map(|tokens| ImplementMethod::new(tokens[0].span.clone(), a))?;
 
-    entry(m, &mut interface, vec![])?;
-    t.interfaces.push(interface);
+    map(m, &mut method.data)?;
+    t.push(method);
 
-    return Ok(());
-
-    fn entry<'a>(m: &mut M<'a>, s: &mut ImplementInterface<'a>, a: Vec<Attribute<'a>>) -> R<()> {
-        let token = m.any(&[
-            Class::At,
-            Class::Method,
-            Class::Property,
-            Class::BraceRight,
-        ])?;
-        match token.class {
-            Class::At => {
-                let a = attribute(m, a)?;
-                return entry(m, s, a);
-            }
-            Class::Method => implement_method(m, &mut s.methods, a)?,
-            Class::Property => property(m, &mut s.properties, a)?,
-            Class::BraceRight => { return Ok(()); }
-            _ => unreachable!(),
-        }
-        entry(m, s, vec![])
-    }
+    Ok(())
 }
 
 fn primitive<'a>(m: &mut M<'a>, t: &mut Specification<'a>, a: Vec<Attribute<'a>>) -> R<()> {
@@ -235,17 +215,6 @@ fn primitive<'a>(m: &mut M<'a>, t: &mut Specification<'a>, a: Vec<Attribute<'a>>
             _ => unreachable!(),
         }
     }
-}
-
-fn implement_method<'a>(m: &mut M<'a>, t: &mut Vec<ImplementMethod<'a>>, a: Vec<Attribute<'a>>) -> R<()> {
-    let mut method = m
-        .all(&[Class::Identifier, Class::BraceLeft])
-        .map(|tokens| ImplementMethod::new(tokens[0].span.clone(), a))?;
-
-    map(m, &mut method.data)?;
-    t.push(method);
-
-    Ok(())
 }
 
 fn list<'a>(m: &mut M<'a>, t: &mut Vec<Value<'a>>) -> R<()> {
@@ -413,7 +382,7 @@ fn service<'a>(m: &mut M<'a>, t: &mut Specification<'a>, a: Vec<Attribute<'a>>) 
     fn entry<'a>(m: &mut M<'a>, t: &mut Service<'a>, a: Vec<Attribute<'a>>) -> R<()> {
         let token = m.any(&[
             Class::At,
-            Class::Interface,
+            Class::Method,
             Class::BraceRight,
         ])?;
         match token.class {
@@ -421,40 +390,9 @@ fn service<'a>(m: &mut M<'a>, t: &mut Specification<'a>, a: Vec<Attribute<'a>>) 
                 let a = attribute(m, a)?;
                 return entry(m, t, a);
             }
-            Class::Interface => {
-                service_interface(m, t, a)?;
-                entry(m, t, vec![])
-            }
-            Class::BraceRight => Ok(()),
-            _ => unreachable!(),
-        }
-    }
-}
-
-fn service_interface<'a>(m: &mut M<'a>, t: &mut Service<'a>, a: Vec<Attribute<'a>>) -> R<()> {
-    let mut interface = m
-        .all(&[Class::Identifier, Class::BraceLeft])
-        .map(|tokens| ServiceInterface::new(tokens[0].span.clone(), a))?;
-
-    entry(m, &mut interface, vec![])?;
-    t.interfaces.push(interface);
-
-    return Ok(());
-
-    fn entry<'a>(m: &mut M<'a>, s: &mut ServiceInterface<'a>, a: Vec<Attribute<'a>>) -> R<()> {
-        let token = m.any(&[
-            Class::At,
-            Class::Method,
-            Class::BraceRight,
-        ])?;
-        match token.class {
-            Class::At => {
-                let a = attribute(m, a)?;
-                return entry(m, s, a);
-            }
             Class::Method => {
-                service_method(m, &mut s.methods, a)?;
-                entry(m, s, vec![])
+                service_method(m, &mut t.methods, a)?;
+                entry(m, t, vec![])
             }
             Class::BraceRight => Ok(()),
             _ => unreachable!(),

@@ -6,30 +6,21 @@ system Authorization {
 }
 
 service AuthorizationControl {
-    interface IntraCloud {
-        method VerifyAccess(IntraCloudAuthRequest): IntraCloudAuthResponse;
-    }
-
-    interface InterCloud {
-        method VerifyAccess(InterCloudAuthRequest): InterCloudAuthResponse;
-    }
+    method VerifyIntraCloudAccess(IntraCloudAuthRequest): IntraCloudAuthResponse;
+    method VerifyInterCloudAccess(InterCloudAuthRequest): InterCloudAuthResponse;
 }
 
 implement AuthorizationControl using HTTP/JSON {
     property BasePath: "/authorization";
 
-    interface IntraCloud {
-        method VerifyAccess {
-            Method: "PUT",
-            Path: "/intracloud",
-        }
+    method VerifyIntraCloudAccess {
+        Method: "PUT",
+        Path: "/intracloud",
     }
 
-    interface InterCloud {
-        method VerifyAccess {
-            Method: "PUT",
-            Path: "/intercloud",
-        }
+    method VerifyInterCloudAccess {
+        Method: "PUT",
+        Path: "/intercloud",
     }
 }
 
@@ -71,19 +62,15 @@ record InterCloudAuthResponse {
 }
 
 service TokenGeneration {
-    interface Generation {
-        method Generate(TokenGenerationRequest): TokenGenerationResponse;
-    }
+    method Generate(TokenGenerationRequest): TokenGenerationResponse;
 }
 
 implement TokenGeneration using HTTP/JSON {
     property BasePath: "/authorization";
 
-    interface Generation {
-        method Generate {
-            Method: "PUT",
-            Path: "/token",
-        }
+    method Generate {
+        Method: "PUT",
+        Path: "/token",
     }
 }
 

@@ -19,7 +19,7 @@ pub struct Implement<'a> {
     pub properties: Vec<Property<'a>>,
 
     /// Any interface implementation definitions.
-    pub interfaces: Vec<ImplementInterface<'a>>,
+    pub methods: Vec<ImplementMethod<'a>>,
 
     /// Any attributes.
     pub attributes: Vec<Attribute<'a>>,
@@ -39,7 +39,7 @@ impl<'a> Implement<'a> {
             protocol,
             encoding,
             properties: Vec::new(),
-            interfaces: Vec::new(),
+            methods: Vec::new(),
             attributes,
         }
     }
@@ -51,26 +51,26 @@ impl<'a> Implement<'a> {
                 service: self.name.to_excerpt(),
             })?;
 
-        'outer0: for interface0 in &self.interfaces {
-            for interface1 in &service.interfaces {
-                if interface0.name == interface1.name {
+        'outer0: for method0 in &self.methods {
+            for method1 in &service.methods {
+                if method0.name == method1.name {
                     continue 'outer0;
                 }
             }
             return Err(VerificationError::NoSuchInterfaceToImplement {
                 service: service.name.to_excerpt(),
-                interface: interface0.name.to_excerpt(),
+                interface: method0.name.to_excerpt(),
             });
         }
 
-        'outer1: for interface0 in &service.interfaces {
-            for interface1 in &self.interfaces {
-                if interface0.name == interface1.name {
+        'outer1: for method0 in &service.methods {
+            for method1 in &self.methods {
+                if method0.name == method1.name {
                     continue 'outer1;
                 }
             }
             return Err(VerificationError::InterfaceNotImplemented {
-                interface: interface0.name.to_excerpt(),
+                interface: method0.name.to_excerpt(),
                 implementation: self.name.to_excerpt(),
             });
         }
@@ -87,39 +87,6 @@ impl<'a> Implement<'a> {
             _ => Err(VerificationError::UnknownServiceEncoding {
                 encoding: self.encoding.to_excerpt(),
             })
-        }
-    }
-}
-
-/// Specifies how to implement a named [`ServiceInterface`][irf].
-///
-/// [irf]: struct.ServiceInterface.html
-#[derive(Debug)]
-pub struct ImplementInterface<'a> {
-    /// Name of implemented [`ServiceInterface`](struct.ServiceInterface.html).
-    pub name: Span<'a>,
-
-    /// Any interface method implementations.
-    pub methods: Vec<ImplementMethod<'a>>,
-
-    /// Any interface properties.
-    pub properties: Vec<Property<'a>>,
-
-    /// Any attributes.
-    pub attributes: Vec<Attribute<'a>>,
-}
-
-impl<'a> ImplementInterface<'a> {
-    /// Create new [`ServiceInterface`][irf] implementation definition.
-    ///
-    /// [irf]: struct.ServiceInterface.html
-    #[inline]
-    pub fn new(name: Span<'a>, attributes: Vec<Attribute<'a>>) -> Self {
-        ImplementInterface {
-            name,
-            methods: Vec::new(),
-            properties: Vec::new(),
-            attributes,
         }
     }
 }

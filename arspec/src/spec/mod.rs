@@ -14,11 +14,11 @@ mod verify;
 
 pub use self::attribute::Attribute;
 pub use self::enum_::{Enum, EnumVariant};
-pub use self::implement::{Implement, ImplementInterface, ImplementMethod};
+pub use self::implement::{Implement, ImplementMethod};
 pub use self::primitive::Primitive;
 pub use self::property::Property;
 pub use self::record::{Record, RecordEntry};
-pub use self::service::{Service, ServiceInterface, ServiceMethod, ServiceRef};
+pub use self::service::{Service, ServiceMethod, ServiceRef};
 pub use self::system::System;
 pub use self::type_ref::TypeRef;
 pub use self::value::Value;

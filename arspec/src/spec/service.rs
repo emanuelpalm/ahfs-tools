@@ -8,7 +8,7 @@ pub struct Service<'a> {
     pub name: Span<'a>,
 
     /// Any service interface definitions.
-    pub interfaces: Vec<ServiceInterface<'a>>,
+    pub methods: Vec<ServiceMethod<'a>>,
 
     /// Any attributes.
     pub attributes: Vec<Attribute<'a>>,
@@ -20,7 +20,7 @@ impl<'a> Service<'a> {
     pub fn new(name: Span<'a>, attributes: Vec<Attribute<'a>>) -> Self {
         Service {
             name,
-            interfaces: Vec::new(),
+            methods: Vec::new(),
             attributes,
         }
     }
@@ -30,31 +30,6 @@ impl<'a> AsRef<str> for Service<'a> {
     #[inline]
     fn as_ref(&self) -> &str {
         self.name.as_str()
-    }
-}
-
-/// Abstract service interface definition.
-#[derive(Debug)]
-pub struct ServiceInterface<'a> {
-    /// Name of interface.
-    pub name: Span<'a>,
-
-    /// Interface method definitions.
-    pub methods: Vec<ServiceMethod<'a>>,
-
-    /// Any attributes.
-    pub attributes: Vec<Attribute<'a>>,
-}
-
-impl<'a> ServiceInterface<'a> {
-    /// Create new abstract service interface definition.
-    #[inline]
-    pub fn new(name: Span<'a>, attributes: Vec<Attribute<'a>>) -> Self {
-        ServiceInterface {
-            name,
-            methods: Vec::new(),
-            attributes,
-        }
     }
 }
 
